@@ -3,11 +3,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RootConfigModule } from './config/config.module';
 import { RootProviderModule } from './provider/provider.module';
+import { RootIntegrationModule } from './integration/integration.module';
 
 @Module({
   imports: [
     RootConfigModule,
-    RootProviderModule
+    RootProviderModule,
+    RootIntegrationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
