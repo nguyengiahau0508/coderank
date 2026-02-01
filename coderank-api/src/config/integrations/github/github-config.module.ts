@@ -4,7 +4,6 @@ import * as Joi from 'joi'
 import { GithubConfigService } from './github-config.service';
 import githubConfig from './github-config';
 
-@Global()
 @Module({
   imports: [
     ConfigModule.forRoot({

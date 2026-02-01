@@ -3,7 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import * as Joi from 'joi'
 import appConfig from "./app-config";
 import { AppConfigService } from "./app-config.service";
-@Global()
+
 @Module({
   imports: [
     ConfigModule.forRoot({

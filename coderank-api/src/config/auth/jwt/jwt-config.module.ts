@@ -4,7 +4,6 @@ import * as Joi from 'joi'
 import { JwtConfigService } from './jwt-config.service';
 import jwtConfig from './jwt-config';
 
-@Global()
 @Module({
   imports: [
     ConfigModule.forRoot({

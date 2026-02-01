@@ -4,7 +4,6 @@ import * as Joi from 'joi'
 import { GoogleConfigService } from './google-config.service';
 import googleConfig from './google-config';
 
-@Global()
 @Module({
   imports: [
     ConfigModule.forRoot({

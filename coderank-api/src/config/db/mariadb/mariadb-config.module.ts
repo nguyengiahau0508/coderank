@@ -4,7 +4,6 @@ import * as Joi from 'joi'
 import mariadbConfig from "./mariadb-config";
 import { MariadbConfigService } from "./mariadb-config.service";
 
-@Global()
 @Module({
   imports: [
     ConfigModule.forRoot({
