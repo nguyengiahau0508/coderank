@@ -5,13 +5,15 @@ import { RootConfigModule } from './config/config.module';
 import { RootProviderModule } from './provider/provider.module';
 import { RootIntegrationModule } from './integration/integration.module';
 import { RootModule } from './module/module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     RootConfigModule,
     RootProviderModule,
     RootIntegrationModule,
-    RootModule
+    RootModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
