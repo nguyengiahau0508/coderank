@@ -6,8 +6,6 @@ import { AuthProviderEntity } from "./auth-provider.entity";
 import { SessionEntity } from "./session.entity";
 
 @Entity("users")
-@Index(["username"], { unique: true })
-@Index(["email"], { unique: true })
 @Index(["role"])
 @Index(["createdAt"])
 export class UserEntity extends BaseEntity {
@@ -64,17 +62,12 @@ export class UserEntity extends BaseEntity {
     @Column({ type: "timestamp", nullable: true })
     lockedUntil: Date;
 
-    @OneToMany(() => TokenEntity, (token) => token.user, { cascade: ["remove"] })
+    @OneToMany(() => TokenEntity, (token) => token.user)
     tokens: TokenEntity[];
 
-    @OneToMany(() => AuthProviderEntity, (authProvider) => authProvider.user, { cascade: ["remove"] })
+    @OneToMany(()=>AuthProviderEntity, (authProvider)=>authProvider.user)
     authProviders: AuthProviderEntity[];
 
-    @OneToMany(() => SessionEntity, (session) => session.user, { cascade: ["remove"] })
+    @OneToMany(() => SessionEntity, (session) => session.user)
     sessions: SessionEntity[];
-
-    @BeforeUpdate()
-    updateTimestamps() {
-        this.updatedAt = new Date();
-    }
 }
