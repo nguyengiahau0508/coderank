@@ -10,6 +10,14 @@ export class AuthService {
     ) { }
 
     async validateOrCreateUser(dto: GoogleLoginDto, provider: AuthProvidersEnum) {
-        
+        const existingUser = await this.userService.findOne({
+            where: {
+                email: dto.email,
+                authProviders:{
+                    providerName: provider,
+                    providerId: dto.providerId
+                }
+            }
+        })
     }
 }

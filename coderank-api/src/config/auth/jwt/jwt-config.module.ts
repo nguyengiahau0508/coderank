@@ -12,7 +12,11 @@ import jwtConfig from './jwt-config';
         AUTH_JWT_ACCESS_TOKEN_SECRET: Joi.string().required(),
         AUTH_JWT_ACCESS_TOKEN_EXPIRES_IN: Joi.string().required(),
         AUTH_JWT_REFRESH_TOKEN_SECRET: Joi.string().required(),
-        AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN: Joi.string().required()
+        AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN: Joi.string().required(),
+        AUTH_JWT_EMAIL_VERIFICATION_TOKEN_SECRET: Joi.string().required(),
+        AUTH_JWT_EMAIL_VERIFICATION_TOKEN_EXPIRES_IN: Joi.string().required(),
+        AUTH_JWT_PASSWORD_RESET_TOKEN_SECRET: Joi.string().required(),
+        AUTH_JWT_PASSWORD_RESET_TOKEN_EXPIRES_IN: Joi.string().required(),
       })
     })
   ],

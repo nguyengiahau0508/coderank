@@ -3,18 +3,16 @@ import { Column, Entity, JoinColumn, ManyToOne, Index } from "typeorm";
 import { UserEntity } from "./user.entity";
 import { TokenTypeEnum } from "src/common/enums/enums";
 
-
-
 @Entity("tokens")
 @Index(["userId", "type"])
-@Index(["token"])
+@Index(["tokenHash"])
 @Index(["expiresAt"])
 export class TokenEntity extends BaseEntity {
   @Column({ type: "uuid" })
   userId: string;
 
   @Column({ type: "varchar", length: 500 })
-  token: string;
+  tokenHash: string;
 
   @Column({
     type: "enum",

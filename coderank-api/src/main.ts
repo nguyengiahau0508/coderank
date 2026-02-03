@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { AppConfigService } from './config/app/app-config.service';
 import { MariadbConfigService } from './config/db/mariadb/mariadb-config.service';
 import { COLORS } from './common/constants/colors';
+import { ValidationPipe } from '@nestjs/common';
 
 
 async function bootstrap() {
@@ -22,6 +23,7 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix('api');
+  app.useGlobalPipes(new ValidationPipe());
   
   const appConfig: AppConfigService = app.get(AppConfigService);
   const mariadbConfig: MariadbConfigService = app.get(MariadbConfigService);
