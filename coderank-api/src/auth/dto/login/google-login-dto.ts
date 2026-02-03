@@ -1,12 +1,6 @@
-
-import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 export class GoogleLoginDto {
-    @IsNotEmpty()
-    @IsString()
-    providerId: string;
-
-    @IsNotEmpty()
     @IsEmail()
     email: string;
 
@@ -14,7 +8,19 @@ export class GoogleLoginDto {
     @IsString()
     fullName: string;
 
-    @IsOptional()
+    @IsNotEmpty()
     @IsString()
-    picture?: string;
+    providerId: string;
+
+    @IsNotEmpty()
+    @IsString()
+    picture: string;
+
+    @IsNotEmpty()
+    @IsString()
+    userAgent: string; // New property
+
+    @IsNotEmpty()
+    @IsString()
+    ipAddress: string; // New property
 }

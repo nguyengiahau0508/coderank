@@ -5,6 +5,7 @@ import { GoogleLoginDto } from "./dto/login/google-login-dto";
 import { TokenService } from "src/module/user/services/token.service";
 import {  generateUsernameFromEmail } from "src/common/helpers/username.helper";
 import { AuthProviderService } from "src/module/user/services/auth-provider.service";
+import { SessionService } from "src/module/user/services/session.service";
 
 @Injectable()
 export class AuthService {
@@ -12,6 +13,7 @@ export class AuthService {
         private readonly userService: UserService,
         private readonly tokenService: TokenService,
         private readonly authProviderService: AuthProviderService,
+        private readonly sesstionService: SessionService,
     ) { }
 
     async validateOrCreateUser(dto: GoogleLoginDto, provider: AuthProvidersEnum) {
@@ -50,10 +52,25 @@ export class AuthService {
             type: TokenTypeEnum.ACCESS,
             expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
         });
-        
+
+        const sessionToken = generateSessionToken(); // Implement this function to generate a unique token
+        const session = await this.sesstionService.create({
+            userId: currentUser.id,
+            sessionToken,
+            userAgent: dto.userAgent, // Assuming userAgent is part of dto
+            ipAddress: dto.ipAddress, // Assuming ipAddress is part of dto
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        });
+
         return {
             refreshToken,
             accessToken,
+            session,
         };
     }
+}
+
+function generateSessionToken() {
+    // Implement this function to generate a unique token
+    return Math.random().toString(36).substring(2, 15);
 }

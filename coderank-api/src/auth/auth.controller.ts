@@ -18,10 +18,19 @@ export class AuthController {
     @Get(`${AuthProvidersEnum.Google}/callback`)
     @UseGuards(AuthGuard(AuthProvidersEnum.Google))
     async googleCallback(@Req() req: express.Request, @Res() res: express.Response) {
+        const userAgent = req.headers['user-agent'] || '';
+        const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || '';
+
+        const userData = {
+            ...req.user,
+            userAgent,
+            ipAddress,
+        };
+        
         const {
             accessToken,
             refreshToken
-        } = await this.authService.validateOrCreateUser(req.user as any, AuthProvidersEnum.Google);
+        } = await this.authService.validateOrCreateUser(userData as any, AuthProvidersEnum.Google);
         res.json({
             accessToken,
             refreshToken
