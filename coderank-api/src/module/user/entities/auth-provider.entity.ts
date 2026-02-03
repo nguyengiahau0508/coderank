@@ -1,23 +1,47 @@
 import { BaseEntity } from "src/common/entities/base.entity";
-import { Column, Entity, JoinColumn, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, Index } from "typeorm";
 import { UserEntity } from "./user.entity";
 import { AuthProvidersEnum } from "src/common/enums/enums";
 
-@Entity()
-export class AuthProviderEntity extends BaseEntity{
+@Entity("auth_providers")
+@Index(["userId", "provider"], { unique: true })
+@Index(["provider", "providerId"], { unique: true })
+@Index(["provider"])
+export class AuthProviderEntity extends BaseEntity {
+  @Column({ type: "uuid" })
+  userId: string;
+
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: AuthProvidersEnum
   })
-  provider: AuthProvidersEnum
+  provider: AuthProvidersEnum;
 
-  @Column({ nullable: true })
-  providerId: string
+  @Column({ type: "varchar", length: 255 })
+  providerId: string;
 
-  @Column({ nullable: true })
-  passwordHash: string
+  @Column({ type: "longtext", nullable: true, select: false })
+  passwordHash: string;
 
-  @OneToOne(() => UserEntity, (user) => user.authProviders, { onDelete: "CASCADE" })
-  @JoinColumn()
+  @Column({ type: "varchar", length: 255, nullable: true })
+  providerEmail: string;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  providerName: string;
+
+  @Column({ type: "longtext", nullable: true })
+  providerAvatar: string;
+
+  @Column({ type: "longtext", nullable: true, select: false })
+  accessToken: string;
+
+  @Column({ type: "longtext", nullable: true, select: false })
+  refreshToken: string;
+
+  @Column({ type: "timestamp", nullable: true })
+  lastUsedAt: Date;
+
+  @ManyToOne(() => UserEntity, (user) => user.authProviders, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "userId" })
   user: UserEntity;
 }

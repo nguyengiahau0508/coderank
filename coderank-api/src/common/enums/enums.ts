@@ -34,3 +34,16 @@ export enum RoleEnum {
   Student = 'student',
   Instructor = 'instructor',
 }
+
+export enum SessionStatusEnum {
+  Active = "active",
+  Expired = "expired",
+  Revoked = "revoked",
+}
+
+export enum TokenTypeEnum {
+  ACCESS = "access",
+  REFRESH = "refresh",
+  RESET_PASSWORD = "reset_password",
+  EMAIL_VERIFICATION = "email_verification",
+}
