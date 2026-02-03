@@ -4,7 +4,20 @@ import { Column, Entity, OneToMany, Index, BeforeUpdate } from "typeorm";
 import { TokenEntity } from "./token.entity";
 import { AuthProviderEntity } from "./auth-provider.entity";
 import { SessionEntity } from "./session.entity";
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import {
+  ApiStringProperty,
+  ApiStringOptional,
+  ApiEmailProperty,
+  ApiUrlOptional,
+  ApiDateOptional,
+  ApiEnumProperty,
+  ApiEnumArrayProperty,
+  ApiDecimalProperty,
+  ApiBooleanProperty,
+  ApiTimestampOptional,
+  ApiIntProperty,
+  ApiRelationArrayOptional,
+} from "src/common/decorators";
 
 /**
  * User Entity
@@ -13,74 +26,35 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 @Entity("users")
 @Index(["createdAt"])
 export class UserEntity extends BaseEntity {
-    @ApiProperty({
-        description: 'Unique username for the user',
-        example: 'john_doe',
-        maxLength: 50
-    })
+    @ApiStringProperty('Unique username for the user', 'john_doe', 50)
     @Column({ type: "varchar", length: 50, unique: true })
     username: string;
 
-    @ApiProperty({
-        description: 'Full name of the user',
-        example: 'Nguyễn Văn A',
-        maxLength: 255
-    })
+    @ApiStringProperty('Full name of the user', 'Nguyễn Văn A', 255)
     @Column({ type: "varchar", length: 255 })
     fullName: string;
 
-    @ApiProperty({
-        description: 'Email address (unique, not exposed in responses)',
-        example: 'user@example.com',
-        maxLength: 255,
-        writeOnly: true
-    })
+    @ApiEmailProperty(true)
     @Column({ type: "varchar", length: 255, unique: true, select: false })
     email: string;
 
-    @ApiPropertyOptional({
-        description: 'URL to user avatar image',
-        example: 'https://example.com/avatars/user123.jpg',
-        nullable: true
-    })
+    @ApiUrlOptional('URL to user avatar image', 'https://example.com/avatars/user123.jpg')
     @Column({ type: "longtext", nullable: true })
     avatarUrl: string;
 
-    @ApiPropertyOptional({
-        description: 'Phone number',
-        example: '+84901234567',
-        maxLength: 20,
-        nullable: true
-    })
+    @ApiStringOptional('Phone number', '+84901234567', 20)
     @Column({ type: "varchar", length: 20, nullable: true })
     phoneNumber: string;
 
-    @ApiPropertyOptional({
-        description: 'User address',
-        example: '123 Nguyễn Du, Quận 1, TP.HCM',
-        maxLength: 255,
-        nullable: true
-    })
+    @ApiStringOptional('User address', '123 Nguyễn Du, Quận 1, TP.HCM', 255)
     @Column({ type: "varchar", length: 255, nullable: true })
     address: string;
 
-    @ApiPropertyOptional({
-        description: 'Date of birth',
-        type: 'string',
-        format: 'date',
-        example: '1995-06-15',
-        nullable: true
-    })
+    @ApiDateOptional('Date of birth', '1995-06-15')
     @Column({ type: "date", nullable: true })
     birthday: Date;
 
-    @ApiProperty({
-        description: 'Gender of the user',
-        enum: GenderEnum,
-        enumName: 'GenderEnum',
-        default: GenderEnum.Other,
-        example: GenderEnum.Male
-    })
+    @ApiEnumProperty('Gender of the user', GenderEnum, 'GenderEnum', GenderEnum.Other, GenderEnum.Male)
     @Column({
         type: "enum",
         enum: GenderEnum,
@@ -88,96 +62,46 @@ export class UserEntity extends BaseEntity {
     })
     gender: GenderEnum;
 
-    @ApiProperty({
-        description: 'User roles (can have multiple)',
-        type: [String],
-        enum: RoleEnum,
-        default: [RoleEnum.Student],
-        example: ['student']
-    })
+    @ApiEnumArrayProperty('User roles (can have multiple)', RoleEnum, [RoleEnum.Student], [RoleEnum.Student])
     @Column({
         type: "simple-array",
         default: RoleEnum.Student
     })
     roles: RoleEnum[];
 
-    @ApiProperty({
-        description: 'User rating score (0-100)',
-        type: 'number',
-        minimum: 0,
-        maximum: 100,
-        default: 0,
-        example: 75.50
-    })
+    @ApiDecimalProperty('User rating score (0-100)', 0, 100, 0)
     @Column({ type: "decimal", precision: 5, scale: 2, default: 0 })
     rating: number;
 
-    @ApiProperty({
-        description: 'Whether the user account is active',
-        type: 'boolean',
-        default: true,
-        example: true
-    })
+    @ApiBooleanProperty('Whether the user account is active', true)
     @Column({ type: "boolean", default: true })
     isActive: boolean;
 
-    @ApiProperty({
-        description: 'Whether email has been verified',
-        type: 'boolean',
-        default: false,
-        example: false
-    })
+    @ApiBooleanProperty('Whether email has been verified', false)
     @Column({ type: "boolean", default: false })
     isEmailVerified: boolean;
 
-    @ApiPropertyOptional({
-        description: 'Last login timestamp',
-        type: 'string',
-        format: 'date-time',
-        nullable: true,
-        example: '2026-02-03T10:30:00Z'
-    })
+    @ApiTimestampOptional('Last login timestamp')
     @Column({ type: "timestamp", nullable: true })
     lastLoginAt: Date;
 
-    @ApiProperty({
-        description: 'Failed login attempts count',
-        type: 'integer',
-        minimum: 0,
-        default: 0,
-        example: 0
-    })
+    @ApiIntProperty('Failed login attempts count', 0, 0)
     @Column({ type: "int", default: 0 })
     loginAttempts: number;
 
-    @ApiPropertyOptional({
-        description: 'Account locked until this timestamp',
-        type: 'string',
-        format: 'date-time',
-        nullable: true,
-        example: null
-    })
+    @ApiTimestampOptional('Account locked until this timestamp')
     @Column({ type: "timestamp", nullable: true })
     lockedUntil: Date;
 
-    @ApiPropertyOptional({
-        description: 'User tokens',
-        type: () => [TokenEntity]
-    })
+    @ApiRelationArrayOptional('User tokens', () => [TokenEntity])
     @OneToMany(() => TokenEntity, (token) => token.user)
     tokens: TokenEntity[];
 
-    @ApiPropertyOptional({
-        description: 'Authentication providers linked to this user',
-        type: () => [AuthProviderEntity]
-    })
+    @ApiRelationArrayOptional('Authentication providers linked to this user', () => [AuthProviderEntity])
     @OneToMany(()=>AuthProviderEntity, (authProvider)=>authProvider.user)
     authProviders: AuthProviderEntity[];
 
-    @ApiPropertyOptional({
-        description: 'User sessions',
-        type: () => [SessionEntity]
-    })
+    @ApiRelationArrayOptional('User sessions', () => [SessionEntity])
     @OneToMany(() => SessionEntity, (session) => session.user)
     sessions: SessionEntity[];
 }
