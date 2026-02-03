@@ -24,4 +24,8 @@ export class GoogleConfigService {
   get driveFolderId(): string  {
     return this.configurationService.get<string>('googleConfig.driveFolderId', '')
   }
+
+  get oauth2RedirectUri(): string {
+    return this.configurationService.get<string>('googleConfig.oauth2RedirectUri', '')
+  }
 }

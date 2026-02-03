@@ -14,6 +14,7 @@ import googleConfig from './google-config';
         INTEGRATIONS_GOOGLE_OAUTH2_CLIENT_EMAIL: Joi.string().required(),
         INTEGRATIONS_GOOGLE_OAUTH2_PRIVATE_KEY: Joi.string().required(),
         INTEGRATIONS_GOOGLE_DRIVE_FOLDER_ID: Joi.string().required(),
+        INTEGRATIONS_GOOGLE_OAUTH2_REDIRECT_URI: Joi.string().required(),
       })
     })
   ],

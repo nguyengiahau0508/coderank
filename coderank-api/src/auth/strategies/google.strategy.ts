@@ -11,7 +11,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, AuthProvidersEnum
     super({
       clientID: googleConfigService.clientId,
       clientSecret: googleConfigService.clientSecret,
-      callbackURL: `http://localhost:3000/api/auth/google/callback`,
+      callbackURL: googleConfigService.oauth2RedirectUri,
       scope: [
         'email',
         'profile',
