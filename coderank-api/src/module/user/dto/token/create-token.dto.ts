@@ -2,6 +2,7 @@
 import { IsNotEmpty, IsEnum, IsDate, IsOptional, IsString, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TokenTypeEnum } from 'src/common/enums/enums';
+import * as jwtPayloadInterface from 'src/common/interfaces/jwt-payload.interface';
 
 export class CreateTokenDto {
   @IsNotEmpty()
@@ -18,6 +19,5 @@ export class CreateTokenDto {
   expiresAt: Date;
 
   @IsOptional()
-  @IsString()
-  revokeReason?: string;
+  payload: jwtPayloadInterface.IJwtPayload;
 }

@@ -6,7 +6,6 @@ import { AuthProviderEntity } from "./auth-provider.entity";
 import { SessionEntity } from "./session.entity";
 
 @Entity("users")
-@Index(["role"])
 @Index(["createdAt"])
 export class UserEntity extends BaseEntity {
     @Column({ type: "varchar", length: 50, unique: true })
@@ -38,11 +37,10 @@ export class UserEntity extends BaseEntity {
     gender: GenderEnum;
 
     @Column({
-        type: "enum",
-        enum: RoleEnum,
+        type: "simple-array",
         default: RoleEnum.Student
     })
-    role: RoleEnum;
+    roles: RoleEnum[];
 
     @Column({ type: "decimal", precision: 5, scale: 2, default: 0 })
     rating: number;

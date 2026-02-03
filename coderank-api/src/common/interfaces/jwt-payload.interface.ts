@@ -1,10 +1,6 @@
+import { RoleEnum } from "../enums/enums";
+
 export interface IJwtPayload {
-	sub: number;
-	email: string;
-	roles?: string[];
-	tokenKey: string;
-	accessKey?: string;
-	refreshKey?: string;
-	[key: string]: any;
-	ip: string
+	sub: string;
+	roles?: RoleEnum[];
 }
