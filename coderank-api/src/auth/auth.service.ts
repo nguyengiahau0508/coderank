@@ -53,10 +53,10 @@ export class AuthService {
             expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
         });
 
-        const sessionToken = generateSessionToken(); // Implement this function to generate a unique token
         const session = await this.sesstionService.create({
             userId: currentUser.id,
-            sessionToken,
+            sessionToken: accessToken,
+            refreshToken: refreshToken,
             userAgent: dto.userAgent, // Assuming userAgent is part of dto
             ipAddress: dto.ipAddress, // Assuming ipAddress is part of dto
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
@@ -68,9 +68,4 @@ export class AuthService {
             session,
         };
     }
-}
-
-function generateSessionToken() {
-    // Implement this function to generate a unique token
-    return Math.random().toString(36).substring(2, 15);
 }
