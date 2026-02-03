@@ -19,7 +19,7 @@ export class UserEntity extends BaseEntity {
     email: string;
 
     @Column({ type: "longtext", nullable: true })
-    avatar: string;
+    avatarUrl: string;
 
     @Column({ type: "varchar", length: 20, nullable: true })
     phoneNumber: string;

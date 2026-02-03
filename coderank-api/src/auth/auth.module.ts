@@ -1,18 +1,20 @@
 import { Global, Module } from "@nestjs/common";
 import { AuthController } from "./auth.controller";
 import { GoogleStrategy } from "./strategies/google.strategy";
-import { GoogleConfigModule } from "src/config/integrations/google/google-config.module";
+import { AuthService } from "./auth.service";
+import { UserModule } from "src/module/user/user.module";
 
 
 @Global()
 @Module({
     imports: [
-        GoogleConfigModule
+        UserModule,
     ],
     controllers: [AuthController],
     providers: [
-        GoogleStrategy
+        GoogleStrategy,
+        AuthService,
     ],
-    exports: [],
+    exports: [AuthService],
 })
 export class AuthModule {}

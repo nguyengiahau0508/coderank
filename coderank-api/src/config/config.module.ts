@@ -14,5 +14,12 @@ import { GoogleConfigModule } from './integrations/google/google-config.module';
     GithubConfigModule,
     GoogleConfigModule,
   ],
+  exports: [
+    AppConfigModule,
+    JwtConfigModule,
+    MariadbConfigModule,
+    GithubConfigModule,
+    GoogleConfigModule,
+  ],
 })
 export class RootConfigModule {}
