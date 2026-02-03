@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { AuthProvidersEnum, TokenTypeEnum } from "src/common/enums/enums";
+import { AuthProvidersEnum, SessionStatusEnum, TokenTypeEnum } from "src/common/enums/enums";
 import { UserService } from "src/module/user/services/user.service";
 import { GoogleLoginDto } from "./dto/login/google-login-dto";
 import { TokenService } from "src/module/user/services/token.service";
@@ -77,7 +77,25 @@ export class AuthService {
         };
     }
 
-    async logout(userId: string, refreshToken: string) {
-        
+    async logout(userId: string,accessToken:string, refreshToken: string) {
+        const isAccessTokenResvoked = await this.tokenService.revokeToken(accessToken, TokenTypeEnum.ACCESS);
+        const isRefreshTokenRevoked = await this.tokenService.revokeToken(refreshToken, TokenTypeEnum.REFRESH);
+
+        const currentSession = await this.sessionService.findOne({
+            where: {
+                userId,
+                refreshToken,
+                status: SessionStatusEnum.Active,
+            },
+        });
+        if (!currentSession) {
+            return false;
+        }
+
+        const updatedSession = await this.sessionService.update(currentSession.id, {
+            status: SessionStatusEnum.Revoked
+        });
+
+        return isAccessTokenResvoked && isRefreshTokenRevoked && !!updatedSession;
     }
 }

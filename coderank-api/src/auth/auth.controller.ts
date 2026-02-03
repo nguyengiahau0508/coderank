@@ -66,7 +66,24 @@ export class AuthController {
     @UseGuards(AuthGuard(AuthProvidersEnum.Jwt))
     @ApiLogout()
     async logout(@Req() req: express.Request, @Res() res: express.Response) {
+        const userId = req.user?.['userId'];
+        if (!userId) {
+            return res.status(HttpStatus.UNAUTHORIZED).json({ success: false, message: 'User not authenticated' });
+        }
+
         const refreshToken = req.cookies?.['refreshToken'];
-        console.log('Logout request received. Refresh Token:', refreshToken); 
+        const accessToken = req.headers?.authorization?.split(' ')[1];
+        if (!accessToken || !refreshToken) {
+            return res.status(HttpStatus.BAD_REQUEST).json({ success: false, message: 'Missing tokens' });
+        }
+
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+        });
+        
+        const logoutSuccess = await this.authService.logout(userId, accessToken, refreshToken);
+        res.json({ success: logoutSuccess });
     }
 }
