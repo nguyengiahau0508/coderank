@@ -6,7 +6,8 @@ import { AppConfigService } from './config/app/app-config.service';
 import { MariadbConfigService } from './config/db/mariadb/mariadb-config.service';
 import { COLORS } from './common/constants/colors';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
+import { swaggerConfig, swaggerCustomOptions } from './config/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -23,17 +24,23 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true, // Strip properties not in DTO
+    transform: true, // Auto-transform payloads
+    forbidNonWhitelisted: true, // Throw error for unknown properties
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+  }));
 
   const appConfig: AppConfigService = app.get(AppConfigService);
   const mariadbConfig: MariadbConfigService = app.get(MariadbConfigService);
 
-  const swaggerConfig = new DocumentBuilder()
-    .addBearerAuth()
-    .addOAuth2()
-    .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api-docs', app, documentFactory);
+  // Setup Swagger Documentation
+  const document = SwaggerModule.createDocument(app, swaggerConfig, {
+    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+  });
+  SwaggerModule.setup('api-docs', app, document, swaggerCustomOptions);
 
   await app.listen(appConfig.port, appConfig.host, () => {
     const border = `${COLORS.cyan}-----------------------------------${COLORS.reset}`;
