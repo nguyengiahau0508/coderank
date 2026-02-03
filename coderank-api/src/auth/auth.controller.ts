@@ -4,7 +4,7 @@ import { AuthProvidersEnum } from "src/common/enums/enums";
 import express from "express";
 import { AuthService } from "./auth.service";
 import { ApiTags } from "@nestjs/swagger";
-import { ApiGoogleAuth, ApiGoogleCallback } from "./decorators";
+import { ApiGoogleAuth, ApiGoogleCallback, ApiLogout } from "./decorators";
 
 /**
  * Authentication Controller
@@ -60,5 +60,13 @@ export class AuthController {
         res.json({
             accessToken,
         });
+    }
+
+    @Get('logout')
+    @UseGuards(AuthGuard(AuthProvidersEnum.Jwt))
+    @ApiLogout()
+    async logout(@Req() req: express.Request, @Res() res: express.Response) {
+        const refreshToken = req.cookies?.['refreshToken'];
+        console.log('Logout request received. Refresh Token:', refreshToken); 
     }
 }

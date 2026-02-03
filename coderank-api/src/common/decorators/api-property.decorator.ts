@@ -125,7 +125,15 @@ export function ApiEmailProperty(writeOnly = false) {
   });
 }
 
-/** URL field */
+/** URL field (required) */
+export function ApiUrlProperty(description: string, example: string) {
+  return ApiProperty({
+    description,
+    example,
+  });
+}
+
+/** URL field (optional) */
 export function ApiUrlOptional(description: string, example: string) {
   return ApiPropertyOptional({
     description,

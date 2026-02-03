@@ -4,6 +4,7 @@ import {
   ApiResponse,
   ApiOAuth2,
   ApiExcludeEndpoint,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 
 /**
@@ -145,6 +146,7 @@ export function ApiLogout() {
       summary: 'Đăng xuất',
       description: 'Đăng xuất người dùng và xóa refresh token.',
     }),
+    ApiBearerAuth('JWT-auth'),
     ApiResponse({
       status: HttpStatus.OK,
       description: 'Logout successful',
