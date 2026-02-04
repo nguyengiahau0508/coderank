@@ -25,6 +25,7 @@ export class AuthController {
      * Initiate Google OAuth2 authentication flow
      */
     @Get(`${AuthProvidersEnum.Google}`)
+    @Public()
     @UseGuards(AuthGuard(AuthProvidersEnum.Google))
     @ApiGoogleAuth()
     async authenticateWithGoogle() {
@@ -35,6 +36,7 @@ export class AuthController {
      * Handle Google OAuth2 callback
      */
     @Get(`${AuthProvidersEnum.Google}/callback`)
+    @Public()
     @UseGuards(AuthGuard(AuthProvidersEnum.Google))
     @ResponseMessage('Google authentication successful')
     @ApiGoogleCallback()
