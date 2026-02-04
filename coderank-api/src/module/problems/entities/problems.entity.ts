@@ -12,90 +12,71 @@ import {
 import { UsersEntity } from "src/module/users/entities/user.entity";
 import { TagsEntity } from "./tags.entity";
 import { TestcasesEntity } from "./testcases.entity";
-import {
-  ApiStringProperty,
-  ApiStringOptional,
-  ApiBooleanProperty,
-  ApiIntProperty,
-  ApiEnumProperty,
-  ApiRelationArrayOptional,
-  ApiRelationOptional,
-  ApiUserIdProperty,
-} from "src/common/decorators";
+import { HintsEntity } from "./hints.entity";
 import { DifficultyEnum } from "src/common/enums/enums";
+// ... imports decorators
 
-/**
- * Problems Entity
- * Stores problem metadata and relations to tags/testcases
- */
 @Entity("problems")
-@Index("IDX_problems_slug", ["slug"], { unique: true })
-@Index("IDX_problems_difficulty", ["difficulty"])
-@Index("IDX_problems_isPublished", ["isPublished"])
+@Index("IDX_problem_slug", ["slug"], { unique: true })
+// Tối ưu query lọc bài tập theo trạng thái và độ khó (thường đi chung)
+@Index("IDX_problem_publish_diff", ["isPublished", "difficulty"]) 
+@Index("IDX_problem_author", ["authorId"])
 export class ProblemsEntity extends BaseEntity {
-  @ApiStringProperty("Problem title", "Sum of Two", 255)
   @Column({ type: "varchar", length: 255 })
   title: string;
 
-  @ApiStringProperty("URL-friendly slug", "sum-of-two", 255)
-  @Column({ type: "varchar", length: 255 })
+  @Column({ type: "varchar", length: 255, unique: true })
   slug: string;
 
-  @ApiStringOptional("Full problem statement (markdown/HTML)", "Given two integers...")
-  @Column({ type: "longtext", nullable: true })
-  description: string;
+  // OPTIMIZATION: select: false
+  // Khi get list problems, không cần load nội dung bài. Chỉ load khi get detail.
+  @Column({ type: "text", nullable: true, select: false })
+  description?: string;
 
-  @ApiStringOptional("Input description", "First line contains...")
-  @Column({ type: "longtext", nullable: true })
-  inputDescription: string;
+  @Column({ type: "text", nullable: true, select: false })
+  inputDescription?: string;
 
-  @ApiStringOptional("Output description", "Print the sum of two integers")
-  @Column({ type: "longtext", nullable: true })
-  outputDescription: string;
+  @Column({ type: "text", nullable: true, select: false })
+  outputDescription?: string;
 
-  @ApiStringOptional("Sample input example", "1 9")
-  @Column({ type: "longtext", nullable: true })
-  sampleInput: string;
+  @Column({ type: "text", nullable: true, select: false })
+  notes?: string;
 
-  @ApiStringOptional("Sample output example", "10")
-  @Column({ type: "longtext", nullable: true })
-  sampleOutput: string;
+  // Sử dụng unsigned int nếu không bao giờ âm để mở rộng range (tùy chọn)
+  @Column({ type: "int", default: 1000, unsigned: true })
+  timeLimitMs: number;
 
-  @ApiIntProperty("Time limit (ms)", 1000, 0)
-  @Column({ type: "int", default: 1000 })
-  timeLimit: number;
+  @Column({ type: "int", default: 256, unsigned: true })
+  memoryLimitMb: number;
 
-  @ApiIntProperty("Memory limit (MB)", 256, 0)
-  @Column({ type: "int", default: 256 })
-  memoryLimit: number;
-
-  @ApiEnumProperty("Problem difficulty", DifficultyEnum, "DifficultyEnum", DifficultyEnum.Medium, DifficultyEnum.Medium)
   @Column({ type: "enum", enum: DifficultyEnum, default: DifficultyEnum.Medium })
   difficulty: DifficultyEnum;
 
-  @ApiBooleanProperty("Whether the problem is published (visible to users)", false)
   @Column({ type: "boolean", default: false })
   isPublished: boolean;
 
-  @ApiIntProperty("Points awarded for full solve", 100, 0)
-  @Column({ type: "int", default: 100 })
+  // smallint đủ cho điểm số (max 32767), tiết kiệm hơn int
+  @Column({ type: "smallint", default: 100, unsigned: true })
   points: number;
 
-  @ApiUserIdProperty()
   @Column({ type: "uuid", nullable: true })
-  authorId: string;
+  authorId?: string;
 
-  @ApiRelationOptional("Author of the problem", () => UsersEntity)
   @ManyToOne(() => UsersEntity, { onDelete: "SET NULL" })
   @JoinColumn({ name: "authorId" })
-  author: UsersEntity;
+  author?: UsersEntity;
 
-  @ApiRelationArrayOptional("Associated tags", () => [TagsEntity])
-  @ManyToMany(() => TagsEntity, (tag) => tag.problems, { cascade: true })
-  @JoinTable({ name: "problem_tags" })
+  @ManyToMany(() => TagsEntity, (t) => t.problems)
+  @JoinTable({
+    name: "problem_tags",
+    joinColumn: { name: "problem_id", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "tag_id", referencedColumnName: "id" },
+  })
   tags: TagsEntity[];
 
-  @ApiRelationArrayOptional("Test cases for judging and samples", () => [TestcasesEntity])
-  @OneToMany(() => TestcasesEntity, (t) => t.problem, { cascade: ["insert", "update", "remove"] })
+  @OneToMany(() => TestcasesEntity, (t) => t.problem, { cascade: true })
   testcases: TestcasesEntity[];
+
+  @OneToMany(() => HintsEntity, (h) => h.problem, { cascade: true })
+  hints: HintsEntity[];
 }

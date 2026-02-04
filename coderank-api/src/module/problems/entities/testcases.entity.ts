@@ -1,57 +1,41 @@
 import { BaseEntity } from "src/common/entities/base.entity";
-import { Column, Entity, Index, ManyToOne } from "typeorm";
+import { Column, Entity, Index, ManyToOne, JoinColumn } from "typeorm"; // Thêm JoinColumn
 import { ProblemsEntity } from "./problems.entity";
-import {
-  ApiStringOptional,
-  ApiBooleanProperty,
-  ApiIntProperty,
-  ApiUserIdProperty,
-  ApiRelationOptional,
-} from "src/common/decorators";
+import { TestcaseCompareTypeEnum } from "src/common/enums/enums";
+// ... decorators
 
-export enum TestcaseCompareType {
-  Exact = "exact",
-  TrimWhitespace = "trim_whitespace",
-  Tokenize = "tokenize",
-}
-
-/**
- * Testcase entity
- * Stores individual input/output pairs used for judging and samples
- */
 @Entity("testcases")
-@Index("IDX_testcases_problemId", ["problemId"])
-@Index("IDX_testcases_isSample", ["isSample"])
+// OPTIMIZATION: Composite Index quan trọng nhất.
+// Query thường gặp: "Lấy tất cả testcase của bài X, sắp xếp theo thứ tự".
+// Index này giúp DB không cần 'filesort' lại dữ liệu.
+@Index("IDX_testcases_prob_order", ["problemId", "testcaseOrder"]) 
+@Index("IDX_testcases_isSample", ["isSample"]) // Để lọc testcase mẫu hiển thị cho user
 export class TestcasesEntity extends BaseEntity {
-  @ApiUserIdProperty()
   @Column({ type: "uuid" })
   problemId: string;
 
-  @ApiStringOptional("Input content for testcase", "")
-  @Column({ type: "longtext" })
+  // OPTIMIZATION: select: false
+  // Input/Output có thể lên tới vài MB. KHÔNG BAO GIỜ load mặc định.
+  // Chỉ dùng queryBuilder.addSelect() khi chấm bài hoặc view chi tiết.
+  @Column({ type: "longtext", select: false })
   input: string;
 
-  @ApiStringOptional("Expected output for testcase", "")
-  @Column({ type: "longtext" })
+  @Column({ type: "longtext", select: false })
   output: string;
 
-  @ApiBooleanProperty("Whether this testcase is shown as sample", false)
   @Column({ type: "boolean", default: false })
   isSample: boolean;
 
-  @ApiBooleanProperty("Whether this testcase is hidden from users (used only for judging)", true)
   @Column({ type: "boolean", default: true })
   isHidden: boolean;
 
-  @ApiIntProperty("Order index of testcase", 0, 0)
   @Column({ type: "int", default: 0 })
-  order: number;
+  testcaseOrder: number;
 
-  @ApiStringOptional("Compare type used to validate output (exact/trim/tokenize)", "exact")
-  @Column({ type: "enum", enum: TestcaseCompareType, default: TestcaseCompareType.Exact })
-  compareType: TestcaseCompareType;
+  @Column({ type: "enum", enum: TestcaseCompareTypeEnum, default: TestcaseCompareTypeEnum.Exact })
+  compareType: TestcaseCompareTypeEnum;
 
-  @ApiRelationOptional("Problem this testcase belongs to", () => ProblemsEntity)
   @ManyToOne(() => ProblemsEntity, (p) => p.testcases, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "problemId" }) // Map chính xác với cột problemId ở trên
   problem: ProblemsEntity;
 }

@@ -1,7 +1,6 @@
 import { IsString, IsOptional, IsBoolean, IsInt, Min, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TestcaseCompareType } from '../../entities/testcases.entity';
-
+import { TestcaseCompareTypeEnum } from 'src/common/enums/enums';
 export class CreateTestcaseDto {
   @ApiPropertyOptional({ description: 'Input content for testcase', example: '1 2\n' })
   @IsOptional()
@@ -29,8 +28,8 @@ export class CreateTestcaseDto {
   @Min(0)
   order?: number;
 
-  @ApiPropertyOptional({ description: 'Compare type used to validate output', enum: TestcaseCompareType, example: TestcaseCompareType.Exact })
+  @ApiPropertyOptional({ description: 'Compare type used to validate output', enum: TestcaseCompareTypeEnum, example: TestcaseCompareTypeEnum.Exact })
   @IsOptional()
-  @IsEnum(TestcaseCompareType)
-  compareType?: TestcaseCompareType;
+  @IsEnum(TestcaseCompareTypeEnum)
+  compareType?: TestcaseCompareTypeEnum;
 }

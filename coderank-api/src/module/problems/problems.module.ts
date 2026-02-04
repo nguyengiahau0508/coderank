@@ -7,6 +7,7 @@ import { ProblemsController } from "./problems.controller";
 import { ProblemsService } from "./services/problems.service";
 import { TestcasesService } from "./services/testcases.service";
 import { TagsService } from "./services/tags.service";
+import { HintsEntity } from "./entities/hints.entity";
 
 
 @Module({
@@ -15,6 +16,7 @@ import { TagsService } from "./services/tags.service";
             ProblemsEntity,
             TestcasesEntity,
             TagsEntity,
+            HintsEntity
         ])
     ],
     controllers: [ProblemsController],
