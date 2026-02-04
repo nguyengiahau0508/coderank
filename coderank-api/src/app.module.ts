@@ -6,6 +6,8 @@ import { RootProviderModule } from './provider/provider.module';
 import { RootIntegrationModule } from './integration/integration.module';
 import { RootModule } from './module/module';
 import { AuthModule } from './auth/auth.module';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -16,6 +18,12 @@ import { AuthModule } from './auth/auth.module';
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard
+    }
+  ],
 })
 export class AppModule {}

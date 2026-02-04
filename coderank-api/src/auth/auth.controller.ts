@@ -6,6 +6,7 @@ import { AuthService } from "./auth.service";
 import { ApiTags } from "@nestjs/swagger";
 import { ApiGoogleAuth, ApiGoogleCallback, ApiLogout, ApiRefreshToken } from "./decorators";
 import { ResponseMessage, SkipTransform } from "src/common/decorators";
+import { Throttle } from "@nestjs/throttler";
 
 /**
  * Authentication Controller
@@ -89,6 +90,7 @@ export class AuthController {
     }
 
     @Post('refresh-tokens')
+    @Throttle({ default: { limit: 3, ttl: 60000 } })
     @ResponseMessage('Access token refreshed successfully')
     @ApiRefreshToken()
     async refreshAccessTokens(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
