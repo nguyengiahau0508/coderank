@@ -1,11 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { AuthProvidersEnum, SessionStatusEnum, TokenTypeEnum } from "src/common/enums/enums";
-import { UsersService } from "src/module/users/services/user.service";
+import { UsersService } from "src/modules/users/services/user.service";
 import { GoogleLoginDto } from "./dto/login/google-login-dto";
-import { TokensService } from "src/module/users/services/token.service";
+import { TokensService } from "src/modules/users/services/token.service";
 import {  generateUsernameFromEmail } from "src/common/helpers/username.helper";
-import { AuthProvidersService } from "src/module/users/services/auth-provider.service";
-import { SessionsService } from "src/module/users/services/session.service";
+import { AuthProvidersService } from "src/modules/users/services/auth-provider.service";
+import { SessionsService } from "src/modules/users/services/session.service";
 import { IJwtPayload } from "src/common/interfaces/jwt-payload.interface";
 
 @Injectable()

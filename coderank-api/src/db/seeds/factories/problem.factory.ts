@@ -1,11 +1,11 @@
 import { fa, faker } from "@faker-js/faker";
 import { DifficultyEnum } from "src/common/enums/enums";
-import { ProblemsEntity } from "src/module/problems/entities/problems.entity";
-import { TagsEntity } from "src/module/problems/entities/tags.entity";
-import { TestcasesEntity } from "src/module/problems/entities/testcases.entity";
+import { ProblemsEntity } from "src/modules/problems/entities/problems.entity";
+import { TagsEntity } from "src/modules/problems/entities/tags.entity";
+import { TestcasesEntity } from "src/modules/problems/entities/testcases.entity";
 import slugify from "slugify";
 import { CP_TAGS } from "../constants/constants";
-import { HintsEntity } from "src/module/problems/entities/hints.entity";
+import { HintsEntity } from "src/modules/problems/entities/hints.entity";
 
 /* ================= TAG FACTORY ================= */
 

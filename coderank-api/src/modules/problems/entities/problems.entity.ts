@@ -9,7 +9,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from "typeorm";
-import { UsersEntity } from "src/module/users/entities/user.entity";
+import { UsersEntity } from "src/modules/users/entities/user.entity";
 import { TagsEntity } from "./tags.entity";
 import { TestcasesEntity } from "./testcases.entity";
 import { HintsEntity } from "./hints.entity";

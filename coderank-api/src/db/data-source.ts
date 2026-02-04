@@ -1,11 +1,11 @@
-import { HintsEntity } from "src/module/problems/entities/hints.entity";
-import { ProblemsEntity } from "src/module/problems/entities/problems.entity";
-import { TagsEntity } from "src/module/problems/entities/tags.entity";
-import { TestcasesEntity } from "src/module/problems/entities/testcases.entity";
-import { AuthProvidersEntity } from "src/module/users/entities/auth-provider.entity";
-import { SessionsEntity } from "src/module/users/entities/session.entity";
-import { TokensEntity } from "src/module/users/entities/token.entity";
-import { UsersEntity } from "src/module/users/entities/user.entity";
+import { HintsEntity } from "src/modules/problems/entities/hints.entity";
+import { ProblemsEntity } from "src/modules/problems/entities/problems.entity";
+import { TagsEntity } from "src/modules/problems/entities/tags.entity";
+import { TestcasesEntity } from "src/modules/problems/entities/testcases.entity";
+import { AuthProvidersEntity } from "src/modules/users/entities/auth-provider.entity";
+import { SessionsEntity } from "src/modules/users/entities/session.entity";
+import { TokensEntity } from "src/modules/users/entities/token.entity";
+import { UsersEntity } from "src/modules/users/entities/user.entity";
 import { DataSource } from "typeorm";
 
 export const AppDataSource = new DataSource({

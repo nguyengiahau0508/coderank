@@ -1,7 +1,7 @@
-import { ProblemsEntity } from "src/module/problems/entities/problems.entity";
+import { ProblemsEntity } from "src/modules/problems/entities/problems.entity";
 import { AppDataSource } from "../../data-source";
 import { createProblemFactory } from "../factories/problem.factory";
-import { TagsEntity } from "src/module/problems/entities/tags.entity";
+import { TagsEntity } from "src/modules/problems/entities/tags.entity";
 import { CP_TAGS } from "../constants/constants";
 import { faker } from "@faker-js/faker/locale/zu_ZA";
 
