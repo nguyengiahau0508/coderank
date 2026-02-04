@@ -1,11 +1,11 @@
-import { Controller, Get, HttpStatus, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Post, Req, Res, UseGuards, BadRequestException, UnauthorizedException } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport/dist/auth.guard";
 import { AuthProvidersEnum } from "src/common/enums/enums";
 import express from "express";
 import { AuthService } from "./auth.service";
 import { ApiTags } from "@nestjs/swagger";
 import { ApiGoogleAuth, ApiGoogleCallback, ApiLogout, ApiRefreshToken } from "./decorators";
-import { ResponseMessage } from "src/common/decorators";
+import { ResponseMessage, SkipTransform } from "src/common/decorators";
 
 /**
  * Authentication Controller
@@ -35,8 +35,9 @@ export class AuthController {
      */
     @Get(`${AuthProvidersEnum.Google}/callback`)
     @UseGuards(AuthGuard(AuthProvidersEnum.Google))
+    @ResponseMessage('Google authentication successful')
     @ApiGoogleCallback()
-    async googleCallback(@Req() req: express.Request, @Res() res: express.Response) {
+    async googleCallback(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
         const userAgent = req.headers['user-agent'] || '';
         const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || '';
 
@@ -58,25 +59,23 @@ export class AuthController {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
-        res.json({
-            accessToken,
-        });
+        return { accessToken };
     }
 
     @Get('logout')
     @ResponseMessage('User logged out successfully')
     @UseGuards(AuthGuard(AuthProvidersEnum.Jwt))
     @ApiLogout()
-    async logout(@Req() req: express.Request, @Res() res: express.Response) {
+    async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
         const userId = req.user?.['userId'];
         if (!userId) {
-            return res.status(HttpStatus.UNAUTHORIZED).json({ success: false, message: 'User not authenticated' });
+            throw new UnauthorizedException('User not authenticated');
         }
 
         const refreshToken = req.cookies?.['refreshToken'];
         const accessToken = req.headers?.authorization?.split(' ')[1];
         if (!accessToken || !refreshToken) {
-            return res.status(HttpStatus.BAD_REQUEST).json({ success: false, message: 'Missing tokens' });
+            throw new BadRequestException('Missing tokens');
         }
 
         res.clearCookie('refreshToken', {
@@ -86,21 +85,21 @@ export class AuthController {
         });
         
         const logoutSuccess = await this.authService.logout(userId, accessToken, refreshToken);
-        res.json({ success: logoutSuccess });
+        return { loggedOut: logoutSuccess };
     }
 
     @Post('refresh-tokens')
     @ResponseMessage('Access token refreshed successfully')
     @ApiRefreshToken()
-    async refreshAccessTokens(@Req() req: express.Request, @Res() res: express.Response) {
+    async refreshAccessTokens(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
         const refreshToken = req.cookies?.['refreshToken'];
         if (!refreshToken) {
-            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Missing refresh token' });
+            throw new BadRequestException('Missing refresh token');
         }
 
         const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || '';
-        const {accessToken} = await this.authService.refreshTokens(ipAddress, refreshToken);
+        const { accessToken } = await this.authService.refreshTokens(ipAddress, refreshToken);
 
-        res.json({ accessToken });
+        return { accessToken };
     }
 }
