@@ -5,6 +5,7 @@ import express from "express";
 import { AuthService } from "./auth.service";
 import { ApiTags } from "@nestjs/swagger";
 import { ApiGoogleAuth, ApiGoogleCallback, ApiLogout, ApiRefreshToken } from "./decorators";
+import { ResponseMessage } from "src/common/decorators";
 
 /**
  * Authentication Controller
@@ -63,6 +64,7 @@ export class AuthController {
     }
 
     @Get('logout')
+    @ResponseMessage('User logged out successfully')
     @UseGuards(AuthGuard(AuthProvidersEnum.Jwt))
     @ApiLogout()
     async logout(@Req() req: express.Request, @Res() res: express.Response) {
@@ -88,6 +90,7 @@ export class AuthController {
     }
 
     @Post('refresh-tokens')
+    @ResponseMessage('Access token refreshed successfully')
     @ApiRefreshToken()
     async refreshAccessTokens(@Req() req: express.Request, @Res() res: express.Response) {
         const refreshToken = req.cookies?.['refreshToken'];

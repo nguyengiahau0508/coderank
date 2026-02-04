@@ -5,3 +5,4 @@
  */
 export * from './swagger.decorator';
 export * from './api-property.decorator';
+export * from './response.decorator';

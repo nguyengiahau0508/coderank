@@ -6,6 +6,12 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
  */
 export class ApiResponseDto<T> {
   @ApiProperty({
+    description: 'Indicates if the request was successful',
+    example: true
+  })
+  success: boolean;
+
+  @ApiProperty({
     description: 'HTTP status code',
     example: 200
   })
@@ -26,6 +32,18 @@ export class ApiResponseDto<T> {
     description: 'Additional metadata (pagination, etc.)'
   })
   meta?: Record<string, any>;
+
+  @ApiProperty({
+    description: 'Response timestamp',
+    example: '2026-02-04T10:30:00.000Z'
+  })
+  timestamp: string;
+
+  @ApiProperty({
+    description: 'Request path',
+    example: '/api/users'
+  })
+  path: string;
 }
 
 /**
@@ -74,6 +92,12 @@ export class PaginationMetaDto {
  */
 export class PaginatedResponseDto<T> {
   @ApiProperty({
+    description: 'Indicates if the request was successful',
+    example: true
+  })
+  success: boolean;
+
+  @ApiProperty({
     description: 'HTTP status code',
     example: 200
   })
@@ -96,12 +120,30 @@ export class PaginatedResponseDto<T> {
     type: PaginationMetaDto
   })
   meta: PaginationMetaDto;
+
+  @ApiProperty({
+    description: 'Response timestamp',
+    example: '2026-02-04T10:30:00.000Z'
+  })
+  timestamp: string;
+
+  @ApiProperty({
+    description: 'Request path',
+    example: '/api/users'
+  })
+  path: string;
 }
 
 /**
  * Error response
  */
 export class ErrorResponseDto {
+  @ApiProperty({
+    description: 'Indicates if the request was successful',
+    example: false
+  })
+  success: boolean;
+
   @ApiProperty({
     description: 'HTTP status code',
     example: 400
@@ -124,17 +166,29 @@ export class ErrorResponseDto {
   })
   error: string | string[];
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Error timestamp',
-    example: '2026-02-03T10:30:00.000Z'
+    example: '2026-02-04T10:30:00.000Z'
   })
-  timestamp?: string;
+  timestamp: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Request path',
     example: '/api/users'
   })
-  path?: string;
+  path: string;
+
+  @ApiProperty({
+    description: 'HTTP method',
+    example: 'POST'
+  })
+  method: string;
+
+  @ApiPropertyOptional({
+    description: 'Correlation ID for request tracking',
+    example: 'abc-123-def-456'
+  })
+  correlationId?: string;
 }
 
 /**

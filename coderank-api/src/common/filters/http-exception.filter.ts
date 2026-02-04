@@ -13,6 +13,7 @@ import { QueryFailedError, EntityNotFoundError } from 'typeorm';
  * Error response interface for consistent API error format
  */
 export interface IErrorResponse {
+  success: boolean;
   statusCode: number;
   message: string;
   error: string | string[];
@@ -106,6 +107,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     return {
+      success: false,
       statusCode: status,
       message,
       error,
@@ -131,6 +133,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // Handle duplicate entry error (MySQL/MariaDB error code 1062)
     if (driverError?.errno === 1062 || driverError?.code === 'ER_DUP_ENTRY') {
       return {
+        success: false,
         statusCode: HttpStatus.CONFLICT,
         message: 'Resource already exists',
         error: 'Duplicate entry detected',
@@ -144,6 +147,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // Handle foreign key constraint error (MySQL/MariaDB error code 1452)
     if (driverError?.errno === 1452 || driverError?.code === 'ER_NO_REFERENCED_ROW_2') {
       return {
+        success: false,
         statusCode: HttpStatus.BAD_REQUEST,
         message: 'Referenced resource not found',
         error: 'Foreign key constraint failed',
@@ -157,6 +161,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // Handle cannot delete parent row (MySQL/MariaDB error code 1451)
     if (driverError?.errno === 1451 || driverError?.code === 'ER_ROW_IS_REFERENCED_2') {
       return {
+        success: false,
         statusCode: HttpStatus.CONFLICT,
         message: 'Cannot delete resource with existing references',
         error: 'Resource is referenced by other records',
@@ -169,6 +174,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     // Generic database error
     return {
+      success: false,
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'Database operation failed',
       error: 'Internal server error',
@@ -190,6 +196,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     correlationId?: string,
   ): IErrorResponse {
     return {
+      success: false,
       statusCode: HttpStatus.NOT_FOUND,
       message: 'Resource not found',
       error: 'The requested resource does not exist',
@@ -219,6 +226,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     return {
+      success: false,
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'An unexpected error occurred',
       error: errorMessage,

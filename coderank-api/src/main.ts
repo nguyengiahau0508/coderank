@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -9,11 +9,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerConfig, swaggerCustomOptions } from './config/swagger';
 import { GlobalExceptionFilter } from './common/filters';
+import { TransformInterceptor } from './common/interceptors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['fatal', 'error', 'warn', 'debug', 'verbose'],
   });
+
+  const reflector = app.get(Reflector);
 
   app.use(cookieParser());
   app.use(helmet());
@@ -26,6 +29,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalInterceptors(new TransformInterceptor(reflector));
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true, // Strip properties not in DTO
     transform: true, // Auto-transform payloads
