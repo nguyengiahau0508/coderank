@@ -1,11 +1,13 @@
 import { Module } from "@nestjs/common";
+import { RunnerController } from "./runner.controller";
+import { RunnerService } from "./runner.service";
 
 
 @Module({
     imports: [],
-    controllers: [],
-    providers: [],
-    exports: []
+    controllers: [RunnerController],
+    providers: [RunnerService],
+    exports: [RunnerService]
 })
 
 export class RunnerModule { }
