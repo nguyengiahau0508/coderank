@@ -66,7 +66,7 @@ export class ProblemsEntity extends BaseEntity {
   @JoinColumn({ name: "authorId" })
   author?: UsersEntity;
 
-  @ManyToMany(() => TagsEntity, (t) => t.problems)
+  @ManyToMany(() => TagsEntity, (t) => t.problems , { cascade: true })
   @JoinTable({
     name: "problem_tags",
     joinColumn: { name: "problem_id", referencedColumnName: "id" },

@@ -82,21 +82,15 @@ Given two integers a and b, compute their sum.
     // Memory in MB (realistic CP values)
     memoryLimitMb: faker.helpers.arrayElement([64, 128, 256, 512]),
 
-    difficulty: DifficultyEnum.Easy,
+    difficulty: faker.helpers.arrayElement([
+      DifficultyEnum.Easy,
+      DifficultyEnum.Medium,
+      DifficultyEnum.Hard,
+    ]),
 
     // Auto-generate correct testcases
     testcases: generateSumTestcases(10) as TestcasesEntity[],
     // Auto-generate hints
     hints: generateSumHints() as HintsEntity[],
-
-    // Assign random tags from CP_TAGS
-    tags: faker.helpers.arrayElements(CP_TAGS, { min: 2, max: 4 }).map(
-      (tagName) =>
-        ({
-          name: tagName,
-          slug: slugify(tagName, { lower: true }),
-          description: `Problems related to ${tagName}.`,
-        } as TagsEntity),
-    ),
   };
 }
