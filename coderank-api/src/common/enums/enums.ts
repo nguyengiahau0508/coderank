@@ -35,6 +35,12 @@ export enum RolesEnum {
   Instructor = 'instructor',
 }
 
+export enum DifficultyEnum {
+  Easy = 'easy',
+  Medium = 'medium',
+  Hard = 'hard',
+}
+
 export enum SessionStatusEnum {
   Active = "active",
   Expired = "expired",
