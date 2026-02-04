@@ -1,10 +1,10 @@
-import { Controller, Get, HttpStatus, Req, Res, UseGuards } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Post, Req, Res, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport/dist/auth.guard";
 import { AuthProvidersEnum } from "src/common/enums/enums";
 import express from "express";
 import { AuthService } from "./auth.service";
 import { ApiTags } from "@nestjs/swagger";
-import { ApiGoogleAuth, ApiGoogleCallback, ApiLogout } from "./decorators";
+import { ApiGoogleAuth, ApiGoogleCallback, ApiLogout, ApiRefreshToken } from "./decorators";
 
 /**
  * Authentication Controller
@@ -85,5 +85,19 @@ export class AuthController {
         
         const logoutSuccess = await this.authService.logout(userId, accessToken, refreshToken);
         res.json({ success: logoutSuccess });
+    }
+
+    @Post('refresh-tokens')
+    @ApiRefreshToken()
+    async refreshAccessTokens(@Req() req: express.Request, @Res() res: express.Response) {
+        const refreshToken = req.cookies?.['refreshToken'];
+        if (!refreshToken) {
+            return res.status(HttpStatus.BAD_REQUEST).json({ message: 'Missing refresh token' });
+        }
+
+        const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || '';
+        const {accessToken} = await this.authService.refreshTokens(ipAddress, refreshToken);
+
+        res.json({ accessToken });
     }
 }

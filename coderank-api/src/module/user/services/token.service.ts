@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { JwtConfigService } from 'src/config/auth/jwt/jwt-config.service';
 import { TokenTypeEnum } from 'src/common/enums/enums';
 import * as crypto from 'crypto';
+import { IJwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 
 @Injectable()
 export class TokenService extends BaseService<TokenEntity> {
@@ -84,7 +85,7 @@ export class TokenService extends BaseService<TokenEntity> {
     return tokenString;
   }
 
-  async verifyToken(token: string, type: TokenTypeEnum): Promise<any> {
+  async verifyToken(token: string, type: TokenTypeEnum): Promise<IJwtPayload> {
     let secret: string;
 
     switch (type) {
@@ -106,7 +107,7 @@ export class TokenService extends BaseService<TokenEntity> {
 
     try {
       // Verify JWT signature and expiration
-      const payload = await this.jwtService.verifyAsync(token, { secret });
+      const payload: IJwtPayload = await this.jwtService.verifyAsync(token, { secret });
 
       // Check if token is revoked in database
       const tokenHash = this.hashToken(token);

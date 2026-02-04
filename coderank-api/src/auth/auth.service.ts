@@ -98,4 +98,49 @@ export class AuthService {
 
         return isAccessTokenResvoked && isRefreshTokenRevoked && !!updatedSession;
     }
+
+    async refreshTokens(ipAddress: string, refreshToken: string) {
+        const jwtPayload: IJwtPayload = await this.tokenService.verifyToken(refreshToken, TokenTypeEnum.REFRESH);
+        const currentUser = await this.userService.findById(jwtPayload.sub);
+        if (!currentUser) {
+            throw new Error('User not found');
+        }
+
+        const currentSession = await this.sessionService.findOne({
+            where: {
+                userId: currentUser.id,
+                refreshToken,
+                status: SessionStatusEnum.Active,
+            },
+        });
+
+        if (!currentSession) {
+            throw new Error('No active session found for this refresh token');
+        }
+
+        if (currentSession.ipAddress !== ipAddress) {
+            await this.sessionService.update(currentSession.id, {
+                status: SessionStatusEnum.Revoked,
+            });
+            await this.tokenService.revokeToken(refreshToken, TokenTypeEnum.REFRESH);
+
+            throw new Error('IP address mismatch');
+        }
+
+        const tokenPayload : IJwtPayload = {
+            sub: currentUser.id,
+            roles: currentUser.roles,
+        }
+
+        const newAccessToken = await this.tokenService.generateToken({
+            userId: currentUser.id,
+            type: TokenTypeEnum.ACCESS,
+            expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+            payload: tokenPayload,
+        });
+
+        return {
+            accessToken: newAccessToken,
+        };
+    }
 }
