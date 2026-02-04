@@ -77,10 +77,10 @@ export class CreateProblemDto {
   @IsUUID('4', { each: true })
   tagIds?: string[];
 
-  @ApiPropertyOptional({ description: 'Inline testcases to create', type: [CreateTestcaseDto] })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateTestcaseDto)
-  testcases?: CreateTestcaseDto[];
+  // @ApiPropertyOptional({ description: 'Inline testcases to create', type: [CreateTestcaseDto] })
+  // @IsOptional()
+  // @IsArray()
+  // @ValidateNested({ each: true })
+  // @Type(() => CreateTestcaseDto)
+  // testcases?: CreateTestcaseDto[];
 }

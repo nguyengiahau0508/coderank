@@ -1,4 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { IJwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 
 /**
  * Current User Decorator
@@ -24,8 +25,8 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 export const CurrentUser = createParamDecorator(
   (data: string | undefined, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    const user = request.user;
-
+    const user: IJwtPayload = request.user;
+    console.log('CurrentUser Decorator: ', user);
     if (!user) {
       return null;
     }
@@ -33,13 +34,3 @@ export const CurrentUser = createParamDecorator(
     return data ? user[data] : user;
   },
 );
-
-/**
- * Type for the user payload attached to the request
- */
-export interface UserPayload {
-  userId: string;
-  roles: string[];
-  isActive?: boolean;
-  isEmailVerified?: boolean;
-}

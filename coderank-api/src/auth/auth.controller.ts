@@ -62,7 +62,7 @@ export class AuthController {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
-        return { accessToken };
+        return res.redirect(`${process.env.APP_URL}/api-docs`);
     }
 
     @Get('logout')

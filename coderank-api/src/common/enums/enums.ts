@@ -33,6 +33,7 @@ export enum RolesEnum {
   Admin = 'admin',
   Student = 'student',
   Instructor = 'instructor',
+  ProblemSetter = 'problem_setter',
 }
 
 export enum DifficultyEnum {

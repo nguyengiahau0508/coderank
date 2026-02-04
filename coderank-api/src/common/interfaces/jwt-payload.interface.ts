@@ -1,6 +1,6 @@
 import { RolesEnum } from "../enums/enums";
 
 export interface IJwtPayload {
-	sub: string;
+	userId: string;
 	roles?: RolesEnum[];
 }

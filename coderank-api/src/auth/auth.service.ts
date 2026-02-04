@@ -43,7 +43,7 @@ export class AuthService {
         }
 
         const tokenPayload : IJwtPayload = {
-            sub: currentUser.id,
+            userId: currentUser.id,
             roles: currentUser.roles,
         }
 
@@ -101,7 +101,7 @@ export class AuthService {
 
     async refreshTokens(ipAddress: string, refreshToken: string) {
         const jwtPayload: IJwtPayload = await this.tokensService.verifyToken(refreshToken, TokenTypeEnum.REFRESH);
-        const currentUser = await this.usersService.findById(jwtPayload.sub);
+        const currentUser = await this.usersService.findById(jwtPayload.userId);
         if (!currentUser) {
             throw new Error('User not found');
         }
@@ -128,7 +128,7 @@ export class AuthService {
         }
 
         const tokenPayload : IJwtPayload = {
-            sub: currentUser.id,
+            userId: currentUser.id,
             roles: currentUser.roles,
         }
 
