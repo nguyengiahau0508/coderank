@@ -1,9 +1,9 @@
 import { BaseEntity } from "src/common/entities/base.entity";
 import { GenderEnum, RolesEnum } from "src/common/enums/enums";
 import { Column, Entity, OneToMany, Index, BeforeUpdate } from "typeorm";
-import { TokenEntity } from "./token.entity";
-import { AuthProviderEntity } from "./auth-provider.entity";
-import { SessionEntity } from "./session.entity";
+import { TokensEntity } from "./token.entity";
+import { AuthProvidersEntity } from "./auth-provider.entity";
+import { SessionsEntity } from "./session.entity";
 import {
   ApiStringProperty,
   ApiStringOptional,
@@ -25,7 +25,7 @@ import {
  */
 @Entity("users")
 @Index(["createdAt"])
-export class UserEntity extends BaseEntity {
+export class UsersEntity extends BaseEntity {
     @ApiStringProperty('Unique username for the user', 'john_doe', 50)
     @Column({ type: "varchar", length: 50, unique: true })
     username: string;
@@ -93,15 +93,15 @@ export class UserEntity extends BaseEntity {
     @Column({ type: "timestamp", nullable: true })
     lockedUntil: Date;
 
-    @ApiRelationArrayOptional('User tokens', () => [TokenEntity])
-    @OneToMany(() => TokenEntity, (token) => token.user)
-    tokens: TokenEntity[];
+    @ApiRelationArrayOptional('User tokens', () => [TokensEntity])
+    @OneToMany(() => TokensEntity, (token) => token.user)
+    tokens: TokensEntity[];
 
-    @ApiRelationArrayOptional('Authentication providers linked to this user', () => [AuthProviderEntity])
-    @OneToMany(()=>AuthProviderEntity, (authProvider)=>authProvider.user)
-    authProviders: AuthProviderEntity[];
+    @ApiRelationArrayOptional('Authentication providers linked to this user', () => [AuthProvidersEntity])
+    @OneToMany(()=>AuthProvidersEntity, (authProvider)=>authProvider.user)
+    authProviders: AuthProvidersEntity[];
 
-    @ApiRelationArrayOptional('User sessions', () => [SessionEntity])
-    @OneToMany(() => SessionEntity, (session) => session.user)
-    sessions: SessionEntity[];
+    @ApiRelationArrayOptional('User sessions', () => [SessionsEntity])
+    @OneToMany(() => SessionsEntity, (session) => session.user)
+    sessions: SessionsEntity[];
 }

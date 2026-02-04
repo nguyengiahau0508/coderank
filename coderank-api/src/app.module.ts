@@ -8,8 +8,8 @@ import { RootModule } from './module/module';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { JwtAuthGuard } from './auth/guard/jwt.guard';
-import { RolesGuard } from './auth/guard/roles.guard';
+import { JwtAuthGuard } from './auth/guards/jwt.guard';
+import { RolesGuard } from './auth/guards/roles.guard';
 
 @Module({
   imports: [

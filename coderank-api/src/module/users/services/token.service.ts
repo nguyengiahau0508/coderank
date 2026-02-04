@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TokenEntity } from '../entities/token.entity';
+import { TokensEntity } from '../entities/token.entity';
 import { BaseService } from 'src/common/services/base.service';
 import { CreateTokenDto } from '../dto/token/create-token.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -11,11 +11,11 @@ import * as crypto from 'crypto';
 import { IJwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 
 @Injectable()
-export class TokenService extends BaseService<TokenEntity> {
+export class TokensService extends BaseService<TokensEntity> {
   constructor(
     private readonly jwtService: JwtService,
     private readonly jwtConfigService: JwtConfigService,
-    @InjectRepository(TokenEntity) private readonly tokenRepository: Repository<TokenEntity>
+    @InjectRepository(TokensEntity) private readonly tokenRepository: Repository<TokensEntity>
   ) { 
     super(tokenRepository);
   }

@@ -106,16 +106,6 @@ Tất cả responses đều tuân theo format:
     },
     'API-Key',
   )
-  // Global tags for API grouping
-  .addTag('Health', 'API health check endpoints')
-  .addTag('Authentication', 'User authentication and authorization')
-  .addTag('Users', 'User management operations')
-  .addTag('Code Runner', 'Code execution and evaluation')
-  .addTag('Problems', 'Problem management')
-  .addTag('Submissions', 'Code submission handling')
-  .addTag('Contests', 'Contest management')
-  .addTag('Learning', 'Learning resources and courses')
-  .addTag('Community', 'Community features')
   .build();
 
 /**

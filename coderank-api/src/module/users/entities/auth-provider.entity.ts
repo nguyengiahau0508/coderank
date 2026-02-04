@@ -1,6 +1,6 @@
 import { BaseEntity } from "src/common/entities/base.entity";
 import { Column, Entity, JoinColumn, ManyToOne, Index } from "typeorm";
-import { UserEntity } from "./user.entity";
+import { UsersEntity } from "./user.entity";
 import { AuthProvidersEnum } from "src/common/enums/enums";
 import {
   ApiUserIdProperty,
@@ -21,7 +21,7 @@ import {
 @Index(["userId", "provider"], { unique: true })
 @Index(["provider", "providerId"], { unique: true })
 @Index(["provider"])
-export class AuthProviderEntity extends BaseEntity {
+export class AuthProvidersEntity extends BaseEntity {
   @ApiUserIdProperty()
   @Column({ type: "uuid" })
   userId: string;
@@ -65,8 +65,8 @@ export class AuthProviderEntity extends BaseEntity {
   @Column({ type: "timestamp", nullable: true })
   lastUsedAt: Date;
 
-  @ApiRelationOptional('Associated user', () => UserEntity)
-  @ManyToOne(() => UserEntity, (user) => user.authProviders, { onDelete: "CASCADE" })
+  @ApiRelationOptional('Associated user', () => UsersEntity)
+  @ManyToOne(() => UsersEntity, (user) => user.authProviders, { onDelete: "CASCADE" })
   @JoinColumn({ name: "userId" })
-  user: UserEntity;
+  user: UsersEntity;
 }

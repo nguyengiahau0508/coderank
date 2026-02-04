@@ -1,24 +1,24 @@
 import { Injectable } from "@nestjs/common";
 import { AuthProvidersEnum, SessionStatusEnum, TokenTypeEnum } from "src/common/enums/enums";
-import { UserService } from "src/module/user/services/user.service";
+import { UsersService } from "src/module/users/services/user.service";
 import { GoogleLoginDto } from "./dto/login/google-login-dto";
-import { TokenService } from "src/module/user/services/token.service";
+import { TokensService } from "src/module/users/services/token.service";
 import {  generateUsernameFromEmail } from "src/common/helpers/username.helper";
-import { AuthProviderService } from "src/module/user/services/auth-provider.service";
-import { SessionService } from "src/module/user/services/session.service";
+import { AuthProvidersService } from "src/module/users/services/auth-provider.service";
+import { SessionsService } from "src/module/users/services/session.service";
 import { IJwtPayload } from "src/common/interfaces/jwt-payload.interface";
 
 @Injectable()
 export class AuthService {
     constructor(
-        private readonly userService: UserService,
-        private readonly tokenService: TokenService,
-        private readonly authProviderService: AuthProviderService,
-        private readonly sessionService: SessionService,
+        private readonly usersService: UsersService,
+        private readonly tokensService: TokensService,
+        private readonly authProvidersService: AuthProvidersService,
+        private readonly sessionsService: SessionsService,
     ) { }
 
     async validateOrCreateUser(dto: GoogleLoginDto, provider: AuthProvidersEnum) {
-        let currentUser = await this.userService.findOne({
+        let currentUser = await this.usersService.findOne({
             where: {
                 email: dto.email,
                 authProviders:{
@@ -28,13 +28,13 @@ export class AuthService {
             }
         })
         if (!currentUser){
-            currentUser = await this.userService.create({
+            currentUser = await this.usersService.create({
                 email: dto.email,
                 fullName: dto.fullName,
                 username: generateUsernameFromEmail(dto.email),
                 avatarUrl: dto.picture,
             })
-            const authProvider = await this.authProviderService.create({
+            const authProvider = await this.authProvidersService.create({
                 userId: currentUser.id,
                 providerName: provider,
                 providerId: dto.providerId,
@@ -47,21 +47,21 @@ export class AuthService {
             roles: currentUser.roles,
         }
 
-        const refreshToken = await this.tokenService.generateToken({
+        const refreshToken = await this.tokensService.generateToken({
             userId: currentUser.id,
             type: TokenTypeEnum.REFRESH,
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
             payload: tokenPayload,
         });
 
-        const accessToken = await this.tokenService.generateToken({
+        const accessToken = await this.tokensService.generateToken({
             userId: currentUser.id,
             type: TokenTypeEnum.ACCESS,
             expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
             payload: tokenPayload,
         });
 
-        const session = await this.sessionService.create({
+        const session = await this.sessionsService.create({
             userId: currentUser.id,
             sessionToken: accessToken,
             refreshToken: refreshToken,
@@ -78,10 +78,10 @@ export class AuthService {
     }
 
     async logout(userId: string,accessToken:string, refreshToken: string) {
-        const isAccessTokenResvoked = await this.tokenService.revokeToken(accessToken, TokenTypeEnum.ACCESS);
-        const isRefreshTokenRevoked = await this.tokenService.revokeToken(refreshToken, TokenTypeEnum.REFRESH);
+        const isAccessTokenResvoked = await this.tokensService.revokeToken(accessToken, TokenTypeEnum.ACCESS);
+        const isRefreshTokenRevoked = await this.tokensService.revokeToken(refreshToken, TokenTypeEnum.REFRESH);
 
-        const currentSession = await this.sessionService.findOne({
+        const currentSession = await this.sessionsService.findOne({
             where: {
                 userId,
                 refreshToken,
@@ -92,7 +92,7 @@ export class AuthService {
             return false;
         }
 
-        const updatedSession = await this.sessionService.update(currentSession.id, {
+        const updatedSession = await this.sessionsService.update(currentSession.id, {
             status: SessionStatusEnum.Revoked
         });
 
@@ -100,13 +100,13 @@ export class AuthService {
     }
 
     async refreshTokens(ipAddress: string, refreshToken: string) {
-        const jwtPayload: IJwtPayload = await this.tokenService.verifyToken(refreshToken, TokenTypeEnum.REFRESH);
-        const currentUser = await this.userService.findById(jwtPayload.sub);
+        const jwtPayload: IJwtPayload = await this.tokensService.verifyToken(refreshToken, TokenTypeEnum.REFRESH);
+        const currentUser = await this.usersService.findById(jwtPayload.sub);
         if (!currentUser) {
             throw new Error('User not found');
         }
 
-        const currentSession = await this.sessionService.findOne({
+        const currentSession = await this.sessionsService.findOne({
             where: {
                 userId: currentUser.id,
                 refreshToken,
@@ -119,10 +119,10 @@ export class AuthService {
         }
 
         if (currentSession.ipAddress !== ipAddress) {
-            await this.sessionService.update(currentSession.id, {
+            await this.sessionsService.update(currentSession.id, {
                 status: SessionStatusEnum.Revoked,
             });
-            await this.tokenService.revokeToken(refreshToken, TokenTypeEnum.REFRESH);
+            await this.tokensService.revokeToken(refreshToken, TokenTypeEnum.REFRESH);
 
             throw new Error('IP address mismatch');
         }
@@ -132,7 +132,7 @@ export class AuthService {
             roles: currentUser.roles,
         }
 
-        const newAccessToken = await this.tokenService.generateToken({
+        const newAccessToken = await this.tokensService.generateToken({
             userId: currentUser.id,
             type: TokenTypeEnum.ACCESS,
             expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes

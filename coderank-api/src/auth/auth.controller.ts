@@ -7,7 +7,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { ApiGoogleAuth, ApiGoogleCallback, ApiLogout, ApiProtectedResource, ApiRefreshToken, Public, Roles } from "./decorators";
 import { ResponseMessage, SkipTransform } from "src/common/decorators";
 import { Throttle } from "@nestjs/throttler";
-import { RolesGuard } from "./guard/roles.guard";
+import { RolesGuard } from "./guards/roles.guard";
 /**
  * Authentication Controller
  * 

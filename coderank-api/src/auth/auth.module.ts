@@ -2,13 +2,13 @@ import { Global, Module } from "@nestjs/common";
 import { AuthController } from "./auth.controller";
 import { GoogleStrategy } from "./strategies/google.strategy";
 import { AuthService } from "./auth.service";
-import { UserModule } from "src/module/user/user.module";
+import { UsersModule } from "src/module/users/users.module";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 
 @Global()
 @Module({
     imports: [
-        UserModule,
+        UsersModule,
     ],
     controllers: [AuthController],
     providers: [

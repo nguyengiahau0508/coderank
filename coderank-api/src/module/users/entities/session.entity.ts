@@ -1,6 +1,6 @@
 import { BaseEntity } from "src/common/entities/base.entity";
 import { Column, Entity, ManyToOne, JoinColumn, Index } from "typeorm";
-import { UserEntity } from "./user.entity";
+import { UsersEntity } from "./user.entity";
 import { SessionStatusEnum } from "src/common/enums/enums";
 import {
   ApiUserIdProperty,
@@ -21,15 +21,15 @@ import {
 @Index(["userId", "createdAt"])
 @Index(["sessionToken"])
 @Index(["userId", "status"])
-export class SessionEntity extends BaseEntity {
+export class SessionsEntity extends BaseEntity {
   @ApiUserIdProperty()
   @Column({ type: "uuid" })
   userId: string;
 
-  @ApiRelationOptional('Associated user', () => UserEntity)
-  @ManyToOne(() => UserEntity)
+  @ApiRelationOptional('Associated user', () => UsersEntity)
+  @ManyToOne(() => UsersEntity)
   @JoinColumn({ name: "userId" })
-  user: UserEntity;
+  user: UsersEntity;
 
   @ApiWriteOnly('Session token (JWT or unique identifier)')
   @Column({ type: "text" })

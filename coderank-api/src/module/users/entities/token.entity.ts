@@ -1,6 +1,6 @@
 import { BaseEntity } from "src/common/entities/base.entity";
 import { Column, Entity, JoinColumn, ManyToOne, Index } from "typeorm";
-import { UserEntity } from "./user.entity";
+import { UsersEntity } from "./user.entity";
 import { TokenTypeEnum } from "src/common/enums/enums";
 import {
   ApiUserIdProperty,
@@ -21,7 +21,7 @@ import {
 @Index(["userId", "type"])
 @Index(["tokenHash"])
 @Index(["expiresAt"])
-export class TokenEntity extends BaseEntity {
+export class TokensEntity extends BaseEntity {
   @ApiUserIdProperty()
   @Column({ type: "uuid" })
   userId: string;
@@ -54,8 +54,8 @@ export class TokenEntity extends BaseEntity {
   @Column({ type: "varchar", length: 255, nullable: true })
   revokeReason: string;
 
-  @ApiRelationOptional('Associated user', () => UserEntity)
-  @ManyToOne(() => UserEntity, (user) => user.tokens, { onDelete: "CASCADE" })
+  @ApiRelationOptional('Associated user', () => UsersEntity)
+  @ManyToOne(() => UsersEntity, (user) => user.tokens, { onDelete: "CASCADE" })
   @JoinColumn({ name: "userId" })
-  user: UserEntity;
+  user: UsersEntity;
 }
