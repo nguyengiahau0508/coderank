@@ -57,7 +57,6 @@ async function bootstrap() {
     console.log(`${COLORS.bright}${COLORS.green}Environment:${COLORS.reset} ${COLORS.magenta}${appConfig.env}${COLORS.reset}`);
     console.log(`${COLORS.bright}${COLORS.green}Server running at:${COLORS.reset} ${COLORS.blue}http://${appConfig.host}:${appConfig.port}/api${COLORS.reset}`);
     console.log(border);
-    console.log(border);
     console.log(`${COLORS.bright}${COLORS.cyan}API Documentation:${COLORS.reset}`);
     console.log(`${COLORS.green}Swagger UI:${COLORS.reset} ${COLORS.blue}http://${appConfig.host}:${appConfig.port}/api-docs${COLORS.reset}`);
     console.log(border + '\n');
