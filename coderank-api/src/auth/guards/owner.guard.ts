@@ -19,7 +19,6 @@ export class OwnerGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user:IJwtPayload = request.user; // từ JwtAuthGuard
     const id = request.params.id;
-    console.log("OwnerGuard: ", { user, id });
     if (!user) throw new ForbiddenException("Unauthenticated");
 
     // Lấy entity từ decorator metadata
