@@ -1,13 +1,14 @@
-import { Controller, Get, HttpStatus, Post, Req, Res, UseGuards, BadRequestException, UnauthorizedException } from "@nestjs/common";
+import { Controller, Get, Post, Req, Res, UseGuards, BadRequestException, UnauthorizedException } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport/dist/auth.guard";
-import { AuthProvidersEnum } from "src/common/enums/enums";
+import { AuthProvidersEnum, RoleEnum } from "src/common/enums/enums";
 import express from "express";
 import { AuthService } from "./auth.service";
 import { ApiTags } from "@nestjs/swagger";
-import { ApiGoogleAuth, ApiGoogleCallback, ApiLogout, ApiRefreshToken } from "./decorators";
+import { ApiGoogleAuth, ApiGoogleCallback, ApiLogout, ApiProtectedResource, ApiRefreshToken, Public, Roles } from "./decorators";
 import { ResponseMessage, SkipTransform } from "src/common/decorators";
 import { Throttle } from "@nestjs/throttler";
-
+import { RolesGuard } from "./guard/roles.guard";
+import { JwtAuthGuard } from "./guard/jwt.guard";
 /**
  * Authentication Controller
  * 
@@ -65,7 +66,8 @@ export class AuthController {
 
     @Get('logout')
     @ResponseMessage('User logged out successfully')
-    @UseGuards(AuthGuard(AuthProvidersEnum.Jwt))
+    @UseGuards(AuthGuard(AuthProvidersEnum.Jwt), RolesGuard)
+    @Roles(RoleEnum.Admin)
     @ApiLogout()
     async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
         const userId = req.user?.['userId'];
@@ -90,6 +92,7 @@ export class AuthController {
     }
 
     @Post('refresh-tokens')
+    @Public()
     @Throttle({ default: { limit: 3, ttl: 60000 } })
     @ResponseMessage('Access token refreshed successfully')
     @ApiRefreshToken()
@@ -103,5 +106,16 @@ export class AuthController {
         const { accessToken } = await this.authService.refreshTokens(ipAddress, refreshToken);
 
         return { accessToken };
+    }
+
+    @Get('test-protected')
+    // @UseGuards(JwtAuthGuard)
+    @SkipTransform()
+    @ApiProtectedResource('Test Protected Endpoint', 'Endpoint to test access to a protected resource')
+    async testProtectedEndpoint(@Req() req: express.Request) {
+        return {
+            message: 'You have accessed a protected endpoint',
+            user: req.user,
+        };
     }
 }

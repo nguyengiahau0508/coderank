@@ -157,3 +157,18 @@ export function ApiLogout() {
     }),
   );
 }
+
+export function ApiProtectedResource(summary: string, description: string) {
+  return applyDecorators(
+    ApiOperation({ summary, description }),
+    ApiBearerAuth('JWT-auth'),
+    ApiResponse({
+      status: HttpStatus.UNAUTHORIZED,
+      description: 'Not authenticated',
+    }),
+    ApiResponse({
+      status: HttpStatus.FORBIDDEN,
+      description: 'Insufficient permissions',
+    }),
+  );
+}
