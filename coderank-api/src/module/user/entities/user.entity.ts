@@ -1,5 +1,5 @@
 import { BaseEntity } from "src/common/entities/base.entity";
-import { GenderEnum, RoleEnum } from "src/common/enums/enums";
+import { GenderEnum, RolesEnum } from "src/common/enums/enums";
 import { Column, Entity, OneToMany, Index, BeforeUpdate } from "typeorm";
 import { TokenEntity } from "./token.entity";
 import { AuthProviderEntity } from "./auth-provider.entity";
@@ -62,12 +62,12 @@ export class UserEntity extends BaseEntity {
     })
     gender: GenderEnum;
 
-    @ApiEnumArrayProperty('User roles (can have multiple)', RoleEnum, [RoleEnum.Student], [RoleEnum.Student])
+    @ApiEnumArrayProperty('User roles (can have multiple)', RolesEnum, [RolesEnum.Student], [RolesEnum.Student])
     @Column({
         type: "simple-array",
-        default: RoleEnum.Student
+        default: RolesEnum.Student
     })
-    roles: RoleEnum[];
+    roles: RolesEnum[];
 
     @ApiDecimalProperty('User rating score (0-100)', 0, 100, 0)
     @Column({ type: "decimal", precision: 5, scale: 2, default: 0 })

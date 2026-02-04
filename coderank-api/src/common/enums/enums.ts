@@ -29,7 +29,7 @@ export enum GenderEnum {
   Other = 'Other'
 }
 
-export enum RoleEnum {
+export enum RolesEnum {
   Admin = 'admin',
   Student = 'student',
   Instructor = 'instructor',

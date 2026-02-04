@@ -22,7 +22,7 @@ export class TokenService extends BaseService<TokenEntity> {
 
   async generateToken(dto: CreateTokenDto): Promise<string> {
     let tokenString: string;
-    const payload = { sub: dto.userId };
+    const payload = dto.payload;
     switch (dto.type) {
       case TokenTypeEnum.ACCESS: {
         tokenString = await this.jwtService.signAsync(
