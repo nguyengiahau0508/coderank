@@ -13,7 +13,7 @@ import { TransformInterceptor } from './common/interceptors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ['fatal', 'error', 'warn', 'debug', 'verbose'],
+    logger: ['fatal', 'error', 'warn', 'verbose'],
   });
 
   const reflector = app.get(Reflector);

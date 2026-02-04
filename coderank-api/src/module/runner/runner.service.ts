@@ -1,5 +1,5 @@
 // coderunner/runner.service.ts
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { RunCodeDto } from "./dto/run-code.dto";
 import { spawn } from "child_process";
 import * as fs from "fs/promises";
@@ -10,6 +10,7 @@ import { RunResultDto, RunStatusEnum } from "./dto/run-result.dto";
 
 @Injectable()
 export class RunnerService {
+  private readonly logger = new Logger(RunnerService.name);
   private readonly WORKDIR = "/tmp/coderank"; // đổi sang docker volume nếu production
 
   async runCode(dto: RunCodeDto) {
@@ -66,7 +67,6 @@ export class RunnerService {
     memoryLimit: number
   ): Promise<RunResultDto> {
     return new Promise((resolve) => {
-      const start = Date.now();
 
       const firejailCmd = [
         "firejail",
@@ -74,7 +74,6 @@ export class RunnerService {
         "--net=none",
         `--private=${cwd}`,
         `--rlimit-as=${memoryLimit * 1024 * 1024}`,
-        `--timeout=0:0:${Math.ceil(timeLimit / 1000)}`,
         "--",
         "bash",
         "-c",
@@ -89,21 +88,65 @@ export class RunnerService {
       let stdout = "";
       let stderr = "";
       let killedByTimeout = false;
+      let stdoutFirstSeen = false;
+      let stderrFirstSeen = false;
+      let killTimer: NodeJS.Timeout | null = null;
 
-      proc.stdin.write(input);
+      const start = Date.now();
+      this.logger.debug(`spawned pid=${proc.pid} cmd=${firejailCmd.join(' ')} start=${start}`);
+      
+      const inputToWrite = input.endsWith('\n') ? input : input + '\n';
+      proc.stdin.write(inputToWrite);
       proc.stdin.end();
+      this.logger.debug(`stdin written len=${inputToWrite.length} (was ${input.length})`);
 
-      proc.stdout.on("data", (d) => (stdout += d.toString()));
-      proc.stderr.on("data", (d) => (stderr += d.toString()));
+      proc.stdout.on("data", (d) => {
+        if (!stdoutFirstSeen) {
+          stdoutFirstSeen = true;
+          this.logger.debug(`stdout first @${Date.now() - start}ms data=${d.toString().slice(0, 200)}`);
+        }
+        stdout += d.toString();
+      });
+
+      proc.stderr.on("data", (d) => {
+        if (!stderrFirstSeen) {
+          stderrFirstSeen = true;
+          this.logger.debug(`stderr first @${Date.now() - start}ms data=${d.toString().slice(0, 200)}`);
+        }
+        stderr += d.toString();
+      });
+
+      proc.on("exit", (code, signal) => {
+        this.logger.debug(`exit code=${code} signal=${signal} time=${Date.now() - start}ms`);
+      });
 
       const timeout = setTimeout(() => {
         killedByTimeout = true;
-        proc.kill("SIGKILL");
+        this.logger.debug(`timeout triggered after ${timeLimit}ms, sending SIGTERM to pid=${proc.pid}`);
+        try {
+          proc.kill("SIGTERM");
+        } catch (e) {
+          this.logger.debug(`failed to send SIGTERM: ${e}`);
+        }
+
+        // If still alive after short grace period, force kill
+        killTimer = setTimeout(() => {
+          this.logger.debug(`force killing pid=${proc.pid} with SIGKILL`);
+          try {
+            proc.kill("SIGKILL");
+          } catch (e) {
+            this.logger.debug(`failed to send SIGKILL: ${e}`);
+          }
+        }, 200);
       }, timeLimit);
 
       proc.on("close", (code) => {
         clearTimeout(timeout);
+        if (killTimer) {
+          clearTimeout(killTimer);
+        }
         const time = Date.now() - start;
+        this.logger.debug(`close code=${code} killedByTimeout=${killedByTimeout} totalTime=${time}ms`);
 
         if (killedByTimeout) {
           return resolve({ status: RunStatusEnum.TLE, stdout, stderr, time, memory: 0 });
