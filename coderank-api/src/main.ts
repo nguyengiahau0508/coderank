@@ -51,7 +51,7 @@ async function bootstrap() {
 
   await app.listen(appConfig.port, appConfig.host, () => {
     const border = `${COLORS.cyan}-----------------------------------${COLORS.reset}`;
-    console.log('\n' + border);
+    console.log(border);
     console.log(`${COLORS.bright}${COLORS.cyan}Application Info:${COLORS.reset}`);
     console.log(`${COLORS.bright}${COLORS.green}Application Name:${COLORS.reset} ${COLORS.yellow}${appConfig.name}${COLORS.reset}`);
     console.log(`${COLORS.bright}${COLORS.green}Environment:${COLORS.reset} ${COLORS.magenta}${appConfig.env}${COLORS.reset}`);
@@ -59,7 +59,7 @@ async function bootstrap() {
     console.log(border);
     console.log(`${COLORS.bright}${COLORS.cyan}API Documentation:${COLORS.reset}`);
     console.log(`${COLORS.green}Swagger UI:${COLORS.reset} ${COLORS.blue}http://${appConfig.host}:${appConfig.port}/api-docs${COLORS.reset}`);
-    console.log(border + '\n');
+    console.log(border);
     console.log(`${COLORS.bright}${COLORS.cyan}Database Connection:${COLORS.reset}`);
     console.log(`${COLORS.green}Type:${COLORS.reset} ${COLORS.yellow}MariaDB${COLORS.reset}`);
     console.log(`${COLORS.green}Host:${COLORS.reset} ${COLORS.yellow}${mariadbConfig.host}${COLORS.reset}`);
