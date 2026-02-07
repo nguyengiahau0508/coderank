@@ -40,7 +40,7 @@ export class AuthController {
     @UseGuards(AuthGuard(AuthProvidersEnum.Google))
     @ResponseMessage('Google authentication successful')
     @ApiGoogleCallback()
-    async googleCallback(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
+    async googleCallback(@Req() req: express.Request, @Res() res: express.Response) {
         const userAgent = req.headers['user-agent'] || '';
         const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || '';
 
