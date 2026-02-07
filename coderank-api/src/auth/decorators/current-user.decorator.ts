@@ -26,7 +26,6 @@ export const CurrentUser = createParamDecorator(
   (data: string | undefined, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     const user: IJwtPayload = request.user;
-    console.log('CurrentUser Decorator: ', user);
     if (!user) {
       return null;
     }

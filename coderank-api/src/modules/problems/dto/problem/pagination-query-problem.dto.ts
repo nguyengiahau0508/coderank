@@ -1,14 +1,9 @@
-import { IsOptional, IsString, IsArray, IsEnum, IsInt, Min, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsArray, IsEnum, IsUUID, IsInt, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { DifficultyEnum } from 'src/common/enums/enums';
+import { PaginationQueryDto } from 'src/common/dto';
 
-export class QueryProblemsDto {
-  @ApiPropertyOptional({ description: 'Search keyword for title/description' })
-  @IsOptional()
-  @IsString()
-  q?: string;
-
+export class PaginationQueryProblemsDto extends PaginationQueryDto{
   @ApiPropertyOptional({ description: 'Filter by difficulty', enum: DifficultyEnum })
   @IsOptional()
   @IsEnum(DifficultyEnum)
@@ -24,17 +19,17 @@ export class QueryProblemsDto {
   @IsOptional()
   isPublished?: boolean;
 
-  @ApiPropertyOptional({ description: 'Page number', example: 1 })
+  @ApiPropertyOptional({ description: 'Filter by minimum points' })
   @IsOptional()
   @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  page?: number;
+  @Min(0)
+  @Max(1000)
+  minPoints: number;
 
-  @ApiPropertyOptional({ description: 'Page size', example: 20 })
+  @ApiPropertyOptional({ description: 'Filter by maximum points' })
   @IsOptional()
   @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  limit?: number;
+  @Min(0)
+  @Max(1000)
+  maxPoints: number;
 }

@@ -29,19 +29,18 @@ export class OwnerGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const user: IJwtPayload = request.user; // từ JwtAuthGuard
-    const id = request.params.id;
     if (!user) throw new ForbiddenException("Unauthenticated");
 
     // Lấy entity từ decorator metadata
     const entityName = this.reflector.get<string>("ownerEntity", context.getHandler());
     const ownerField = this.reflector.get<string>("ownerField", context.getHandler()) || "userId";
+    const paramId = this.reflector.get<string>("ownerParam", context.getHandler()) || "id";
+    const id = request.params[paramId];
 
     if (!entityName) return true; // nếu không set metadata thì bỏ qua
     const repo = this.dataSource.getRepository(entityName);
     const entity = await repo.findOne({ where: { id, [ownerField]: user.userId } });
-
     if (!entity) throw new ForbiddenException("Resource not found");
-
     if (entity[ownerField] !== user.userId && !user.roles?.includes("ADMIN" as any)) {
       throw new ForbiddenException("You are not the owner");
     }

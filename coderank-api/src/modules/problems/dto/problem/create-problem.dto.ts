@@ -32,27 +32,17 @@ export class CreateProblemDto {
   @IsString()
   outputDescription?: string;
 
-  @ApiPropertyOptional({ description: 'Sample input example' })
-  @IsOptional()
-  @IsString()
-  sampleInput?: string;
-
-  @ApiPropertyOptional({ description: 'Sample output example' })
-  @IsOptional()
-  @IsString()
-  sampleOutput?: string;
-
   @ApiPropertyOptional({ description: 'Time limit (ms)', example: 1000 })
   @IsOptional()
   @IsInt()
   @Min(0)
-  timeLimit?: number;
+  timeLimitMs?: number;
 
   @ApiPropertyOptional({ description: 'Memory limit (MB)', example: 256 })
   @IsOptional()
   @IsInt()
   @Min(0)
-  memoryLimit?: number;
+  memoryLimitMb?: number;
 
   @ApiPropertyOptional({ description: 'Difficulty', enum: DifficultyEnum, example: DifficultyEnum.Medium })
   @IsOptional()
@@ -70,12 +60,12 @@ export class CreateProblemDto {
   @Min(0)
   points?: number;
 
-  @ApiPropertyOptional({ description: 'Array of tag IDs to associate', type: [String] })
-  @IsOptional()
-  @IsArray()
-  @ArrayUnique()
-  @IsUUID('4', { each: true })
-  tagIds?: string[];
+  // @ApiPropertyOptional({ description: 'Array of tag IDs to associate', type: [String] })
+  // @IsOptional()
+  // @IsArray()
+  // @ArrayUnique()
+  // @IsUUID('4', { each: true })
+  // tagIds?: string[];
 
   // @ApiPropertyOptional({ description: 'Inline testcases to create', type: [CreateTestcaseDto] })
   // @IsOptional()
