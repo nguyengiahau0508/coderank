@@ -10,18 +10,6 @@ import {
 } from '@nestjs/common';
 import { ProblemsService } from './services/problems.service';
 import { CurrentUser, Public, Roles } from 'src/auth/decorators';
-import {
-  ApiProblemsCreate,
-  ApiProblemsDelete,
-  ApiProblemsTagCreate,
-  ApiProblemsTagDelete,
-  ApiProblemsTestcaseCreate,
-  ApiProblemsTestcaseDelete,
-  ApiProblemsTestcaseGet,
-  ApiProblemsTestcaseList,
-  ApiProblemsTestcaseUpdate,
-  ApiProblemsUpdate,
-} from './decorator/problems-swagger.decorator';
 import { RolesEnum } from 'src/common/enums/enums';
 import { CreateProblemDto } from './dto/problem/create-problem.dto';
 import type { IJwtPayload } from 'src/common/interfaces/jwt-payload.interface';
@@ -33,17 +21,22 @@ import { PaginationQueryProblemsDto } from './dto/problem/pagination-query-probl
 import { PaginatedResponseDto } from 'src/common/dto';
 import { CreateTestcaseDto } from './dto/testcase/create-testcase.dto';
 import { UpdateTestcaseDto } from './dto/testcase/update-testcase.dto';
+import { HintsService } from './services/hints.service';
+import { CreateHintDto } from './dto/hint/create-hint.dto';
+import { UpdateHintDto } from './dto/hint/update-hint.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('problems')
 export class ProblemsController {
   constructor(
     private readonly problemsService: ProblemsService,
     private readonly testcasesService: TestcasesService,
+    private readonly hintsService: HintsService,
   ) {}
 
   @Post()
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
-  @ApiProblemsCreate()
+  @ApiBearerAuth('JWT-auth')
   async createProblem(
     @CurrentUser() currentUser: IJwtPayload,
     @Body() createProblemDto: CreateProblemDto,
@@ -90,7 +83,7 @@ export class ProblemsController {
   @Patch(':problemId')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
   @Owner(ProblemsEntity, 'authorId', 'problemId')
-  @ApiProblemsUpdate()
+  @ApiBearerAuth('JWT-auth')
   async updateProblem(
     @CurrentUser() currentUser: IJwtPayload,
     @Body() updateProblemDto: UpdateProblemDto,
@@ -105,7 +98,7 @@ export class ProblemsController {
   @Delete(':problemId')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
   @Owner(ProblemsEntity, 'authorId', 'problemId')
-  @ApiProblemsDelete()
+  @ApiBearerAuth('JWT-auth')
   async deleteProblem(@Param('problemId') problemId: string) {
     return this.problemsService.delete(problemId);
   }
@@ -113,7 +106,7 @@ export class ProblemsController {
   @Post(':problemId/testcases')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
   @Owner(ProblemsEntity, 'authorId', 'problemId')
-  @ApiProblemsTestcaseCreate()
+  @ApiBearerAuth('JWT-auth')
   async createTestcase(
     @CurrentUser() currentUser: IJwtPayload,
     @Body() createTestcaseDto: CreateTestcaseDto,
@@ -129,7 +122,7 @@ export class ProblemsController {
   @Get(':problemId/testcases')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
   @Owner(ProblemsEntity, 'authorId', 'problemId')
-  @ApiProblemsTestcaseList()
+  @ApiBearerAuth('JWT-auth')
   async getTestcasesByProblemId(@Param('problemId') problemId: string) {
     return this.testcasesService.find({
       where: { problemId: problemId },
@@ -139,7 +132,7 @@ export class ProblemsController {
   @Get(':problemId/testcases/:testcaseId')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
   @Owner(ProblemsEntity, 'authorId', 'problemId')
-  @ApiProblemsTestcaseGet()
+  @ApiBearerAuth('JWT-auth')
   async getTestcaseById(
     @Param('problemId') problemId: string,
     @Param('testcaseId') testcaseId: string,
@@ -152,9 +145,8 @@ export class ProblemsController {
   @Patch(':problemId/testcases/:testcaseId')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
   @Owner(ProblemsEntity, 'authorId', 'problemId')
-  @ApiProblemsTestcaseUpdate()
+  @ApiBearerAuth('JWT-auth')
   async updateTestcase(
-    @CurrentUser() currentUser: IJwtPayload,
     @Body() updateTestcaseDto: UpdateTestcaseDto,
     @Param('problemId') problemId: string,
     @Param('testcaseId') testcaseId: string,
@@ -168,7 +160,7 @@ export class ProblemsController {
   @Delete(':problemId/testcases/:testcaseId')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
   @Owner(ProblemsEntity, 'authorId', 'problemId')
-  @ApiProblemsTestcaseDelete()
+  @ApiBearerAuth('JWT-auth')
   async deleteTestcase(
     @Param('problemId') problemId: string,
     @Param('testcaseId') testcaseId: string,
@@ -179,7 +171,7 @@ export class ProblemsController {
   @Post(':problemId/tags/:tagId')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
   @Owner(ProblemsEntity, 'authorId', 'problemId')
-  @ApiProblemsTagCreate()
+  @ApiBearerAuth('JWT-auth')
   async addTagToProblem(
     @Param('problemId') problemId: string,
     @Param('tagId') tagId: string,
@@ -190,11 +182,77 @@ export class ProblemsController {
   @Delete(':problemId/tags/:tagId')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
   @Owner(ProblemsEntity, 'authorId', 'problemId')
-  @ApiProblemsTagDelete()
+  @ApiBearerAuth('JWT-auth')
   async removeTagFromProblem(
     @Param('problemId') problemId: string,
     @Param('tagId') tagId: string,
   ) {
     return this.problemsService.removeTag(problemId, tagId);
+  }
+
+  @Post(':problemId/hints')
+  @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
+  @Owner(ProblemsEntity, 'authorId', 'problemId')
+  @ApiBearerAuth('JWT-auth')
+  async createHint(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Body() createHintDto: CreateHintDto,
+    @Param('problemId') problemId: string,
+  ) {
+    return this.hintsService.create({
+      ...createHintDto,
+      problemId: problemId,
+      authorId: currentUser.userId,
+    });
+  }
+
+  @Get(':problemId/hints')
+  @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
+  @Owner(ProblemsEntity, 'authorId', 'problemId')
+  @ApiBearerAuth('JWT-auth')
+  async getHintsByProblemId(@Param('problemId') problemId: string) {
+    return this.hintsService.find({
+      where: { problemId: problemId },
+      order: { hintOrder: 'ASC' },
+    });
+  }
+
+  @Get(':problemId/hints/:hintId')
+  @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
+  @Owner(ProblemsEntity, 'authorId', 'problemId')
+  @ApiBearerAuth('JWT-auth')
+  async getHintById(
+    @Param('problemId') problemId: string,
+    @Param('hintId') hintId: string,
+  ) {
+    return this.hintsService.findOne({
+      where: { id: hintId, problemId: problemId },
+    });
+  }
+
+  @Patch(':problemId/hints/:hintId')
+  @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
+  @Owner(ProblemsEntity, 'authorId', 'problemId')
+  @ApiBearerAuth('JWT-auth')
+  async updateHint(
+    @Body() updateHintDto: UpdateHintDto,
+    @Param('problemId') problemId: string,
+    @Param('hintId') hintId: string,
+  ) {
+    return this.hintsService.update(hintId, {
+      ...updateHintDto,
+      problemId: problemId,
+    });
+  }
+
+  @Delete(':problemId/hints/:hintId')
+  @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
+  @Owner(ProblemsEntity, 'authorId', 'problemId')
+  @ApiBearerAuth('JWT-auth')
+  async deleteHint(
+    @Param('problemId') problemId: string,
+    @Param('hintId') hintId: string,
+  ) {
+    return this.hintsService.delete(hintId);
   }
 }

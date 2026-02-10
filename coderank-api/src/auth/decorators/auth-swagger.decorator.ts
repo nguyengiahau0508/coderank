@@ -172,3 +172,4 @@ export function ApiProtectedResource(summary: string, description: string) {
     }),
   );
 }
+
