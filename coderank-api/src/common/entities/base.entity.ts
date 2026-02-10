@@ -1,4 +1,10 @@
-import { CreateDateColumn, UpdateDateColumn, DeleteDateColumn, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+  PrimaryGeneratedColumn,
+  Column,
+} from 'typeorm';
 import {
   ApiUuidProperty,
   ApiCreatedAtProperty,
@@ -27,6 +33,6 @@ export abstract class BaseEntity {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deletedAt?: Date;
 
-  @Column({ name: 'created_by_id', type: 'uuid', nullable: true })
-  createdById?: string;
+  @Column({ name: 'authorId', type: 'uuid', nullable: true })
+  authorId?: string;
 }
