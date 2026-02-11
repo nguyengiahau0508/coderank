@@ -9,6 +9,7 @@ import { TestcasesService } from './services/testcases.service';
 import { TagsService } from './services/tags.service';
 import { HintsEntity } from './entities/hints.entity';
 import { HintsService } from './services/hints.service';
+import { SubmissionsEntity } from './entities/submissions.entity';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { HintsService } from './services/hints.service';
       TestcasesEntity,
       TagsEntity,
       HintsEntity,
+      SubmissionsEntity,
     ]),
   ],
   controllers: [ProblemsController],
@@ -24,4 +26,3 @@ import { HintsService } from './services/hints.service';
   exports: [],
 })
 export class ProblemsModule {}
-

@@ -1,17 +1,17 @@
 // coderunner/runner.service.ts
-import { Injectable, Logger } from "@nestjs/common";
-import { RunCodeDto } from "./dto/run-code.dto";
-import { spawn } from "child_process";
-import * as fs from "fs/promises";
-import * as path from "path";
-import { randomUUID } from "crypto";
-import { LanguageEnum } from "src/common/enums/enums";
-import { RunResultDto, RunStatusEnum } from "./dto/run-result.dto";
+import { Injectable, Logger } from '@nestjs/common';
+import { RunCodeDto } from './dto/run-code.dto';
+import { spawn } from 'child_process';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { randomUUID } from 'crypto';
+import { RunResultDto, RunStatusEnum } from './dto/run-result.dto';
+import { ProgrammingLanguageEnum } from 'src/common/enums/enums';
 
 @Injectable()
 export class RunnerService {
   private readonly logger = new Logger(RunnerService.name);
-  private readonly WORKDIR = "/tmp/coderank"; // đổi sang docker volume nếu production
+  private readonly WORKDIR = '/tmp/coderank'; // đổi sang docker volume nếu production
 
   async runCode(dto: RunCodeDto) {
     const id = randomUUID();
@@ -26,16 +26,16 @@ export class RunnerService {
 
     // -------- Handle language ----------
     switch (dto.language) {
-      case LanguageEnum.PYTHON: {
-        const file = path.join(dir, "main.py");
+      case ProgrammingLanguageEnum.Python: {
+        const file = path.join(dir, 'main.py');
         await fs.writeFile(file, dto.code);
         execCmd = `python3 main.py`;
         break;
       }
 
-      case LanguageEnum.CPP: {
-        const file = path.join(dir, "main.cpp");
-        const bin = path.join(dir, "main.out");
+      case ProgrammingLanguageEnum.CPlusPlus: {
+        const file = path.join(dir, 'main.cpp');
+        //const bin = path.join(dir, 'main.out');
         await fs.writeFile(file, dto.code);
         compileCmd = `g++ main.cpp -O2 -std=c++17 -o main.out`;
         execCmd = `./main.out`;
@@ -49,7 +49,13 @@ export class RunnerService {
 
     // -------- Compile ----------
     if (compileCmd) {
-      const compileRes = await this.execSandbox(compileCmd, dir, "", timeLimit, memoryLimit);
+      const compileRes = await this.execSandbox(
+        compileCmd,
+        dir,
+        '',
+        timeLimit,
+        memoryLimit,
+      );
       if (compileRes.status !== RunStatusEnum.OK) {
         return { ...compileRes, status: RunStatusEnum.CE };
       }
@@ -64,67 +70,79 @@ export class RunnerService {
     cwd: string,
     input: string,
     timeLimit: number,
-    memoryLimit: number
+    memoryLimit: number,
   ): Promise<RunResultDto> {
     return new Promise((resolve) => {
-
       const firejailCmd = [
-        "firejail",
-        "--quiet",
-        "--net=none",
+        'firejail',
+        '--quiet',
+        '--net=none',
         `--private=${cwd}`,
         `--rlimit-as=${memoryLimit * 1024 * 1024}`,
-        "--",
-        "bash",
-        "-c",
+        '--',
+        'bash',
+        '-c',
         cmd,
       ];
 
       const proc = spawn(firejailCmd[0], firejailCmd.slice(1), {
         cwd,
-        stdio: "pipe",
+        stdio: 'pipe',
       });
 
-      let stdout = "";
-      let stderr = "";
+      let stdout = '';
+      let stderr = '';
       let killedByTimeout = false;
       let stdoutFirstSeen = false;
       let stderrFirstSeen = false;
       let killTimer: NodeJS.Timeout | null = null;
 
       const start = Date.now();
-      this.logger.debug(`spawned pid=${proc.pid} cmd=${firejailCmd.join(' ')} start=${start}`);
-      
+      this.logger.debug(
+        `spawned pid=${proc.pid} cmd=${firejailCmd.join(' ')} start=${start}`,
+      );
+
       const inputToWrite = input.endsWith('\n') ? input : input + '\n';
       proc.stdin.write(inputToWrite);
       proc.stdin.end();
-      this.logger.debug(`stdin written len=${inputToWrite.length} (was ${input.length})`);
+      this.logger.debug(
+        `stdin written len=${inputToWrite.length} (was ${input.length})`,
+      );
 
-      proc.stdout.on("data", (d) => {
+      proc.stdout.on('data', (d: Buffer) => {
         if (!stdoutFirstSeen) {
           stdoutFirstSeen = true;
-          this.logger.debug(`stdout first @${Date.now() - start}ms data=${d.toString().slice(0, 200)}`);
+          this.logger.debug(
+            `stdout first @${Date.now() - start}ms data=${d.toString().slice(0, 200)}`,
+          );
         }
+
         stdout += d.toString();
       });
 
-      proc.stderr.on("data", (d) => {
+      proc.stderr.on('data', (d: Buffer) => {
         if (!stderrFirstSeen) {
           stderrFirstSeen = true;
-          this.logger.debug(`stderr first @${Date.now() - start}ms data=${d.toString().slice(0, 200)}`);
+          this.logger.debug(
+            `stderr first @${Date.now() - start}ms data=${d.toString().slice(0, 200)}`,
+          );
         }
         stderr += d.toString();
       });
 
-      proc.on("exit", (code, signal) => {
-        this.logger.debug(`exit code=${code} signal=${signal} time=${Date.now() - start}ms`);
+      proc.on('exit', (code, signal) => {
+        this.logger.debug(
+          `exit code=${code} signal=${signal} time=${Date.now() - start}ms`,
+        );
       });
 
       const timeout = setTimeout(() => {
         killedByTimeout = true;
-        this.logger.debug(`timeout triggered after ${timeLimit}ms, sending SIGTERM to pid=${proc.pid}`);
+        this.logger.debug(
+          `timeout triggered after ${timeLimit}ms, sending SIGTERM to pid=${proc.pid}`,
+        );
         try {
-          proc.kill("SIGTERM");
+          proc.kill('SIGTERM');
         } catch (e) {
           this.logger.debug(`failed to send SIGTERM: ${e}`);
         }
@@ -133,27 +151,41 @@ export class RunnerService {
         killTimer = setTimeout(() => {
           this.logger.debug(`force killing pid=${proc.pid} with SIGKILL`);
           try {
-            proc.kill("SIGKILL");
+            proc.kill('SIGKILL');
           } catch (e) {
             this.logger.debug(`failed to send SIGKILL: ${e}`);
           }
         }, 200);
       }, timeLimit);
 
-      proc.on("close", (code) => {
+      proc.on('close', (code) => {
         clearTimeout(timeout);
         if (killTimer) {
           clearTimeout(killTimer);
         }
         const time = Date.now() - start;
-        this.logger.debug(`close code=${code} killedByTimeout=${killedByTimeout} totalTime=${time}ms`);
+        this.logger.debug(
+          `close code=${code} killedByTimeout=${killedByTimeout} totalTime=${time}ms`,
+        );
 
         if (killedByTimeout) {
-          return resolve({ status: RunStatusEnum.TLE, stdout, stderr, time, memory: 0 });
+          return resolve({
+            status: RunStatusEnum.TLE,
+            stdout,
+            stderr,
+            time,
+            memory: 0,
+          });
         }
 
         if (code !== 0) {
-          return resolve({ status: RunStatusEnum.RE, stdout, stderr, time, memory: 0 });
+          return resolve({
+            status: RunStatusEnum.RE,
+            stdout,
+            stderr,
+            time,
+            memory: 0,
+          });
         }
 
         resolve({ status: RunStatusEnum.OK, stdout, stderr, time, memory: 0 });
@@ -161,3 +193,4 @@ export class RunnerService {
     });
   }
 }
+

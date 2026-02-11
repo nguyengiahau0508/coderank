@@ -1,20 +1,25 @@
-export enum LanguageEnum {
-  CPP = 'cpp',
-  PYTHON = "python",
-  JAVA = "java",
-  JAVASCRIPT = "javascript"
+export enum ProgrammingLanguageEnum {
+  JavaScript = 'javascript',
+  TypeScript = 'typescript',
+  Python = 'python',
+  Java = 'java',
+  CPlusPlus = 'cpp',
+  C = 'c',
+  Go = 'go',
+  Rust = 'rust',
 }
 
-export enum StatusEnum {
-  PENDING = 'pending',
-  ACCEPTED = 'accepted',
-  WRONG_ANSWER = 'wrong_answer',
-  TIME_LIMIT_EXCEEDED = 'time_limit_exceeded',
-  MEMORY_LIMIT_EXCEEDED = 'memory_limit_exceeded',
-  RUNTIME_ERROR = 'runtime_error',
-  COMPILATION_ERROR = 'compilation_error'
+export enum SubmissionStatusEnum {
+  Pending = 'pending',
+  Running = 'running',
+  Accepted = 'accepted',
+  WrongAnswer = 'wrong_answer',
+  TimeLimitExceeded = 'time_limit_exceeded',
+  MemoryLimitExceeded = 'memory_limit_exceeded',
+  RuntimeError = 'runtime_error',
+  CompilationError = 'compilation_error',
+  SystemError = 'system_error',
 }
-
 
 export enum AuthProvidersEnum {
   Google = 'google',
@@ -24,9 +29,9 @@ export enum AuthProvidersEnum {
 }
 
 export enum GenderEnum {
-  Male = "Male",
-  Female = "Female",
-  Other = 'Other'
+  Male = 'Male',
+  Female = 'Female',
+  Other = 'Other',
 }
 
 export enum RolesEnum {
@@ -43,21 +48,20 @@ export enum DifficultyEnum {
 }
 
 export enum SessionStatusEnum {
-  Active = "active",
-  Expired = "expired",
-  Revoked = "revoked",
+  Active = 'active',
+  Expired = 'expired',
+  Revoked = 'revoked',
 }
 
 export enum TokenTypeEnum {
-  ACCESS = "access",
-  REFRESH = "refresh",
-  RESET_PASSWORD = "reset_password",
-  EMAIL_VERIFICATION = "email_verification",
+  ACCESS = 'access',
+  REFRESH = 'refresh',
+  RESET_PASSWORD = 'reset_password',
+  EMAIL_VERIFICATION = 'email_verification',
 }
 
-
 export enum TestcaseCompareTypeEnum {
-  Exact = "exact",
-  TrimWhitespace = "trim_whitespace",
-  Tokenize = "tokenize",
+  Exact = 'exact',
+  TrimWhitespace = 'trim_whitespace',
+  Tokenize = 'tokenize',
 }

@@ -1,12 +1,22 @@
 // coderunner/dto/run-code.dto.ts
-import { IsEnum, IsString, IsOptional } from "class-validator";
-import { LanguageEnum } from "src/common/enums/enums";
-import { ApiEnumProperty, ApiStringProperty, ApiIntProperty } from 'src/common/decorators/api-property.decorator';
+import { IsEnum, IsString, IsOptional } from 'class-validator';
+import {
+  ApiEnumProperty,
+  ApiStringProperty,
+  ApiIntProperty,
+} from 'src/common/decorators/api-property.decorator';
+import { ProgrammingLanguageEnum } from 'src/common/enums/enums';
 
 export class RunCodeDto {
-  @ApiEnumProperty('Programming language', LanguageEnum, 'LanguageEnum', undefined, LanguageEnum.PYTHON)
-  @IsEnum(LanguageEnum)
-  language: LanguageEnum;
+  @ApiEnumProperty(
+    'Programming language',
+    ProgrammingLanguageEnum,
+    'ProgrammingLanguageEnum',
+    undefined,
+    ProgrammingLanguageEnum.Python,
+  )
+  @IsEnum(ProgrammingLanguageEnum)
+  language: ProgrammingLanguageEnum;
 
   @ApiStringProperty('Source code', 'print("Hello world")')
   @IsString()
