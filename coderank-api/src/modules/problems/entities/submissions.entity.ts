@@ -8,14 +8,11 @@ import {
 } from 'src/common/enums/enums';
 
 @Entity('submissions')
-@Index('IDX_submission_user', ['userId'])
+@Index('IDX_submission_author', ['authorId'])
 @Index('IDX_submission_problem', ['problemId'])
 @Index('IDX_submission_status', ['status'])
-@Index('IDX_submission_user_problem', ['userId', 'problemId'])
+@Index('IDX_submission_author_problem', ['authorId', 'problemId'])
 export class SubmissionsEntity extends BaseEntity {
-  @Column({ type: 'uuid' })
-  userId: string;
-
   @Column({ type: 'uuid' })
   problemId: string;
 
@@ -56,10 +53,6 @@ export class SubmissionsEntity extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   output?: string;
-
-  @ManyToOne(() => UsersEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user: UsersEntity;
 
   @ManyToOne(() => ProblemsEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'problemId' })
