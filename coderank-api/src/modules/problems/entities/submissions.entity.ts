@@ -1,11 +1,11 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, Index, ManyToOne, JoinColumn } from 'typeorm';
-import { UsersEntity } from 'src/modules/users/entities/user.entity';
 import { ProblemsEntity } from './problems.entity';
 import {
   ProgrammingLanguageEnum,
   SubmissionStatusEnum,
 } from 'src/common/enums/enums';
+import { UsersEntity } from 'src/modules/users/entities/user.entity';
 
 @Entity('submissions')
 @Index('IDX_submission_author', ['authorId'])
@@ -57,4 +57,8 @@ export class SubmissionsEntity extends BaseEntity {
   @ManyToOne(() => ProblemsEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'problemId' })
   problem: ProblemsEntity;
+
+  @ManyToOne(() => UsersEntity, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'authorId' })
+  author?: UsersEntity;
 }
