@@ -12,7 +12,7 @@ export class SubmissionCompletedListener {
   constructor(
     @InjectRepository(SubmissionsEntity)
     private readonly submissionRepository: Repository<SubmissionsEntity>,
-  ) {}
+  ) { }
 
   @OnEvent('submission.completed')
   async handleSubmissionCompleted(event: SubmissionCompletedEvent) {

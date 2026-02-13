@@ -65,3 +65,10 @@ export enum TestcaseCompareTypeEnum {
   TrimWhitespace = 'trim_whitespace',
   Tokenize = 'tokenize',
 }
+
+export enum ContestStatusEnum {
+  Draft = 'draft',
+  Upcoming = 'upcoming',
+  Running = 'running',
+  Ended = 'ended',
+}
