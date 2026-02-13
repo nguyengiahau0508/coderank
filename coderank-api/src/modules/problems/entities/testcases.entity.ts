@@ -2,7 +2,6 @@ import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, Index, ManyToOne, JoinColumn } from 'typeorm'; // Thêm JoinColumn
 import { ProblemsEntity } from './problems.entity';
 import { TestcaseCompareTypeEnum } from 'src/common/enums/enums';
-// ... decorators
 
 @Entity('testcases')
 // OPTIMIZATION: Composite Index quan trọng nhất.
@@ -21,13 +20,10 @@ export class TestcasesEntity extends BaseEntity {
   input: string;
 
   @Column({ type: 'longtext', select: false })
-  output: string;
+  expectedOutput: string;
 
   @Column({ type: 'boolean', default: false })
   isSample: boolean;
-
-  @Column({ type: 'boolean', default: true })
-  isHidden: boolean;
 
   @Column({ type: 'int', default: 0 })
   testcaseOrder: number;
@@ -38,6 +34,7 @@ export class TestcasesEntity extends BaseEntity {
     default: TestcaseCompareTypeEnum.Exact,
   })
   compareType: TestcaseCompareTypeEnum;
+
 
   @ManyToOne(() => ProblemsEntity, (p) => p.testcases, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'problemId' }) // Map chính xác với cột problemId ở trên

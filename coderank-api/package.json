@@ -21,6 +21,9 @@
     "seed": "ts-node -r tsconfig-paths/register -r dotenv/config src/db/seeds/seed.ts"
   },
   "dependencies": {
+    "@bull-board/api": "^6.17.0",
+    "@bull-board/express": "^6.17.0",
+    "@bull-board/nestjs": "^6.17.0",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",

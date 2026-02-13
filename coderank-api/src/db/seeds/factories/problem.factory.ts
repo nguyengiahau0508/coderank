@@ -1,4 +1,4 @@
-import { fa, faker } from "@faker-js/faker";
+import { faker } from "@faker-js/faker";
 import { DifficultyEnum } from "src/common/enums/enums";
 import { ProblemsEntity } from "src/modules/problems/entities/problems.entity";
 import { TagsEntity } from "src/modules/problems/entities/tags.entity";
@@ -52,7 +52,7 @@ export function generateSumTestcases(count = 10): Partial<TestcasesEntity>[] {
     return {
       order: i + 1,
       input: `${a} ${b}`,
-      output: (a + b).toString(),
+      expectedOutput: (a + b).toString(),
       isSample: i < 2, // first 2 are public samples
     };
   });

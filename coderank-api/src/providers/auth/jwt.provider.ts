@@ -3,9 +3,8 @@ import { JwtModule } from "@nestjs/jwt";
 
 
 @Module({
-    imports:[
-        JwtModule.register({}),
-    ],
-    exports: [JwtModule],
+  imports: [
+    JwtModule.register({}),
+  ],
 })
 export class JwtProviderModule { }

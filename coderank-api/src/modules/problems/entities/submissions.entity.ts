@@ -22,7 +22,7 @@ export class SubmissionsEntity extends BaseEntity {
   @Column({
     type: 'enum',
     enum: ProgrammingLanguageEnum,
-    default: ProgrammingLanguageEnum.JavaScript,
+    default: ProgrammingLanguageEnum.Python,
   })
   language: ProgrammingLanguageEnum;
 

@@ -25,6 +25,8 @@ import { HintsService } from './services/hints.service';
 import { CreateHintDto } from './dto/hint/create-hint.dto';
 import { UpdateHintDto } from './dto/hint/update-hint.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { SubmissionsService } from './services/submissions.serivce';
+import { CreateSubmissionDto } from './dto/submission';
 
 @Controller('problems')
 export class ProblemsController {
@@ -32,7 +34,8 @@ export class ProblemsController {
     private readonly problemsService: ProblemsService,
     private readonly testcasesService: TestcasesService,
     private readonly hintsService: HintsService,
-  ) {}
+    private readonly submissionsService: SubmissionsService
+  ) { }
 
   @Post()
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
@@ -254,5 +257,35 @@ export class ProblemsController {
     @Param('hintId') hintId: string,
   ) {
     return this.hintsService.delete(hintId);
+  }
+
+  @Post(':problemId/submissions')
+  @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
+  @ApiBearerAuth('JWT-auth')
+  async submitProblem(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('problemId') problemId: string,
+    @Body() dto: CreateSubmissionDto
+  ) {
+    return this.submissionsService.submit(
+      currentUser.userId,
+      problemId,
+      dto
+    );
+  }
+
+  @Get(':problemId/submissions')
+  @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
+  @ApiBearerAuth('JWT-auth')
+  async getSubmissionsByProblemId(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('problemId') problemId: string
+  ) {
+    return this.submissionsService.find({
+      where: {
+        problemId: problemId,
+        authorId: currentUser.userId
+      }
+    });
   }
 }
