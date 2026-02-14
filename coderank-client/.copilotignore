@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+.angular/
+
+# Build output
+dist/
+.angular/cache/
+
+# Environment files
+.env
+.env.local
+
+# Test coverage
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
