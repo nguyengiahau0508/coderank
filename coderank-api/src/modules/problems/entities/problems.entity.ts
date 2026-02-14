@@ -63,7 +63,6 @@ export class ProblemsEntity extends BaseEntity {
   @Column({ type: 'smallint', default: 100, unsigned: true })
   points: number;
 
-
   @ManyToOne(() => UsersEntity, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'authorId' })
   author?: UsersEntity;
