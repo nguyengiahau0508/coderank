@@ -51,7 +51,7 @@ export class ProblemsController {
   }
 
   @Get(':problemId')
-  @Public()
+  @ApiBearerAuth('JWT-auth')
   async getProblem(@Param('problemId') problemId: string) {
     return this.problemsService.findOne({
       where: { id: problemId },
@@ -60,7 +60,7 @@ export class ProblemsController {
   }
 
   @Get()
-  @Public()
+  @ApiBearerAuth('JWT-auth')
   async getProblems(
     @Query() dto: PaginationQueryProblemsDto,
   ): Promise<PaginatedResponseDto<ProblemsEntity>> {
@@ -123,12 +123,19 @@ export class ProblemsController {
   }
 
   @Get(':problemId/testcases')
-  @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
-  @Owner(ProblemsEntity, 'authorId', 'problemId')
   @ApiBearerAuth('JWT-auth')
-  async getTestcasesByProblemId(@Param('problemId') problemId: string) {
+  async getTestcasesByProblemId(@CurrentUser() currentUser: IJwtPayload, @Param('problemId') problemId: string) {
+    const isSample = !(currentUser.roles.includes(RolesEnum.Admin) || currentUser.roles.includes(RolesEnum.ProblemSetter));
+    const whereCondition = {
+      problemId: problemId,
+    }
+    if (isSample) {
+      whereCondition['isSample'] = true;
+    } else {
+      whereCondition['authorId'] = currentUser.userId;
+    }
     return this.testcasesService.find({
-      where: { problemId: problemId },
+      where: whereCondition,
     });
   }
 
@@ -210,8 +217,6 @@ export class ProblemsController {
   }
 
   @Get(':problemId/hints')
-  @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
-  @Owner(ProblemsEntity, 'authorId', 'problemId')
   @ApiBearerAuth('JWT-auth')
   async getHintsByProblemId(@Param('problemId') problemId: string) {
     return this.hintsService.find({

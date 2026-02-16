@@ -1,0 +1,35 @@
+<!-- Minimalist Code Editor -->
+<div class="h-full flex flex-col border border-gray-200 dark:border-gray-800">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+    <p-select
+      [(ngModel)]="selectedLanguage"
+      [options]="languageOptions"
+      optionLabel="label"
+      optionValue="value"
+      (onChange)="onLanguageChange()"
+      [disabled]="readOnly()"
+      styleClass="w-40"
+    />
+    
+    @if (!readOnly()) {
+      <button
+        type="button"
+        (click)="clearEditor()"
+        class="text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white"
+      >
+        Clear
+      </button>
+    }
+  </div>
+
+  <!-- Editor -->
+  <div class="flex-1 min-h-[500px]">
+    <ngx-monaco-editor
+      [options]="editorOptions"
+      [(ngModel)]="editorModel"
+      (ngModelChange)="onCodeChange($event.value)"
+      class="h-full w-full"
+    />
+  </div>
+</div>

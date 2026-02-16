@@ -1,3 +1,81 @@
-/* You can add global styles to this file, and also import other style files */
+/* Minimalist Design System */
 
 @import "tailwindcss";
+
+/* Custom Prose Styling for Markdown */
+.prose-custom {
+  @apply text-gray-700 dark:text-gray-300 leading-relaxed;
+}
+
+.prose-custom h1,
+.prose-custom h2,
+.prose-custom h3,
+.prose-custom h4 {
+  @apply font-normal text-gray-900 dark:text-white mt-8 mb-4;
+}
+
+.prose-custom h1 { @apply text-2xl; }
+.prose-custom h2 { @apply text-xl; }
+.prose-custom h3 { @apply text-lg; }
+
+.prose-custom p {
+  @apply mb-4 font-light;
+}
+
+.prose-custom pre {
+  @apply p-4 bg-gray-50 dark:bg-gray-900 rounded-none my-4 overflow-x-auto;
+}
+
+.prose-custom code {
+  @apply px-2 py-1 bg-gray-100 dark:bg-gray-800 text-sm font-mono;
+}
+
+.prose-custom ul,
+.prose-custom ol {
+  @apply ml-6 mb-4 space-y-2;
+}
+
+.prose-custom li {
+  @apply font-light;
+}
+
+.prose-custom a {
+  @apply text-blue-600 dark:text-blue-400 hover:underline;
+}
+
+/* Line Clamp Utility */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Monaco Editor Minimal Override */
+.monaco-editor {
+  @apply font-mono text-sm;
+}
+
+/* PrimeNG Minimal Overrides */
+.p-paginator {
+  @apply border-0 bg-transparent;
+}
+
+.p-paginator .p-paginator-pages .p-paginator-page {
+  @apply min-w-10 h-10 text-sm font-light border-0 bg-transparent text-gray-500;
+}
+
+.p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+  @apply bg-gray-900 dark:bg-white text-white dark:text-black;
+}
+
+/* Focus States - Minimal */
+*:focus-visible {
+  @apply outline-none ring-1 ring-gray-300 dark:ring-gray-700;
+}
+
+/* Transitions */
+* {
+  @apply transition-colors duration-200;
+}
+

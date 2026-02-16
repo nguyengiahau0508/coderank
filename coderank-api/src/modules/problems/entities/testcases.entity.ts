@@ -35,7 +35,6 @@ export class TestcasesEntity extends BaseEntity {
   })
   compareType: TestcaseCompareTypeEnum;
 
-
   @ManyToOne(() => ProblemsEntity, (p) => p.testcases, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'problemId' }) // Map chính xác với cột problemId ở trên
   problem: ProblemsEntity;

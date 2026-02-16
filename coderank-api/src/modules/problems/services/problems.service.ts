@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, FindOptionsWhere, Like, In } from "typeorm";
+import { Repository, FindOptionsWhere, Like, Between, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
 import { BaseService } from "src/common/services/base.service";
 import { ProblemsEntity } from "../entities/problems.entity";
 import { PaginationQueryProblemsDto } from "../dto/problem/pagination-query-problem.dto";
@@ -28,79 +28,83 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
       maxPoints,
     } = dto;
 
-    const where: FindOptionsWhere<ProblemsEntity> = {};
+    const queryBuilder = this.repository.createQueryBuilder('problem');
 
-    // difficulty filter
+    // Join tags relation
+    queryBuilder.leftJoinAndSelect('problem.tags', 'tag');
+
+    // Difficulty filter
     if (difficulty) {
-      where.difficulty = difficulty;
+      queryBuilder.andWhere('problem.difficulty = :difficulty', { difficulty });
     }
 
-    // published filter
+    // Published filter
     if (isPublished !== undefined) {
-      where.isPublished = isPublished;
+      queryBuilder.andWhere('problem.isPublished = :isPublished', { isPublished });
     }
 
-    // points filter
+    // Points filter - Using Between, MoreThanOrEqual, LessThanOrEqual for better performance
     if (minPoints !== undefined && maxPoints !== undefined) {
-      where.points = In(
-        Array.from({ length: maxPoints - minPoints + 1 }, (_, i) => i + minPoints)
-      );
+      queryBuilder.andWhere('problem.points BETWEEN :minPoints AND :maxPoints', {
+        minPoints,
+        maxPoints,
+      });
     } else if (minPoints !== undefined) {
-      where.points = In(
-        Array.from({ length: 1000 - minPoints + 1 }, (_, i) => i + minPoints)
-      );
+      queryBuilder.andWhere('problem.points >= :minPoints', { minPoints });
     } else if (maxPoints !== undefined) {
-      where.points = In(
-        Array.from({ length: maxPoints + 1 }, (_, i) => i)
-      );
+      queryBuilder.andWhere('problem.points <= :maxPoints', { maxPoints });
     }
 
-    // search (title OR description)
-    const searchWhere: FindOptionsWhere<ProblemsEntity>[] = [];
+    // Search filter (title OR slug)
     if (search) {
-      searchWhere.push(
-        { ...where, title: Like(`%${search}%`) },
-        { ...where, description: Like(`%${search}%`) },
+      queryBuilder.andWhere(
+        '(problem.title LIKE :search OR problem.slug LIKE :search)',
+        { search: `%${search}%` }
       );
     }
 
-    const [items, totalItems] = await this.repository.findAndCount({
-      where: search ? searchWhere : where,
-      relations: {
-        tags: true, // load tags relation
-      },
-      order: {
-        [sortBy]: sortOrder,
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      select: {
-        id: true,
-        title: true,
-        difficulty: true,
-        points: true,
-        isPublished: true,
-        createdAt: true,
-        updatedAt: true,
-        tags: {
-          id: true,
-          name: true
-        }
-      }
-    });
-
-    let filteredItems = items;
+    // Tag filter - Using subquery for better performance
     if (tagIds?.length) {
-      filteredItems = items.filter(problem =>
-        problem.tags?.some(tag => tagIds.includes(tag.id))
-      );
+      queryBuilder.andWhere((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('pt.problem_id')
+          .from('problem_tags', 'pt')
+          .where('pt.tag_id IN (:...tagIds)')
+          .getQuery();
+        return `problem.id IN ${subQuery}`;
+      });
+      queryBuilder.setParameter('tagIds', tagIds);
     }
+
+    // Select specific fields
+    queryBuilder.select([
+      'problem.id',
+      'problem.title',
+      'problem.slug',
+      'problem.difficulty',
+      'problem.points',
+      'problem.isPublished',
+      'problem.createdAt',
+      'problem.updatedAt',
+      'tag.id',
+      'tag.name',
+    ]);
+
+    // Sorting
+    queryBuilder.orderBy(`problem.${sortBy}`, sortOrder as 'ASC' | 'DESC');
+
+    // Pagination
+    queryBuilder.skip((page - 1) * limit).take(limit);
+
+    // Execute query
+    const [items, totalItems] = await queryBuilder.getManyAndCount();
 
     return {
-      items: filteredItems,
-      totalItems: filteredItems.length,
+      items,
+      totalItems,
       currentPage: page,
-      totalPages: Math.ceil(filteredItems.length / limit),
+      totalPages: Math.ceil(totalItems / limit),
     };
   }
 

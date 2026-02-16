@@ -17,100 +17,102 @@ import { RolesGuard } from "./guards/roles.guard";
 @ApiTags('Authentication')
 @Controller("auth")
 export class AuthController {
-    constructor(
-        private readonly authService: AuthService,
-    ) { }
+  constructor(
+    private readonly authService: AuthService,
+  ) { }
 
-    /**
-     * Initiate Google OAuth2 authentication flow
-     */
-    @Get(`${AuthProvidersEnum.Google}`)
-    @Public()
-    @UseGuards(AuthGuard(AuthProvidersEnum.Google))
-    @ApiGoogleAuth()
-    async authenticateWithGoogle() {
-        // Redirect to Google's OAuth flow
+  /**
+   * Initiate Google OAuth2 authentication flow
+   */
+  @Get(`${AuthProvidersEnum.Google}`)
+  @Public()
+  @UseGuards(AuthGuard(AuthProvidersEnum.Google))
+  @ApiGoogleAuth()
+  async authenticateWithGoogle() {
+    // Redirect to Google's OAuth flow
+  }
+
+  /**
+   * Handle Google OAuth2 callback
+   */
+  @Get(`${AuthProvidersEnum.Google}/callback`)
+  @Public()
+  @UseGuards(AuthGuard(AuthProvidersEnum.Google))
+  @ResponseMessage('Google authentication successful')
+  @ApiGoogleCallback()
+  async googleCallback(@Req() req: express.Request, @Res() res: express.Response) {
+    const userAgent = req.headers['user-agent'] || '';
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || '';
+
+    const userData = {
+      ...req.user,
+      userAgent,
+      ipAddress,
+    };
+
+    const {
+      accessToken,
+      refreshToken,
+      user
+    } = await this.authService.validateOrCreateUser(userData as any, AuthProvidersEnum.Google);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    const userJson = encodeURIComponent(JSON.stringify(user));
+    return res.redirect(`${process.env.CLIENT_URL}/auth/callback?accessToken=${accessToken}&user=${userJson}`);
+  }
+
+  @Get('logout')
+  @ApiLogout()
+  async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
+    const userId = req.user?.['userId'];
+    if (!userId) {
+      throw new UnauthorizedException('User not authenticated');
     }
 
-    /**
-     * Handle Google OAuth2 callback
-     */
-    @Get(`${AuthProvidersEnum.Google}/callback`)
-    @Public()
-    @UseGuards(AuthGuard(AuthProvidersEnum.Google))
-    @ResponseMessage('Google authentication successful')
-    @ApiGoogleCallback()
-    async googleCallback(@Req() req: express.Request, @Res() res: express.Response) {
-        const userAgent = req.headers['user-agent'] || '';
-        const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || '';
-
-        const userData = {
-            ...req.user,
-            userAgent,
-            ipAddress,
-        };
-        
-        const {
-            accessToken,
-            refreshToken
-        } = await this.authService.validateOrCreateUser(userData as any, AuthProvidersEnum.Google);
-
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
-
-        return res.redirect(`${process.env.APP_URL}/api-docs`);
+    const refreshToken = req.cookies?.['refreshToken'];
+    const accessToken = req.headers?.authorization?.split(' ')[1];
+    if (!accessToken || !refreshToken) {
+      throw new BadRequestException('Missing tokens');
     }
 
-    @Get('logout')
-    @ApiLogout()
-    async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
-        const userId = req.user?.['userId'];
-        if (!userId) {
-            throw new UnauthorizedException('User not authenticated');
-        }
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
 
-        const refreshToken = req.cookies?.['refreshToken'];
-        const accessToken = req.headers?.authorization?.split(' ')[1];
-        if (!accessToken || !refreshToken) {
-            throw new BadRequestException('Missing tokens');
-        }
+    const logoutSuccess = await this.authService.logout(userId, accessToken, refreshToken);
+    return { loggedOut: logoutSuccess };
+  }
 
-        res.clearCookie('refreshToken', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-        });
-        
-        const logoutSuccess = await this.authService.logout(userId, accessToken, refreshToken);
-        return { loggedOut: logoutSuccess };
+  @Post('refresh-tokens')
+  @Public()
+  @ApiRefreshToken()
+  async refreshAccessTokens(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
+    const refreshToken = req.cookies?.['refreshToken'];
+    if (!refreshToken) {
+      throw new BadRequestException('Missing refresh token');
     }
 
-    @Post('refresh-tokens')
-    @Public()
-    @ApiRefreshToken()
-    async refreshAccessTokens(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
-        const refreshToken = req.cookies?.['refreshToken'];
-        if (!refreshToken) {
-            throw new BadRequestException('Missing refresh token');
-        }
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || '';
+    const { accessToken } = await this.authService.refreshTokens(ipAddress, refreshToken);
 
-        const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || '';
-        const { accessToken } = await this.authService.refreshTokens(ipAddress, refreshToken);
+    return { accessToken };
+  }
 
-        return { accessToken };
-    }
-
-    // @Get('test-protected')
-    // @Roles(RolesEnum.Admin)
-    // @ApiProtectedResource('Test Protected Endpoint', 'Endpoint to test access to a protected resource')
-    // async testProtectedEndpoint(@Req() req: express.Request) {
-    //     return {
-    //         message: 'You have accessed a protected endpoint',
-    //         user: req.user,
-    //     };
-    // }
+  // @Get('test-protected')
+  // @Roles(RolesEnum.Admin)
+  // @ApiProtectedResource('Test Protected Endpoint', 'Endpoint to test access to a protected resource')
+  // async testProtectedEndpoint(@Req() req: express.Request) {
+  //     return {
+  //         message: 'You have accessed a protected endpoint',
+  //         user: req.user,
+  //     };
+  // }
 }
