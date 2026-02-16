@@ -43,6 +43,74 @@
   @apply text-blue-600 dark:text-blue-400 hover:underline;
 }
 
+.prose-custom blockquote {
+  @apply border-l-4 pl-4 my-4 italic;
+  border-color: var(--p-surface-300);
+  color: var(--p-surface-600);
+}
+
+:is(.dark) .prose-custom blockquote {
+  border-color: var(--p-surface-600);
+  color: var(--p-surface-400);
+}
+
+.prose-custom del {
+  @apply line-through;
+  color: var(--p-surface-400);
+}
+
+.prose-custom mark {
+  @apply px-1 rounded-sm;
+  background-color: rgb(254 240 138);
+  color: var(--p-surface-900);
+}
+
+:is(.dark) .prose-custom mark {
+  background-color: rgb(133 77 14);
+  color: var(--p-surface-100);
+}
+
+.prose-custom hr {
+  @apply my-6;
+  border-color: var(--p-surface-200);
+}
+
+:is(.dark) .prose-custom hr {
+  border-color: var(--p-surface-700);
+}
+
+.prose-custom table {
+  @apply w-full border-collapse my-4;
+}
+
+.prose-custom th {
+  @apply px-3 py-2 text-left text-sm font-medium;
+  border: 1px solid var(--p-surface-200);
+  background-color: var(--p-surface-50);
+}
+
+:is(.dark) .prose-custom th {
+  border-color: var(--p-surface-700);
+  background-color: var(--p-surface-800);
+}
+
+.prose-custom td {
+  @apply px-3 py-2 text-sm;
+  border: 1px solid var(--p-surface-200);
+}
+
+:is(.dark) .prose-custom td {
+  border-color: var(--p-surface-700);
+}
+
+.prose-custom img {
+  @apply max-w-full rounded-lg my-4;
+}
+
+.prose-custom input[type="checkbox"] {
+  @apply mr-2;
+}
+
 /* Line Clamp Utility */
 .line-clamp-1 {
   display: -webkit-box;

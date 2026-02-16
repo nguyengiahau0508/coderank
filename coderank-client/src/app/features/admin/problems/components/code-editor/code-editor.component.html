@@ -1,7 +1,7 @@
-<!-- Minimalist Code Editor -->
-<div class="h-full flex flex-col border border-gray-200 dark:border-gray-800">
+<!-- Code Editor -->
+<div class="flex flex-col border border-surface-200 dark:border-surface-700 rounded-xl overflow-hidden">
   <!-- Header -->
-  <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+  <div class="flex items-center justify-between px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border-b border-surface-200 dark:border-surface-700">
     <p-select
       [(ngModel)]="selectedLanguage"
       [options]="languageOptions"
@@ -9,22 +9,24 @@
       optionValue="value"
       (onChange)="onLanguageChange()"
       [disabled]="readOnly()"
-      styleClass="w-40"
+      styleClass="w-36"
+      size="small"
     />
-    
+
     @if (!readOnly()) {
       <button
         type="button"
         (click)="clearEditor()"
-        class="text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white"
+        class="text-xs text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-colors"
       >
-        Clear
+        <i class="pi pi-refresh mr-1 text-[10px]"></i>
+        Đặt lại
       </button>
     }
   </div>
 
   <!-- Editor -->
-  <div class="flex-1 min-h-[500px]">
+  <div class="min-h-[460px]">
     <ngx-monaco-editor
       [options]="editorOptions"
       [model]="editorModel"

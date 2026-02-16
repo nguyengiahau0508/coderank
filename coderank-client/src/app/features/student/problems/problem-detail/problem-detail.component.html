@@ -86,16 +86,16 @@
           </div>
 
           <!-- Tab Content -->
-          <div class="prose-custom">
+          <div>
             @if (activeTabIndex() === 0) {
-              <div [innerHTML]="renderMarkdown(prob.description)"></div>
+              <app-markdown-view [content]="prob.description" />
               @if (prob.inputDescription) {
                 <h3 class="text-lg font-normal mt-8 mb-4">Input</h3>
-                <div [innerHTML]="renderMarkdown(prob.inputDescription)"></div>
+                <app-markdown-view [content]="prob.inputDescription" />
               }
               @if (prob.outputDescription) {
                 <h3 class="text-lg font-normal mt-8 mb-4">Output</h3>
-                <div [innerHTML]="renderMarkdown(prob.outputDescription)"></div>
+                <app-markdown-view [content]="prob.outputDescription" />
               }
             }
 
@@ -126,7 +126,9 @@
                       Hint {{ idx + 1 }} {{ isHintVisible(hint.id) ? '▼' : '▶' }}
                     </button>
                     @if (isHintVisible(hint.id)) {
-                      <div class="pl-4 py-3 text-gray-600 dark:text-gray-400 font-light" [innerHTML]="renderMarkdown(hint.content)"></div>
+                      <div class="pl-4 py-3 text-gray-600 dark:text-gray-400 font-light">
+                        <app-markdown-view [content]="hint.content" format="markdown" />
+                      </div>
                     }
                   </div>
                 } @empty {

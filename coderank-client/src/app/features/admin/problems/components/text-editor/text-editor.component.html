@@ -1,0 +1,38 @@
+<p-editor
+  [ngModel]="content()"
+  (onTextChange)="onTextChange($event)"
+  (onBlur)="onBlur()"
+  [readonly]="disabled()"
+  [style]="{ height: '320px' }"
+  placeholder="Nhập nội dung tại đây..."
+>
+  <ng-template #header>
+    <span class="ql-formats">
+      <select class="ql-header" aria-label="Heading">
+        <option value="1">Heading 1</option>
+        <option value="2">Heading 2</option>
+        <option value="3">Heading 3</option>
+        <option selected>Normal</option>
+      </select>
+    </span>
+    <span class="ql-formats">
+      <button type="button" class="ql-bold" aria-label="Bold"></button>
+      <button type="button" class="ql-italic" aria-label="Italic"></button>
+      <button type="button" class="ql-underline" aria-label="Underline"></button>
+      <button type="button" class="ql-strike" aria-label="Strikethrough"></button>
+    </span>
+    <span class="ql-formats">
+      <button type="button" class="ql-list" value="ordered" aria-label="Ordered list"></button>
+      <button type="button" class="ql-list" value="bullet" aria-label="Bullet list"></button>
+      <button type="button" class="ql-blockquote" aria-label="Blockquote"></button>
+      <button type="button" class="ql-code-block" aria-label="Code block"></button>
+    </span>
+    <span class="ql-formats">
+      <button type="button" class="ql-link" aria-label="Link"></button>
+      <button type="button" class="ql-image" aria-label="Image"></button>
+    </span>
+    <span class="ql-formats">
+      <button type="button" class="ql-clean" aria-label="Clean formatting"></button>
+    </span>
+  </ng-template>
+</p-editor>

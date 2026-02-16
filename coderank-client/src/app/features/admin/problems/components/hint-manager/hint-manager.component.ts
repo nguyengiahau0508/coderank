@@ -12,7 +12,7 @@ import { HintsModel } from '../../../../../data/models/hints.model';
 import { CreateHintDto, UpdateHintDto } from '../../../../../data/dto/problems';
 
 @Component({
-  selector: 'app-hint-manager',
+  selector: 'app-admin-hint-manager',
   imports: [
     TableModule,
     Button,
@@ -27,7 +27,7 @@ import { CreateHintDto, UpdateHintDto } from '../../../../../data/dto/problems';
   templateUrl: './hint-manager.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class HintManagerComponent {
+export class AdminHintManagerComponent {
   private readonly fb = inject(FormBuilder);
   private readonly confirmationService = inject(ConfirmationService);
 

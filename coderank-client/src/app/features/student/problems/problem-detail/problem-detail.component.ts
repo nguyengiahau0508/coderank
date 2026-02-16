@@ -7,9 +7,6 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
 
 // PrimeNG
 import { Toast } from 'primeng/toast';
@@ -18,6 +15,7 @@ import { MessageService } from 'primeng/api';
 // Components
 import { CodeEditorComponent } from '../components/code-editor/code-editor.component';
 import { SubmissionResultComponent } from '../components/submission-result/submission-result.component';
+import { MarkdownViewComponent } from '../../../../shared/components/markdown-view/markdown-view.component';
 
 // Services & Models
 import { ProblemsService } from '../services/problems.service';
@@ -35,6 +33,7 @@ import { DifficultyEnum, ProgrammingLanguageEnum } from '../../../../data/enums/
     Toast,
     CodeEditorComponent,
     SubmissionResultComponent,
+    MarkdownViewComponent,
   ],
   providers: [MessageService],
   templateUrl: './problem-detail.component.html',
@@ -43,7 +42,6 @@ import { DifficultyEnum, ProgrammingLanguageEnum } from '../../../../data/enums/
 export class ProblemDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly problemsService = inject(ProblemsService);
   private readonly submissionsService = inject(SubmissionsService);
   private readonly messageService = inject(MessageService);
@@ -263,16 +261,6 @@ export class ProblemDetailComponent implements OnInit {
    */
   isHintVisible(hintId: number): boolean {
     return this.visibleHints().has(hintId);
-  }
-
-  /**
-   * Render markdown to HTML
-   */
-  renderMarkdown(markdown: string | null): SafeHtml {
-    if (!markdown) return '';
-    const html = marked.parse(markdown) as string;
-    const clean = DOMPurify.sanitize(html);
-    return this.sanitizer.sanitize(1, clean) || '';
   }
 
   /**

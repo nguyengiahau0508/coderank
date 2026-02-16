@@ -55,7 +55,7 @@ export class ProblemsController {
   async getProblem(@Param('problemId') problemId: string) {
     return this.problemsService.findOne({
       where: { id: problemId },
-      select: ['id', 'title', 'slug', 'description', 'inputDescription', 'outputDescription', 'notes', 'timeLimitMs', 'memoryLimitMb', 'difficulty', 'isPublished'],
+      select: ['id', 'title', 'slug', 'description', 'inputDescription', 'outputDescription', 'notes', 'timeLimitMs', 'memoryLimitMb', 'difficulty', 'isPublished', 'points'],
       relations: { tags: true, hints: true },
     });
   }

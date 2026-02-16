@@ -14,12 +14,12 @@ import { Select } from 'primeng/select';
 import { ProgrammingLanguageEnum } from '../../../../../data/enums/enums';
 
 interface LanguageOption { label: string; value: ProgrammingLanguageEnum; monacoLang: string; template: string; } @Component({
-  selector: 'app-code-editor',
+  selector: 'app-admin-code-editor',
   imports: [FormsModule, MonacoEditorModule, Select],
   templateUrl: './code-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CodeEditorComponent implements OnInit, OnDestroy {
+export class AdminCodeEditorComponent implements OnInit, OnDestroy {
   // Inputs
   readonly initialCode = input<string>('');
   readonly initialLanguage = input<ProgrammingLanguageEnum>(ProgrammingLanguageEnum.Python);

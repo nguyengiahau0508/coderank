@@ -36,6 +36,7 @@
     "monaco-editor": "^0.55.1",
     "ngx-monaco-editor-v2-alternative": "^21.0.1",
     "primeng": "^21.1.1",
+    "quill": "^2.0.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

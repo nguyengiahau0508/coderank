@@ -4,38 +4,46 @@ export const adminRoutes: Routes = [
   {
     path: '',
     redirectTo: 'dashboard',
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
   {
     path: 'dashboard',
-    loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.AdminDashboardComponent)
+    loadComponent: () =>
+      import('./dashboard/dashboard.component').then(m => m.AdminDashboardComponent),
   },
   {
     path: 'users',
-    loadComponent: () => import('./pages/users/users.component').then(m => m.AdminUsersComponent)
+    loadComponent: () =>
+      import('./users/users.component').then(m => m.AdminUsersComponent),
   },
   {
     path: 'problems',
-    loadChildren: () => import('./problems/problems.routes').then(m => m.problemsRoutes)
+    loadChildren: () =>
+      import('./problems/problems.routes').then(m => m.problemsRoutes),
   },
   {
     path: 'contests',
-    loadComponent: () => import('./pages/contests/contests.component').then(m => m.AdminContestsComponent)
+    loadComponent: () =>
+      import('./contests/contests.component').then(m => m.AdminContestsComponent),
   },
   {
     path: 'courses',
-    loadComponent: () => import('./pages/courses/courses.component').then(m => m.AdminCoursesComponent)
+    loadComponent: () =>
+      import('./courses/courses.component').then(m => m.AdminCoursesComponent),
   },
   {
     path: 'settings',
-    loadComponent: () => import('./pages/settings/settings.component').then(m => m.AdminSettingsComponent)
+    loadComponent: () =>
+      import('./settings/settings.component').then(m => m.AdminSettingsComponent),
   },
   {
     path: 'reports',
-    loadComponent: () => import('./pages/reports/reports.component').then(m => m.AdminReportsComponent)
+    loadComponent: () =>
+      import('./reports/reports.component').then(m => m.AdminReportsComponent),
   },
   {
     path: 'logs',
-    loadComponent: () => import('./pages/logs/logs.component').then(m => m.AdminLogsComponent)
-  }
+    loadComponent: () =>
+      import('./logs/logs.component').then(m => m.AdminLogsComponent),
+  },
 ];

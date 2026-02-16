@@ -1,8 +1,8 @@
-<div class="hint-manager">
-  <div class="flex justify-between items-center mb-4">
-    <h3 class="text-lg font-semibold text-gray-900">Hints</h3>
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Gợi ý</h3>
     <p-button
-      label="Add Hint"
+      label="Thêm"
       icon="pi pi-plus"
       size="small"
       (onClick)="openCreateDialog()"
@@ -11,102 +11,84 @@
   </div>
 
   @if (hints().length === 0) {
-    <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-      <i class="pi pi-lightbulb text-4xl text-gray-400 mb-2"></i>
-      <p class="text-gray-500">No hints yet. Add hints to help students solve this problem.</p>
+    <div class="text-center py-10 rounded-xl border-2 border-dashed border-surface-200 dark:border-surface-700">
+      <div class="flex items-center justify-center w-12 h-12 rounded-full bg-surface-100 dark:bg-surface-700 mx-auto mb-3">
+        <i class="pi pi-lightbulb text-xl text-surface-400"></i>
+      </div>
+      <p class="text-sm text-surface-500">Chưa có gợi ý nào</p>
+      <p class="text-xs text-surface-400 mt-1">Thêm gợi ý để hỗ trợ sinh viên giải bài</p>
     </div>
   } @else {
-    <p-table
-      [value]="hints()"
-      [loading]="loading()"
-      styleClass="p-datatable-sm"
-      responsiveLayout="scroll"
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th style="width: 10%">Order</th>
-          <th style="width: 65%">Content</th>
-          <th style="width: 10%">Public</th>
-          <th style="width: 15%">Actions</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-hint>
-        <tr>
-          <td>
-            <span class="font-semibold text-gray-600">#{{ hint.hintOrder }}</span>
-          </td>
-          <td>
-            <p class="text-sm text-gray-700">
-              {{ truncateText(hint.content, 150) }}
-            </p>
-          </td>
-          <td>
-            @if (hint.isPublic) {
-              <i class="pi pi-check text-green-500"></i>
-            } @else {
-              <i class="pi pi-lock text-gray-400"></i>
-            }
-          </td>
-          <td>
-            <div class="flex gap-1">
-              <p-button
-                icon="pi pi-pencil"
-                [text]="true"
-                [rounded]="true"
-                size="small"
-                severity="info"
-                (onClick)="openEditDialog(hint)"
-                [disabled]="loading()"
-              />
-              <p-button
-                icon="pi pi-trash"
-                [text]="true"
-                [rounded]="true"
-                size="small"
-                severity="danger"
-                (onClick)="confirmDelete(hint)"
-                [disabled]="loading()"
-              />
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+      <table class="w-full text-sm" aria-label="Hints table">
+        <thead>
+          <tr class="border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900">
+            <th class="text-left px-4 py-2.5 text-xs font-medium text-surface-500 w-16">Thứ tự</th>
+            <th class="text-left px-4 py-2.5 text-xs font-medium text-surface-500">Nội dung</th>
+            <th class="text-center px-4 py-2.5 text-xs font-medium text-surface-500 w-20">Công khai</th>
+            <th class="px-4 py-2.5 w-20"><span class="sr-only">Hành động</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (hint of hints(); track hint.id) {
+            <tr class="border-b border-surface-100 dark:border-surface-800 last:border-b-0 hover:bg-surface-50 dark:hover:bg-surface-900 transition-colors">
+              <td class="px-4 py-2.5">
+                <span class="text-xs font-semibold text-surface-500">#{{ hint.hintOrder }}</span>
+              </td>
+              <td class="px-4 py-2.5 text-xs text-surface-600 dark:text-surface-400">
+                {{ truncateText(hint.content, 120) }}
+              </td>
+              <td class="px-4 py-2.5 text-center">
+                @if (hint.isPublic) {
+                  <i class="pi pi-check text-green-500 text-xs"></i>
+                } @else {
+                  <i class="pi pi-lock text-surface-300 text-xs"></i>
+                }
+              </td>
+              <td class="px-4 py-2.5">
+                <div class="flex gap-1 justify-end">
+                  <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" size="small" severity="secondary" (onClick)="openEditDialog(hint)" />
+                  <p-button icon="pi pi-trash" [text]="true" [rounded]="true" size="small" severity="danger" (onClick)="confirmDelete(hint)" />
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 
   <!-- Create/Edit Dialog -->
   <p-dialog
-    [header]="editingHint() ? 'Edit Hint' : 'Add Hint'"
+    [header]="editingHint() ? 'Chỉnh sửa gợi ý' : 'Thêm gợi ý'"
     [visible]="showDialog()"
     (visibleChange)="!$event && closeDialog()"
     [modal]="true"
     [draggable]="false"
+    [dismissableMask]="true"
     [style]="{ width: '90vw', maxWidth: '600px' }"
   >
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
-      <!-- Content -->
-      <div class="flex flex-col gap-2">
-        <label for="content" class="font-semibold text-gray-700">
-          Hint Content <span class="text-red-500">*</span>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+      <div class="flex flex-col gap-1.5">
+        <label for="content" class="text-xs font-medium text-surface-600 dark:text-surface-300">
+          Nội dung <span class="text-red-500">*</span>
         </label>
         <textarea
-          pInputTextarea
+          pTextarea
           id="content"
           formControlName="content"
           [rows]="6"
-          placeholder="Enter helpful hint for students..."
+          placeholder="Nhập nội dung gợi ý (hỗ trợ Markdown)..."
           class="w-full"
-          [class.ng-invalid]="form.get('content')?.invalid && form.get('content')?.touched"
         ></textarea>
         @if (form.get('content')?.invalid && form.get('content')?.touched) {
-          <small class="text-red-500">Hint content is required (minimum 10 characters)</small>
+          <small class="text-red-500 text-xs">Nội dung gợi ý phải có ít nhất 10 ký tự</small>
         }
       </div>
 
-      <!-- Hint Order -->
-      <div class="flex flex-col gap-2">
-        <label for="hintOrder" class="font-semibold text-gray-700">
-          Display Order <span class="text-red-500">*</span>
+      <div class="flex flex-col gap-1.5">
+        <label for="hintOrder" class="text-xs font-medium text-surface-600 dark:text-surface-300">
+          Thứ tự hiển thị <span class="text-red-500">*</span>
         </label>
         <p-inputNumber
           inputId="hintOrder"
@@ -115,32 +97,22 @@
           [showButtons]="true"
           class="w-full"
         />
-        <small class="text-gray-500">Hints will be shown in this order</small>
+        <small class="text-xs text-surface-400">Gợi ý sẽ hiển thị theo thứ tự này</small>
       </div>
 
-      <!-- Public Checkbox -->
       <div class="flex items-center gap-2">
-        <p-checkbox
-          inputId="isPublic"
-          formControlName="isPublic"
-          [binary]="true"
-        />
-        <label for="isPublic" class="text-gray-700 cursor-pointer">
-          Make this hint public (visible to students)
+        <p-checkbox inputId="isPublic" formControlName="isPublic" [binary]="true" />
+        <label for="isPublic" class="text-sm text-surface-700 dark:text-surface-300 cursor-pointer">
+          Công khai (hiển thị cho sinh viên)
         </label>
       </div>
     </form>
 
     <ng-template pTemplate="footer">
       <div class="flex justify-end gap-2">
+        <p-button label="Hủy" severity="secondary" [outlined]="true" (onClick)="closeDialog()" />
         <p-button
-          label="Cancel"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="closeDialog()"
-        />
-        <p-button
-          [label]="editingHint() ? 'Update' : 'Add'"
+          [label]="editingHint() ? 'Cập nhật' : 'Thêm'"
           icon="pi pi-check"
           (onClick)="onSubmit()"
           [disabled]="form.invalid"

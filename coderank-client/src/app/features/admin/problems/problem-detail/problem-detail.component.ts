@@ -7,17 +7,15 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
 
 // PrimeNG
 import { Toast } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
 // Components
-import { CodeEditorComponent } from '../components/code-editor/code-editor.component';
-import { SubmissionResultComponent } from '../components/submission-result/submission-result.component';
+import { AdminCodeEditorComponent } from '../components/code-editor/code-editor.component';
+import { AdminSubmissionResultComponent } from '../components/submission-result/submission-result.component';
+import { MarkdownViewComponent } from '../../../../shared/components/markdown-view/markdown-view.component';
 
 // Services & Models
 import { ProblemsService } from '../services/problems.service';
@@ -29,21 +27,21 @@ import { SubmissionsModel } from '../../../../data/models/submissions.model';
 import { DifficultyEnum, ProgrammingLanguageEnum } from '../../../../data/enums/enums';
 
 @Component({
-  selector: 'app-problem-detail',
+  selector: 'app-admin-problem-detail',
   imports: [
     CommonModule,
     Toast,
-    CodeEditorComponent,
-    SubmissionResultComponent,
+    AdminCodeEditorComponent,
+    AdminSubmissionResultComponent,
+    MarkdownViewComponent,
   ],
   providers: [MessageService],
   templateUrl: './problem-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProblemDetailComponent implements OnInit {
+export class AdminProblemDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly problemsService = inject(ProblemsService);
   private readonly submissionsService = inject(SubmissionsService);
   private readonly messageService = inject(MessageService);
@@ -64,6 +62,13 @@ export class ProblemDetailComponent implements OnInit {
   // UI State
   readonly visibleHints = signal<Set<number>>(new Set());
   readonly activeTabIndex = signal<number>(0);
+
+  readonly tabs = [
+    { label: 'Đề bài', index: 0 },
+    { label: 'Ví dụ', index: 1 },
+    { label: 'Gợi ý', index: 2 },
+    { label: 'Lịch sử', index: 3 },
+  ];
 
   ngOnInit(): void {
     const problemId = this.route.snapshot.paramMap.get('id');
@@ -257,16 +262,6 @@ export class ProblemDetailComponent implements OnInit {
    */
   isHintVisible(hintId: number): boolean {
     return this.visibleHints().has(hintId);
-  }
-
-  /**
-   * Render markdown to HTML
-   */
-  renderMarkdown(markdown: string | null): SafeHtml {
-    if (!markdown) return '';
-    const html = marked.parse(markdown) as string;
-    const clean = DOMPurify.sanitize(html);
-    return this.sanitizer.sanitize(1, clean) || '';
   }
 
   /**

@@ -4,12 +4,12 @@ import { SubmissionsModel } from '../../../../../data/models/submissions.model';
 import { SubmissionsService } from '../../services/submissions.service';
 
 @Component({
-  selector: 'app-submission-result',
+  selector: 'app-admin-submission-result',
   imports: [CommonModule],
   templateUrl: './submission-result.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SubmissionResultComponent {
+export class AdminSubmissionResultComponent {
   private readonly submissionsService = inject(SubmissionsService);
 
   readonly submission = input.required<SubmissionsModel>();

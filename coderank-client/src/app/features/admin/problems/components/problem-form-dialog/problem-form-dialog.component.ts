@@ -2,10 +2,10 @@ import { Component, ChangeDetectionStrategy, input, output, signal, effect, inje
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
-import { Textarea } from 'primeng/textarea';
 import { Select } from 'primeng/select';
 import { InputNumber } from 'primeng/inputnumber';
 import { Checkbox } from 'primeng/checkbox';
+import { AdminTextEditorComponent } from '../text-editor/text-editor.component';
 import { DifficultyEnum } from '../../../../../data/enums/enums';
 import { ProblemsModel } from '../../../../../data/models/problems.model';
 import { CreateProblemDto, UpdateProblemDto } from '../../../../../data/dto/problems';
@@ -17,20 +17,20 @@ interface DifficultyOption {
 }
 
 @Component({
-  selector: 'app-problem-form-dialog',
+  selector: 'app-admin-problem-form-dialog',
   imports: [
     Button,
     InputText,
-    Textarea,
     Select,
     InputNumber,
     Checkbox,
     ReactiveFormsModule,
+    AdminTextEditorComponent,
   ],
   templateUrl: './problem-form-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ProblemFormDialogComponent {
+export class AdminProblemFormDialogComponent {
   private fb = inject(FormBuilder);
 
   // Inputs

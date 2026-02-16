@@ -10,14 +10,14 @@ import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { MultiSelect } from 'primeng/multiselect';
 import { Slider } from 'primeng/slider';
-import { Badge } from 'primeng/badge';
-import { Skeleton } from 'primeng/skeleton';
+import { Tag } from 'primeng/tag';
 import { Paginator } from 'primeng/paginator';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { Dialog } from 'primeng/dialog';
 import { Toast } from 'primeng/toast';
 import { Tooltip } from 'primeng/tooltip';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Services & Models
@@ -26,11 +26,11 @@ import { AdminProblemsService } from '../services/admin-problems.service';
 import { ProblemsModel } from '../../../../data/models/problems.model';
 import { DifficultyEnum } from '../../../../data/enums/enums';
 import { TagsModel } from '../../../../data/models/tags.model';
-import { ProblemFormDialogComponent } from '../components/problem-form-dialog/problem-form-dialog.component';
-import { TestcaseManagerComponent } from '../components/testcase-manager/testcase-manager.component';
+import { AdminProblemFormDialogComponent } from '../components/problem-form-dialog/problem-form-dialog.component';
+import { AdminTestcaseManagerComponent } from '../components/testcase-manager/testcase-manager.component';
 
 @Component({
-  selector: 'app-problems-list',
+  selector: 'app-problem-list',
   imports: [
     CommonModule,
     FormsModule,
@@ -41,20 +41,22 @@ import { TestcaseManagerComponent } from '../components/testcase-manager/testcas
     Select,
     MultiSelect,
     Slider,
+    Tag,
     Paginator,
     IconField,
     InputIcon,
     Dialog,
     Toast,
     Tooltip,
-    ProblemFormDialogComponent,
-    TestcaseManagerComponent,
+    ConfirmDialog,
+    AdminProblemFormDialogComponent,
+    AdminTestcaseManagerComponent,
   ],
   providers: [MessageService, ConfirmationService],
-  templateUrl: './problems-list.component.html',
+  templateUrl: './problem-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProblemsListComponent implements OnInit {
+export class ProblemListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly problemsService = inject(ProblemsService);
@@ -226,12 +228,35 @@ export class ProblemsListComponent implements OnInit {
   }
 
   /**
-   * Open dialog to edit problem
+   * Open dialog to edit problem (fetch full detail first)
    */
   editProblem(event: Event, problem: ProblemsModel): void {
     event.stopPropagation();
-    this.editingProblem.set(problem);
-    this.showProblemDialog.set(true);
+    this.loading.set(true);
+    this.adminService.getProblem(problem.id.toString()).subscribe({
+      next: (response) => {
+        if (response.data) {
+          this.editingProblem.set(response.data);
+          this.showProblemDialog.set(true);
+        } else {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load problem details',
+          });
+        }
+        this.showProblemDialog.set(true);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load problem details',
+        });
+        this.loading.set(false);
+      },
+    });
   }
 
   /**

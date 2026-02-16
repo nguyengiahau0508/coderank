@@ -1,0 +1,284 @@
+<p-toast position="top-right" />
+<p-confirmDialog />
+
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Quản lý bài tập</h1>
+      <p class="mt-1 text-surface-500 dark:text-surface-400">Tạo, chỉnh sửa và quản lý các bài tập lập trình</p>
+    </div>
+    <p-button label="Tạo bài tập" icon="pi pi-plus" severity="primary" (onClick)="createProblem()" />
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+      <p class="text-xs text-surface-400 mb-1">Tổng bài tập</p>
+      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">{{ totalRecords() }}</p>
+    </div>
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+      <p class="text-xs text-green-500 mb-1">Dễ</p>
+      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">—</p>
+    </div>
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+      <p class="text-xs text-yellow-500 mb-1">Trung bình</p>
+      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">—</p>
+    </div>
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+      <p class="text-xs text-red-500 mb-1">Khó</p>
+      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">—</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+    <div class="flex flex-col lg:flex-row gap-3">
+      <!-- Search -->
+      <div class="flex-1">
+        <p-iconfield iconPosition="left">
+          <p-inputicon styleClass="pi pi-search" />
+          <input
+            type="text"
+            pInputText
+            placeholder="Tìm bài tập..."
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="onSearch()"
+            class="w-full"
+          />
+        </p-iconfield>
+      </div>
+
+      <!-- Difficulty -->
+      <p-select
+        [(ngModel)]="selectedDifficulty"
+        [options]="difficultyOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Độ khó"
+        [showClear]="true"
+        (onChange)="onDifficultyChange()"
+        styleClass="w-full lg:w-40"
+      />
+
+      <!-- Advanced Toggle -->
+      <p-button
+        [label]="showAdvancedFilters() ? 'Ẩn bộ lọc' : 'Bộ lọc'"
+        [icon]="showAdvancedFilters() ? 'pi pi-angle-up' : 'pi pi-filter'"
+        (onClick)="toggleAdvancedFilters()"
+        severity="secondary"
+        [outlined]="true"
+      />
+
+      @if (hasFilters()) {
+        <p-button
+          label="Xóa lọc"
+          icon="pi pi-times"
+          (onClick)="clearFilters()"
+          severity="secondary"
+          [text]="true"
+        />
+      }
+    </div>
+
+    <!-- Advanced Filters -->
+    @if (showAdvancedFilters()) {
+      <div class="mt-4 pt-4 border-t border-surface-200 dark:border-surface-700 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Tags -->
+        <div>
+          <label class="block text-xs font-medium text-surface-500 dark:text-surface-400 mb-2">Tags</label>
+          <p-multiselect
+            [(ngModel)]="selectedTags"
+            [options]="tagOptions()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Chọn tags"
+            [showClear]="true"
+            (onChange)="onTagsChange()"
+            styleClass="w-full"
+            [maxSelectedLabels]="3"
+          />
+        </div>
+
+        <!-- Points Range -->
+        <div>
+          <label class="block text-xs font-medium text-surface-500 dark:text-surface-400 mb-2">
+            Điểm: {{ pointsRange()[0] }} — {{ pointsRange()[1] }}
+          </label>
+          <p-slider
+            [(ngModel)]="pointsRange"
+            [range]="true"
+            [min]="0"
+            [max]="1000"
+            [step]="10"
+            (onSlideEnd)="onPointsChange()"
+            styleClass="w-full"
+          />
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Problem Table -->
+  @if (loading()) {
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <div class="px-5 py-4 border-b border-surface-100 dark:border-surface-800">
+          <div class="flex items-center gap-4">
+            <div class="flex-1 space-y-2">
+              <div class="h-4 w-48 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
+              <div class="h-3 w-96 bg-surface-50 dark:bg-surface-800 rounded animate-pulse"></div>
+            </div>
+            <div class="h-6 w-16 bg-surface-100 dark:bg-surface-700 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (problems().length > 0) {
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+      @for (problem of problems(); track problem.id) {
+        <div
+          class="group px-5 py-4 border-b border-surface-100 dark:border-surface-800 last:border-b-0 hover:bg-surface-50 dark:hover:bg-surface-900 transition-colors cursor-pointer"
+          (click)="viewProblem(problem)"
+        >
+          <div class="flex items-center gap-4">
+            <!-- Main Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0 group-hover:text-primary transition-colors truncate">
+                  {{ problem.title }}
+                </h3>
+                @if (!problem.isPublished) {
+                  <p-tag value="Nháp" severity="warn" styleClass="text-[10px]" />
+                }
+              </div>
+              @if (problem.description) {
+                <p class="text-xs text-surface-400 line-clamp-1">{{ problem.description }}</p>
+              }
+              @if (problem.tags && problem.tags.length) {
+                <div class="mt-2 flex gap-1.5 flex-wrap">
+                  @for (tag of problem.tags; track tag.id) {
+                    <span class="text-[10px] text-surface-500 bg-surface-100 dark:bg-surface-700 px-2 py-0.5 rounded-full">
+                      {{ tag.name }}
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Meta -->
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <p-tag
+                [value]="getDifficultyLabel(problem.difficulty)"
+                [severity]="getDifficultySeverity(problem.difficulty)"
+                styleClass="text-xs"
+              />
+              <span class="text-xs text-surface-400 font-medium w-12 text-right">
+                {{ problem.points || 0 }} đ
+              </span>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <p-button
+                icon="pi pi-pencil"
+                (onClick)="editProblem($event, problem)"
+                [rounded]="true"
+                [text]="true"
+                severity="secondary"
+                pTooltip="Chỉnh sửa"
+                tooltipPosition="top"
+              />
+              <p-button
+                icon="pi pi-list-check"
+                (onClick)="manageTestcases($event, problem)"
+                [rounded]="true"
+                [text]="true"
+                severity="secondary"
+                pTooltip="Testcases"
+                tooltipPosition="top"
+              />
+              <p-button
+                icon="pi pi-trash"
+                (onClick)="deleteProblem($event, problem)"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Xóa"
+                tooltipPosition="top"
+              />
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (totalRecords() > limit()) {
+      <div class="flex justify-center">
+        <p-paginator
+          [rows]="limit()"
+          [totalRecords]="totalRecords()"
+          [rowsPerPageOptions]="[10, 20, 50]"
+          (onPageChange)="onPageChange($event)"
+        />
+      </div>
+    }
+  } @else {
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-12 text-center">
+      <div class="flex items-center justify-center w-14 h-14 rounded-full bg-surface-100 dark:bg-surface-700 mx-auto mb-4">
+        <i class="pi pi-code text-2xl text-surface-400"></i>
+      </div>
+      <p class="text-surface-500 mb-2">Không tìm thấy bài tập nào</p>
+      @if (hasFilters()) {
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="text-sm text-primary hover:underline"
+        >
+          Xóa bộ lọc
+        </button>
+      } @else {
+        <p-button
+          label="Tạo bài tập đầu tiên"
+          icon="pi pi-plus"
+          [text]="true"
+          (onClick)="createProblem()"
+        />
+      }
+    </div>
+  }
+</div>
+
+<!-- Problem Form Dialog -->
+<p-dialog
+  [visible]="showProblemDialog()"
+  (onHide)="closeProblemDialog()"
+  [header]="editingProblem() ? 'Chỉnh sửa bài tập' : 'Tạo bài tập mới'"
+  [modal]="true"
+  [style]="{ width: '90vw', maxWidth: '900px' }"
+  [dismissableMask]="true"
+>
+  <app-admin-problem-form-dialog
+    [problem]="editingProblem()"
+    [loading]="isSubmittingDialog()"
+    (save)="onProblemSave($event)"
+    (cancel)="closeProblemDialog()"
+  />
+</p-dialog>
+
+<!-- Testcase Manager Dialog -->
+<p-dialog
+  [visible]="showTestcaseDialog()"
+  (onHide)="closeTestcaseDialog()"
+  header="Quản lý Testcases"
+  [modal]="true"
+  [style]="{ width: '90vw', maxWidth: '1000px' }"
+  [dismissableMask]="true"
+>
+  @if (selectedProblem()) {
+    <app-admin-testcase-manager
+      [problemId]="selectedProblem()!.id.toString()"
+      (close)="closeTestcaseDialog()"
+    />
+  }
+</p-dialog>

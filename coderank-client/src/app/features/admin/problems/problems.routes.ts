@@ -4,11 +4,11 @@ export const problemsRoutes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./problems-list/problems-list.component').then(m => m.ProblemsListComponent),
+      import('./problem-list/problem-list.component').then(m => m.ProblemListComponent),
   },
   {
     path: ':id',
     loadComponent: () =>
-      import('./problem-detail/problem-detail.component').then(m => m.ProblemDetailComponent),
+      import('./problem-detail/problem-detail.component').then(m => m.AdminProblemDetailComponent),
   },
 ];

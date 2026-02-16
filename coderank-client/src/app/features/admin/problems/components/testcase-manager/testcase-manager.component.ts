@@ -21,7 +21,7 @@ interface CompareTypeOption {
 }
 
 @Component({
-  selector: 'app-testcase-manager',
+  selector: 'app-admin-testcase-manager',
   imports: [
     CommonModule,
     TableModule,
@@ -38,7 +38,7 @@ interface CompareTypeOption {
   templateUrl: './testcase-manager.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TestcaseManagerComponent implements OnInit {
+export class AdminTestcaseManagerComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly adminService = inject(AdminProblemsService);
   private readonly confirmationService = inject(ConfirmationService);
