@@ -1,14 +1,23 @@
-<!-- Minimalist Problems List -->
-<div class="max-w-6xl mx-auto px-6 py-12">
+<!-- Admin Problems Management -->
+<div class="max-w-7xl mx-auto px-6 py-12">
+  <p-toast position="top-right" />
   
-  <!-- Header -->
-  <div class="mb-16">
-    <h1 class="text-4xl font-light tracking-tight text-gray-900 dark:text-white mb-3">
-      Problems
-    </h1>
-    <p class="text-gray-500 dark:text-gray-400 font-light">
-      Choose a problem to start practicing
-    </p>
+  <!-- Header with Create Button -->
+  <div class="mb-8 flex items-center justify-between">
+    <div>
+      <h1 class="text-4xl font-light tracking-tight text-gray-900 dark:text-white mb-3">
+        Problems Management
+      </h1>
+      <p class="text-gray-500 dark:text-gray-400 font-light">
+        Create, edit, and manage coding problems
+      </p>
+    </div>
+    <p-button
+      label="+ New Problem"
+      icon="pi pi-plus"
+      (onClick)="createProblem()"
+      severity="success"
+    />
   </div>
 
   <!-- Filters -->
@@ -116,12 +125,14 @@
     <div class="space-y-1">
       @for (problem of problems(); track problem.id) {
         <div
-          (click)="viewProblem(problem)"
-          class="group py-6 px-6 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer transition-colors"
+          class="group py-4 px-6 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
         >
-          <div class="flex items-start justify-between gap-6">
-            <div class="flex-1">
-              <h3 class="text-lg font-normal text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 transition-colors">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <h3 
+                (click)="viewProblem(problem)"
+                class="text-lg font-normal text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 transition-colors cursor-pointer"
+              >
                 {{ problem.title }}
               </h3>
               @if (problem.description) {
@@ -131,25 +142,56 @@
               }
             </div>
 
-            <div class="flex items-center gap-8 text-sm">
+            <div class="flex items-center gap-4 text-sm flex-shrink-0">
               <span 
-                [class]="'font-light ' + 
+                [class]="'font-light whitespace-nowrap ' + 
                   (problem.difficulty === 'easy' ? 'text-green-600' : 
                    problem.difficulty === 'medium' ? 'text-yellow-600' : 
                    'text-red-600')"
               >
                 {{ getDifficultyLabel(problem.difficulty) }}
               </span>
-              <span class="text-gray-500 font-light">
+              <span class="text-gray-500 font-light whitespace-nowrap">
                 {{ problem.points || 0 }} pts
               </span>
+
+              <!-- Action Buttons -->
+              <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <p-button
+                  icon="pi pi-pencil"
+                  (onClick)="editProblem($event, problem)"
+                  [rounded]="true"
+                  severity="info"
+                  [text]="true"
+                  pTooltip="Edit"
+                  tooltipPosition="top"
+                />
+                <p-button
+                  icon="pi pi-list-check"
+                  (onClick)="manageTestcases($event, problem)"
+                  [rounded]="true"
+                  severity="info"
+                  [text]="true"
+                  pTooltip="Testcases"
+                  tooltipPosition="top"
+                />
+                <p-button
+                  icon="pi pi-trash"
+                  (onClick)="deleteProblem($event, problem)"
+                  [rounded]="true"
+                  severity="danger"
+                  [text]="true"
+                  pTooltip="Delete"
+                  tooltipPosition="top"
+                />
+              </div>
             </div>
           </div>
 
           @if (problem.tags && problem.tags.length) {
-            <div class="mt-4 flex gap-2">
+            <div class="mt-3 flex gap-2 flex-wrap">
               @for (tag of problem.tags; track tag.id) {
-                <span class="text-xs text-gray-400 font-light">
+                <span class="text-xs text-gray-400 font-light bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                   {{ tag.name }}
                 </span>
               }
@@ -186,3 +228,38 @@
     </div>
   }
 </div>
+<!-- Problem Form Dialog -->
+<p-dialog
+  [visible]="showProblemDialog()"
+  (onHide)="closeProblemDialog()"
+  [header]="editingProblem() ? 'Edit Problem' : 'Create New Problem'"
+  [modal]="true"
+  [maximizable]="false"
+  [style]="{ width: '90vw', maxWidth: '900px' }"
+  styleClass="p-dialog-header-sm"
+>
+  <app-problem-form-dialog
+    [problem]="editingProblem()"
+    [loading]="isSubmittingDialog()"
+    (save)="onProblemSave($event)"
+    (cancel)="closeProblemDialog()"
+  />
+</p-dialog>
+
+<!-- Testcase Manager Dialog -->
+<p-dialog
+  [visible]="showTestcaseDialog()"
+  (onHide)="closeTestcaseDialog()"
+  header="Manage Testcases"
+  [modal]="true"
+  [maximizable]="false"
+  [style]="{ width: '90vw', maxWidth: '1000px' }"
+  styleClass="p-dialog-header-sm"
+>
+  @if (selectedProblem()) {
+    <app-testcase-manager
+      [problemId]="selectedProblem()!.id.toString()"
+      (close)="closeTestcaseDialog()"
+    />
+  }
+</p-dialog>

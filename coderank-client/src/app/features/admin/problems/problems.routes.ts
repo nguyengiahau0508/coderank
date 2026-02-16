@@ -1,14 +1,14 @@
 import { Routes } from '@angular/router';
-import { ProblemsListComponent } from './problems-list/problems-list.component';
-import { ProblemDetailComponent } from './problem-detail/problem-detail.component';
 
 export const problemsRoutes: Routes = [
   {
     path: '',
-    component: ProblemsListComponent,
+    loadComponent: () =>
+      import('./problems-list/problems-list.component').then(m => m.ProblemsListComponent),
   },
   {
     path: ':id',
-    component: ProblemDetailComponent,
+    loadComponent: () =>
+      import('./problem-detail/problem-detail.component').then(m => m.ProblemDetailComponent),
   },
 ];

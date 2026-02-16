@@ -1,14 +1,4 @@
-<p-dialog
-  [header]="isEditMode() ? 'Edit Problem' : 'Create New Problem'"
-  [visible]="visible()"
-  (visibleChange)="onHide()"
-  [modal]="true"
-  [draggable]="false"
-  [resizable]="false"
-  [style]="{ width: '90vw', maxWidth: '800px' }"
-  styleClass="problem-form-dialog"
->
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-6">
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-6">
     <!-- Title -->
     <div class="flex flex-col gap-2">
       <label for="title" class="font-semibold text-gray-700">
@@ -181,22 +171,19 @@
     </div>
   </form>
 
-  <ng-template pTemplate="footer">
-    <div class="flex justify-end gap-2">
-      <p-button
-        label="Cancel"
-        severity="secondary"
-        [outlined]="true"
-        (onClick)="onHide()"
-        [disabled]="loading()"
-      />
-      <p-button
-        [label]="isEditMode() ? 'Update' : 'Create'"
-        icon="pi pi-check"
-        (onClick)="onSubmit()"
-        [loading]="loading()"
-        [disabled]="form.invalid"
-      />
-    </div>
-  </ng-template>
-</p-dialog>
+  <div class="flex justify-end gap-2 mt-6">
+    <p-button
+      label="Cancel"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onCancel()"
+      [disabled]="loading()"
+    />
+    <p-button
+      [label]="isEditMode() ? 'Update' : 'Create'"
+      icon="pi pi-check"
+      (onClick)="onSubmit()"
+      [loading]="loading()"
+      [disabled]="form.invalid"
+    />
+  </div>

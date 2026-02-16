@@ -1,3 +1,5 @@
+<p-toast position="top-right" />
+
 <div class="testcase-manager">
   <div class="flex justify-between items-center mb-4">
     <h3 class="text-lg font-semibold text-gray-900">Testcases</h3>
@@ -125,8 +127,8 @@
           class="w-full font-mono text-sm"
           [class.ng-invalid]="form.get('output')?.invalid && form.get('output')?.touched"
         ></textarea>
-        @if (form.get('output')?.invalid && form.get('output')?.touched) {
-          <small class="text-red-500">Output is required</small>
+        @if (form.get('expectedOutput')?.invalid && form.get('expectedOutput')?.touched) {
+          <small class="text-red-500">Expected output is required</small>
         }
       </div>
 
@@ -156,17 +158,6 @@
           />
           <label for="isSample" class="text-gray-700 cursor-pointer">
             Sample Testcase (visible to students)
-          </label>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <p-checkbox
-            inputId="isHidden"
-            formControlName="isHidden"
-            [binary]="true"
-          />
-          <label for="isHidden" class="text-gray-700 cursor-pointer">
-            Hidden
           </label>
         </div>
       </div>

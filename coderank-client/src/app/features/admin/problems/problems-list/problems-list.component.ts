@@ -1,7 +1,7 @@
-import { Component, ChangeDetectionStrategy, OnInit, signal, computed, inject, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // PrimeNG
 import { TableModule } from 'primeng/table';
@@ -15,18 +15,26 @@ import { Skeleton } from 'primeng/skeleton';
 import { Paginator } from 'primeng/paginator';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
+import { Dialog } from 'primeng/dialog';
+import { Toast } from 'primeng/toast';
+import { Tooltip } from 'primeng/tooltip';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Services & Models
 import { ProblemsService } from '../services/problems.service';
+import { AdminProblemsService } from '../services/admin-problems.service';
 import { ProblemsModel } from '../../../../data/models/problems.model';
 import { DifficultyEnum } from '../../../../data/enums/enums';
 import { TagsModel } from '../../../../data/models/tags.model';
+import { ProblemFormDialogComponent } from '../components/problem-form-dialog/problem-form-dialog.component';
+import { TestcaseManagerComponent } from '../components/testcase-manager/testcase-manager.component';
 
 @Component({
   selector: 'app-problems-list',
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     TableModule,
     Button,
     InputText,
@@ -36,7 +44,13 @@ import { TagsModel } from '../../../../data/models/tags.model';
     Paginator,
     IconField,
     InputIcon,
+    Dialog,
+    Toast,
+    Tooltip,
+    ProblemFormDialogComponent,
+    TestcaseManagerComponent,
   ],
+  providers: [MessageService, ConfirmationService],
   templateUrl: './problems-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -44,6 +58,9 @@ export class ProblemsListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly problemsService = inject(ProblemsService);
+  private readonly adminService = inject(AdminProblemsService);
+  private readonly messageService = inject(MessageService);
+  private readonly confirmService = inject(ConfirmationService);
 
   // State
   readonly problems = signal<ProblemsModel[]>([]);
@@ -51,6 +68,13 @@ export class ProblemsListComponent implements OnInit {
   readonly totalRecords = signal<number>(0);
   readonly allTags = signal<TagsModel[]>([]);
   readonly showAdvancedFilters = signal<boolean>(false);
+  
+  // Dialog states
+  readonly showProblemDialog = signal<boolean>(false);
+  readonly showTestcaseDialog = signal<boolean>(false);
+  readonly selectedProblem = signal<ProblemsModel | null>(null);
+  readonly editingProblem = signal<ProblemsModel | null>(null);
+  readonly isSubmittingDialog = signal<boolean>(false);
 
   // Filters
   readonly searchTerm = signal<string>('');
@@ -137,10 +161,9 @@ export class ProblemsListComponent implements OnInit {
     if (this.pointsRange()[1] < 1000) {
       params.maxPoints = this.pointsRange()[1];
     }
-    console.log('Loading problems with params:', params);
+
     this.problemsService.getProblems(params).subscribe({
       next: (response) => {
-        console.log('Loaded problems:', response);
         this.problems.set(response.data);
         this.totalRecords.set(response.meta.totalItems);
         this.loading.set(false);
@@ -192,6 +215,129 @@ export class ProblemsListComponent implements OnInit {
 
   viewProblem(problem: ProblemsModel): void {
     this.router.navigate([problem.id], { relativeTo: this.route });
+  }
+
+  /**
+   * Open dialog to create new problem
+   */
+  createProblem(): void {
+    this.editingProblem.set(null);
+    this.showProblemDialog.set(true);
+  }
+
+  /**
+   * Open dialog to edit problem
+   */
+  editProblem(event: Event, problem: ProblemsModel): void {
+    event.stopPropagation();
+    this.editingProblem.set(problem);
+    this.showProblemDialog.set(true);
+  }
+
+  /**
+   * Delete problem with confirmation
+   */
+  deleteProblem(event: Event, problem: ProblemsModel): void {
+    event.stopPropagation();
+    this.confirmService.confirm({
+      message: `Are you sure you want to delete "${problem.title}"?`,
+      header: 'Confirm',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.adminService.deleteProblem(problem.id.toString()).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Problem deleted successfully',
+            });
+            this.loadProblems();
+          },
+          error: () => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Failed to delete problem',
+            });
+          },
+        });
+      },
+    });
+  }
+
+  /**
+   * Open testcase manager
+   */
+  manageTestcases(event: Event, problem: ProblemsModel): void {
+    event.stopPropagation();
+    this.selectedProblem.set(problem);
+    this.showTestcaseDialog.set(true);
+  }
+
+  /**
+   * Handle problem form submission
+   */
+  onProblemSave(data: any): void {
+    this.isSubmittingDialog.set(true);
+    if (this.editingProblem()) {
+      // Update
+      this.adminService.updateProblem(this.editingProblem()!.id.toString(), data).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Problem updated successfully',
+          });
+          this.showProblemDialog.set(false);
+          this.isSubmittingDialog.set(false);
+          this.loadProblems();
+        },
+        error: () => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to update problem',
+          });
+          this.isSubmittingDialog.set(false);
+        },
+      });
+    } else {
+      // Create
+      this.adminService.createProblem(data).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Problem created successfully',
+          });
+          this.showProblemDialog.set(false);
+          this.isSubmittingDialog.set(false);
+          this.page.set(1);
+          this.loadProblems();
+        },
+        error: () => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to create problem',
+          });
+          this.isSubmittingDialog.set(false);
+        },
+      });
+    }
+  }
+
+  /**
+   * Close dialogs
+   */
+  closeProblemDialog(): void {
+    this.showProblemDialog.set(false);
+  }
+
+  closeTestcaseDialog(): void {
+    this.showTestcaseDialog.set(false);
+    this.selectedProblem.set(null);
+    this.loadProblems();
   }
 
   getDifficultySeverity(difficulty: DifficultyEnum): 'success' | 'warn' | 'danger' {

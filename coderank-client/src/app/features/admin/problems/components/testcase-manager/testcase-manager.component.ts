@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
@@ -7,10 +7,13 @@ import { Textarea } from 'primeng/textarea';
 import { Checkbox } from 'primeng/checkbox';
 import { Select } from 'primeng/select';
 import { ConfirmDialog } from 'primeng/confirmdialog';
-import { ConfirmationService } from 'primeng/api';
+import { Toast } from 'primeng/toast';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { TestcasesModel } from '../../../../../data/models/testcases.model';
 import { CreateTestcaseDto, UpdateTestcaseDto } from '../../../../../data/dto/problems';
 import { TestcaseCompareTypeEnum } from '../../../../../data/enums/enums';
+import { AdminProblemsService } from '../../services/admin-problems.service';
+import { CommonModule } from '@angular/common';
 
 interface CompareTypeOption {
   label: string;
@@ -20,6 +23,7 @@ interface CompareTypeOption {
 @Component({
   selector: 'app-testcase-manager',
   imports: [
+    CommonModule,
     TableModule,
     Button,
     Dialog,
@@ -27,28 +31,31 @@ interface CompareTypeOption {
     Checkbox,
     Select,
     ConfirmDialog,
+    Toast,
     ReactiveFormsModule
   ],
-  providers: [ConfirmationService],
+  providers: [ConfirmationService, MessageService],
   templateUrl: './testcase-manager.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TestcaseManagerComponent {
-  private fb = inject(FormBuilder);
-  private confirmationService = inject(ConfirmationService);
+export class TestcaseManagerComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly adminService = inject(AdminProblemsService);
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
 
   // Inputs
-  testcases = input<TestcasesModel[]>([]);
-  loading = input<boolean>(false);
+  readonly problemId = input<string>('');
 
   // Outputs
-  create = output<CreateTestcaseDto>();
-  update = output<{ id: string; dto: UpdateTestcaseDto }>();
-  delete = output<string>();
+  readonly close = output<void>();
 
   // State
-  showDialog = signal<boolean>(false);
-  editingTestcase = signal<TestcasesModel | null>(null);
+  readonly testcases = signal<TestcasesModel[]>([]);
+  readonly loading = signal<boolean>(false);
+  readonly showDialog = signal<boolean>(false);
+  readonly editingTestcase = signal<TestcasesModel | null>(null);
+  readonly isSubmitting = signal<boolean>(false);
   form!: FormGroup;
 
   compareTypeOptions: CompareTypeOption[] = [
@@ -56,6 +63,30 @@ export class TestcaseManagerComponent {
     { label: 'Trim Whitespace', value: TestcaseCompareTypeEnum.TrimWhitespace },
     { label: 'Tokenize', value: TestcaseCompareTypeEnum.Tokenize }
   ];
+
+  ngOnInit(): void {
+    this.loadTestcases();
+  }
+
+  private loadTestcases(): void {
+    if (!this.problemId()) return;
+    
+    this.loading.set(true);
+    this.adminService.getTestcases(this.problemId()).subscribe({
+      next: (response) => {
+        this.testcases.set(response.data || []);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load testcases',
+        });
+        this.loading.set(false);
+      },
+    });
+  }
 
   constructor() {
     this.initForm();
@@ -104,16 +135,64 @@ export class TestcaseManagerComponent {
       return;
     }
 
-    const formValue = this.form.value;
-    const editing = this.editingTestcase();
-
-    if (editing) {
-      this.update.emit({ id: editing.id.toString(), dto: formValue });
-    } else {
-      this.create.emit(formValue);
+    if (!this.problemId()) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Problem ID is missing'
+      });
+      return;
     }
 
-    this.closeDialog();
+    const formValue = this.form.value;
+    const editing = this.editingTestcase();
+    this.isSubmitting.set(true);
+
+    if (editing) {
+      // Update
+      this.adminService.updateTestcase(this.problemId(), editing.id.toString(), formValue).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Testcase updated successfully',
+          });
+          this.closeDialog();
+          this.isSubmitting.set(false);
+          this.loadTestcases();
+        },
+        error: () => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to update testcase',
+          });
+          this.isSubmitting.set(false);
+        },
+      });
+    } else {
+      // Create
+      this.adminService.createTestcase(this.problemId(), formValue).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Testcase created successfully',
+          });
+          this.closeDialog();
+          this.isSubmitting.set(false);
+          this.loadTestcases();
+        },
+        error: () => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to create testcase',
+          });
+          this.isSubmitting.set(false);
+        },
+      });
+    }
   }
 
   confirmDelete(testcase: TestcasesModel): void {
@@ -123,7 +202,35 @@ export class TestcaseManagerComponent {
       icon: 'pi pi-exclamation-triangle',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
-        this.delete.emit(testcase.id.toString());
+        if (!this.problemId()) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Problem ID is missing'
+          });
+          return;
+        }
+
+        this.isSubmitting.set(true);
+        this.adminService.deleteTestcase(this.problemId(), testcase.id.toString()).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Testcase deleted successfully',
+            });
+            this.isSubmitting.set(false);
+            this.loadTestcases();
+          },
+          error: () => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Failed to delete testcase',
+            });
+            this.isSubmitting.set(false);
+          },
+        });
       }
     });
   }

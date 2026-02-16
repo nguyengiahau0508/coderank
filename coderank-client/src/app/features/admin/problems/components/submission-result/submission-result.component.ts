@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SubmissionsModel } from '../../../../../data/models/submissions.model';
 import { SubmissionsService } from '../../services/submissions.service';
@@ -10,9 +10,9 @@ import { SubmissionsService } from '../../services/submissions.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SubmissionResultComponent {
-  readonly submission = input.required<SubmissionsModel>();
+  private readonly submissionsService = inject(SubmissionsService);
 
-  constructor(private submissionsService: SubmissionsService) {}
+  readonly submission = input.required<SubmissionsModel>();
 
   /**
    * Get status label

@@ -67,14 +67,11 @@ export class ProblemDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const problemId = this.route.snapshot.paramMap.get('id');
-    console.log('[ProblemDetail] ngOnInit - problemId:', problemId);
     if (problemId) {
       this.loadProblem(problemId);
       this.loadTestcases(problemId);
       this.loadHints(problemId);
       this.loadSubmissionHistory(problemId);
-    } else {
-      console.error('[ProblemDetail] No problemId in route!');
     }
   }
 
@@ -82,16 +79,13 @@ export class ProblemDetailComponent implements OnInit {
    * Load problem details
    */
   private loadProblem(problemId: string): void {
-    console.log('[ProblemDetail] Loading problem:', problemId);
     this.loading.set(true);
     this.problemsService.getProblemById(problemId).subscribe({
       next: (response) => {
-        console.log('[ProblemDetail] Problem loaded:', response);
         this.problem.set(response.data || null);
         this.loading.set(false);
       },
-      error: (err) => {
-        console.error('[ProblemDetail] Error loading problem:', err);
+      error: () => {
         this.messageService.add({
           severity: 'error',
           summary: 'Lỗi',

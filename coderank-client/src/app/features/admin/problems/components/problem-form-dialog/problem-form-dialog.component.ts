@@ -1,6 +1,5 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, effect, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Dialog } from 'primeng/dialog';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
@@ -20,14 +19,13 @@ interface DifficultyOption {
 @Component({
   selector: 'app-problem-form-dialog',
   imports: [
-    Dialog,
     Button,
     InputText,
     Textarea,
     Select,
     InputNumber,
     Checkbox,
-    ReactiveFormsModule
+    ReactiveFormsModule,
   ],
   templateUrl: './problem-form-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -36,13 +34,12 @@ export class ProblemFormDialogComponent {
   private fb = inject(FormBuilder);
 
   // Inputs
-  visible = input<boolean>(false);
-  problem = input<ProblemsModel | null>(null);
-  loading = input<boolean>(false);
+  readonly problem = input<ProblemsModel | null>(null);
+  readonly loading = input<boolean>(false);
 
   // Outputs
-  visibleChange = output<boolean>();
-  save = output<CreateProblemDto | UpdateProblemDto>();
+  readonly save = output<CreateProblemDto | UpdateProblemDto>();
+  readonly cancel = output<void>();
 
   // State
   form!: FormGroup;
@@ -115,8 +112,8 @@ export class ProblemFormDialogComponent {
     });
   }
 
-  onHide(): void {
-    this.visibleChange.emit(false);
+  onCancel(): void {
+    this.cancel.emit();
     this.form.reset(this.getDefaultValues());
   }
 

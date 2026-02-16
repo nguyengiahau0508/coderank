@@ -28,21 +28,21 @@ import { CreateHintDto, UpdateHintDto } from '../../../../../data/dto/problems';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HintManagerComponent {
-  private fb = inject(FormBuilder);
-  private confirmationService = inject(ConfirmationService);
+  private readonly fb = inject(FormBuilder);
+  private readonly confirmationService = inject(ConfirmationService);
 
   // Inputs
-  hints = input<HintsModel[]>([]);
-  loading = input<boolean>(false);
+  readonly hints = input<HintsModel[]>([]);
+  readonly loading = input<boolean>(false);
 
   // Outputs
-  create = output<CreateHintDto>();
-  update = output<{ id: string; dto: UpdateHintDto }>();
-  delete = output<string>();
+  readonly create = output<CreateHintDto>();
+  readonly update = output<{ id: string; dto: UpdateHintDto }>();
+  readonly delete = output<string>();
 
   // State
-  showDialog = signal<boolean>(false);
-  editingHint = signal<HintsModel | null>(null);
+  readonly showDialog = signal<boolean>(false);
+  readonly editingHint = signal<HintsModel | null>(null);
   form!: FormGroup;
 
   constructor() {
