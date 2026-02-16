@@ -11,7 +11,7 @@ import { Tag } from 'primeng/tag';
   selector: 'app-admin-logs',
   imports: [FormsModule, InputText, Select, Button, IconField, InputIcon, Tag],
   template: `
-    <div class="space-y-6">
+    <div class="space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Nhật ký hệ thống</h1>

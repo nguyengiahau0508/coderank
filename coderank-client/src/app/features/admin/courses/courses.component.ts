@@ -6,7 +6,7 @@ import { Tag } from 'primeng/tag';
   selector: 'app-admin-courses',
   imports: [Button, Tag],
   template: `
-    <div class="space-y-6">
+    <div class="space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Khóa học</h1>
@@ -35,12 +35,12 @@ import { Tag } from 'primeng/tag';
         @for (course of courses; track course.title) {
           <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden transition-shadow hover:shadow-md">
             <div [class]="'h-2 ' + course.color"></div>
-            <div class="p-5">
-              <div class="flex items-start justify-between mb-2">
+            <div class="p-4">
+              <div class="flex items-start justify-between mb-1.5">
                 <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0">{{ course.title }}</h3>
                 <p-tag [value]="course.status" [severity]="course.status === 'Đang mở' ? 'success' : 'secondary'" />
               </div>
-              <p class="text-xs text-surface-400 mb-4">{{ course.instructor }}</p>
+              <p class="text-xs text-surface-400 mb-3">{{ course.instructor }}</p>
               <div class="flex items-center justify-between text-xs text-surface-500">
                 <span><i class="pi pi-users mr-1"></i>{{ course.students }} SV</span>
                 <span><i class="pi pi-book mr-1"></i>{{ course.lessons }} bài học</span>

@@ -73,14 +73,15 @@ export class AuthService {
 
   async refreshToken(): Promise<boolean> {
     try {
-      const response = await firstValueFrom(this.api.post<AuthResponse>('/auth/refresh-tokens', {}));
+      const response = await firstValueFrom(
+        this.api.post<AuthResponse>('/auth/refresh-tokens', {}, true),
+      );
       if (response?.accessToken) {
         this.setAuth(response.accessToken, response.user);
         return true;
       }
       return false;
     } catch {
-      this.clearAuth();
       return false;
     }
   }

@@ -1,7 +1,7 @@
 <p-toast position="top-right" />
 <p-confirmDialog />
 
-<div class="space-y-6">
+<div class="space-y-4">
   <!-- Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
@@ -199,6 +199,15 @@
                 tooltipPosition="top"
               />
               <p-button
+                icon="pi pi-lightbulb"
+                (onClick)="manageHints($event, problem)"
+                [rounded]="true"
+                [text]="true"
+                severity="secondary"
+                pTooltip="Gợi ý"
+                tooltipPosition="top"
+              />
+              <p-button
                 icon="pi pi-trash"
                 (onClick)="deleteProblem($event, problem)"
                 [rounded]="true"
@@ -225,10 +234,10 @@
     }
   } @else {
     <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-12 text-center">
-      <div class="flex items-center justify-center w-14 h-14 rounded-full bg-surface-100 dark:bg-surface-700 mx-auto mb-4">
+      <div class="flex items-center justify-center w-14 h-14 rounded-full bg-surface-100 dark:bg-surface-700 mx-auto mb-3">
         <i class="pi pi-code text-2xl text-surface-400"></i>
       </div>
-      <p class="text-surface-500 mb-2">Không tìm thấy bài tập nào</p>
+      <p class="text-surface-500 mb-1.5">Không tìm thấy bài tập nào</p>
       @if (hasFilters()) {
         <button
           type="button"
@@ -279,6 +288,23 @@
     <app-admin-testcase-manager
       [problemId]="selectedProblem()!.id.toString()"
       (close)="closeTestcaseDialog()"
+    />
+  }
+</p-dialog>
+
+<!-- Hint Manager Dialog -->
+<p-dialog
+  [visible]="showHintDialog()"
+  (onHide)="closeHintDialog()"
+  header="Quản lý Gợi ý"
+  [modal]="true"
+  [style]="{ width: '90vw', maxWidth: '900px' }"
+  [dismissableMask]="true"
+>
+  @if (selectedProblem()) {
+    <app-admin-hint-manager
+      [problemId]="selectedProblem()!.id.toString()"
+      (close)="closeHintDialog()"
     />
   }
 </p-dialog>

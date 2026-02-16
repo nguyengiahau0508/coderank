@@ -22,7 +22,7 @@
       styleClass="p-datatable-sm"
       responsiveLayout="scroll"
     >
-      <ng-template pTemplate="header">
+      <ng-template #header>
         <tr>
           <th style="width: 30%">Input</th>
           <th style="width: 30%">Output</th>
@@ -31,7 +31,7 @@
           <th style="width: 15%">Actions</th>
         </tr>
       </ng-template>
-      <ng-template pTemplate="body" let-testcase>
+      <ng-template #body let-testcase>
         <tr>
           <td>
             <code class="text-xs bg-gray-100 px-2 py-1 rounded">
@@ -123,9 +123,9 @@
           [rows]="5"
           placeholder="Enter expected output..."
           class="w-full font-mono text-sm"
-          [class.ng-invalid]="form.get('output')?.invalid && form.get('output')?.touched"
+          [class.ng-invalid]="form.get('expectedOutput')?.invalid && form.get('expectedOutput')?.touched"
         ></textarea>
-        @if (form.get('output')?.invalid && form.get('output')?.touched) {
+        @if (form.get('expectedOutput')?.invalid && form.get('expectedOutput')?.touched) {
           <small class="text-red-500">Output is required</small>
         }
       </div>
@@ -147,32 +147,19 @@
       </div>
 
       <!-- Checkboxes -->
-      <div class="flex gap-4">
-        <div class="flex items-center gap-2">
-          <p-checkbox
-            inputId="isSample"
-            formControlName="isSample"
-            [binary]="true"
-          />
-          <label for="isSample" class="text-gray-700 cursor-pointer">
-            Sample Testcase (visible to students)
-          </label>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <p-checkbox
-            inputId="isHidden"
-            formControlName="isHidden"
-            [binary]="true"
-          />
-          <label for="isHidden" class="text-gray-700 cursor-pointer">
-            Hidden
-          </label>
-        </div>
+      <div class="flex items-center gap-2">
+        <p-checkbox
+          inputId="isSample"
+          formControlName="isSample"
+          [binary]="true"
+        />
+        <label for="isSample" class="text-gray-700 cursor-pointer">
+          Sample Testcase (visible to students)
+        </label>
       </div>
     </form>
 
-    <ng-template pTemplate="footer">
+    <ng-template #footer>
       <div class="flex justify-end gap-2">
         <p-button
           label="Cancel"

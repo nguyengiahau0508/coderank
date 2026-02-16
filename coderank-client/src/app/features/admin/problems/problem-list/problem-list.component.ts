@@ -28,6 +28,7 @@ import { DifficultyEnum } from '../../../../data/enums/enums';
 import { TagsModel } from '../../../../data/models/tags.model';
 import { AdminProblemFormDialogComponent } from '../components/problem-form-dialog/problem-form-dialog.component';
 import { AdminTestcaseManagerComponent } from '../components/testcase-manager/testcase-manager.component';
+import { AdminHintManagerComponent } from '../components/hint-manager/hint-manager.component';
 
 @Component({
   selector: 'app-problem-list',
@@ -51,6 +52,7 @@ import { AdminTestcaseManagerComponent } from '../components/testcase-manager/te
     ConfirmDialog,
     AdminProblemFormDialogComponent,
     AdminTestcaseManagerComponent,
+    AdminHintManagerComponent,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './problem-list.component.html',
@@ -74,6 +76,7 @@ export class ProblemListComponent implements OnInit {
   // Dialog states
   readonly showProblemDialog = signal<boolean>(false);
   readonly showTestcaseDialog = signal<boolean>(false);
+  readonly showHintDialog = signal<boolean>(false);
   readonly selectedProblem = signal<ProblemsModel | null>(null);
   readonly editingProblem = signal<ProblemsModel | null>(null);
   readonly isSubmittingDialog = signal<boolean>(false);
@@ -291,6 +294,15 @@ export class ProblemListComponent implements OnInit {
   }
 
   /**
+   * Open hint manager
+   */
+  manageHints(event: Event, problem: ProblemsModel): void {
+    event.stopPropagation();
+    this.selectedProblem.set(problem);
+    this.showHintDialog.set(true);
+  }
+
+  /**
    * Open testcase manager
    */
   manageTestcases(event: Event, problem: ProblemsModel): void {
@@ -363,6 +375,11 @@ export class ProblemListComponent implements OnInit {
     this.showTestcaseDialog.set(false);
     this.selectedProblem.set(null);
     this.loadProblems();
+  }
+
+  closeHintDialog(): void {
+    this.showHintDialog.set(false);
+    this.selectedProblem.set(null);
   }
 
   getDifficultySeverity(difficulty: DifficultyEnum): 'success' | 'warn' | 'danger' {

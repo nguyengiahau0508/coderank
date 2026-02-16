@@ -21,7 +21,7 @@ interface QuickAction {
   selector: 'app-admin-dashboard',
   imports: [RouterLink],
   template: `
-    <div class="space-y-8">
+    <div class="space-y-5">
       <!-- Header -->
       <div>
         <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Dashboard</h1>
@@ -31,8 +31,8 @@ interface QuickAction {
       <!-- Stats Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         @for (stat of stats; track stat.label) {
-          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5 transition-shadow hover:shadow-md">
-            <div class="flex items-center justify-between mb-3">
+          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 transition-shadow hover:shadow-md">
+            <div class="flex items-center justify-between mb-2">
               <span class="text-sm font-medium text-surface-500 dark:text-surface-400">{{ stat.label }}</span>
               <div [class]="'flex items-center justify-center w-10 h-10 rounded-lg ' + stat.color">
                 <i [class]="'pi ' + stat.icon + ' text-lg text-white'"></i>
@@ -51,10 +51,10 @@ interface QuickAction {
       </div>
 
       <!-- Content Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Recent Activity -->
-        <div class="lg:col-span-2 rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-6">
-          <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0 mb-4">Hoạt động gần đây</h2>
+        <div class="lg:col-span-2 rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+          <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0 mb-3">Hoạt động gần đây</h2>
           <div class="space-y-4">
             @for (activity of recentActivities; track activity.time) {
               <div class="flex items-start gap-3">
@@ -71,8 +71,8 @@ interface QuickAction {
         </div>
 
         <!-- Quick Actions -->
-        <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-6">
-          <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0 mb-4">Thao tác nhanh</h2>
+        <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+          <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0 mb-3">Thao tác nhanh</h2>
           <div class="space-y-2">
             @for (action of quickActions; track action.route) {
               <a
@@ -93,9 +93,9 @@ interface QuickAction {
       </div>
 
       <!-- System Status -->
-      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-6">
-        <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0 mb-4">Trạng thái hệ thống</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+        <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0 mb-3">Trạng thái hệ thống</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           @for (status of systemStatuses; track status.label) {
             <div class="flex items-center gap-3">
               <div [class]="'w-2.5 h-2.5 rounded-full ' + status.statusColor"></div>

@@ -5,7 +5,7 @@ import { Button } from 'primeng/button';
   selector: 'app-admin-settings',
   imports: [Button],
   template: `
-    <div class="space-y-6">
+    <div class="space-y-4">
       <div>
         <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Cài đặt</h1>
         <p class="mt-1 text-surface-500 dark:text-surface-400">Cấu hình hệ thống và tùy chỉnh</p>
@@ -14,7 +14,7 @@ import { Button } from 'primeng/button';
       <!-- Settings Sections -->
       <div class="space-y-4">
         @for (section of sections; track section.title) {
-          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-6">
+          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div [class]="'flex items-center justify-center w-10 h-10 rounded-lg ' + section.color">

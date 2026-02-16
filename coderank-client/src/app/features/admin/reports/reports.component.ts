@@ -3,7 +3,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 @Component({
   selector: 'app-admin-reports',
   template: `
-    <div class="space-y-6">
+    <div class="space-y-4">
       <div>
         <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Báo cáo</h1>
         <p class="mt-1 text-surface-500 dark:text-surface-400">Thống kê và phân tích hoạt động hệ thống</p>
@@ -12,8 +12,8 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
       <!-- Report Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @for (report of reports; track report.title) {
-          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-6 transition-shadow hover:shadow-md cursor-pointer">
-            <div class="flex items-center gap-3 mb-4">
+          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 transition-shadow hover:shadow-md cursor-pointer">
+            <div class="flex items-center gap-3 mb-3">
               <div [class]="'flex items-center justify-center w-10 h-10 rounded-lg ' + report.color">
                 <i [class]="'pi ' + report.icon + ' text-white'"></i>
               </div>

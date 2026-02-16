@@ -127,17 +127,19 @@ export class ProblemsController {
   @ApiBearerAuth('JWT-auth')
   async getTestcasesByProblemId(@CurrentUser() currentUser: IJwtPayload, @Param('problemId') problemId: string) {
     const isSample = !(currentUser.roles.includes(RolesEnum.Admin) || currentUser.roles.includes(RolesEnum.ProblemSetter));
-    const whereCondition = {
-      problemId: problemId,
-    }
+
+    const qb = this.testcasesService.getRepository()
+      .createQueryBuilder('tc')
+      .addSelect(['tc.input', 'tc.expectedOutput'])
+      .where('tc.problemId = :problemId', { problemId });
+
     if (isSample) {
-      whereCondition['isSample'] = true;
-    } else {
-      whereCondition['authorId'] = currentUser.userId;
+      qb.andWhere('tc.isSample = :isSample', { isSample: true });
     }
-    return this.testcasesService.find({
-      where: whereCondition,
-    });
+
+    qb.orderBy('tc.testcaseOrder', 'ASC');
+
+    return qb.getMany();
   }
 
   @Get(':problemId/testcases/:testcaseId')
@@ -148,9 +150,12 @@ export class ProblemsController {
     @Param('problemId') problemId: string,
     @Param('testcaseId') testcaseId: string,
   ) {
-    return this.testcasesService.findOne({
-      where: { id: testcaseId, problemId: problemId },
-    });
+    return this.testcasesService.getRepository()
+      .createQueryBuilder('tc')
+      .addSelect(['tc.input', 'tc.expectedOutput'])
+      .where('tc.id = :testcaseId', { testcaseId })
+      .andWhere('tc.problemId = :problemId', { problemId })
+      .getOne();
   }
 
   @Patch(':problemId/testcases/:testcaseId')

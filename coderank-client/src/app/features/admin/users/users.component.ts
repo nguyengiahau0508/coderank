@@ -20,7 +20,7 @@ interface UserPlaceholder {
   selector: 'app-admin-users',
   imports: [FormsModule, InputText, Select, Button, IconField, InputIcon, Tag],
   template: `
-    <div class="space-y-6">
+    <div class="space-y-4">
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

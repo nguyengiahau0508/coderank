@@ -1,34 +1,43 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Tag } from 'primeng/tag';
 
 @Component({
   selector: 'app-studentcontests',
+  imports: [Tag],
   template: `
-    <div class="max-w-7xl mx-auto">
-      <!-- Page Header -->
-      <div class="mb-8">
-        <div class="flex items-center gap-3 mb-2">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <i class="pi pi-trophy text-white text-lg"></i>
-          </div>
-          <h1 class="text-3xl font-bold text-gray-900">Contests</h1>
-        </div>
-        <p class="text-gray-500">Participate in coding competitions and challenges</p>
+    <div class="space-y-4">
+      <!-- Header -->
+      <div>
+        <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Cuộc thi</h1>
+        <p class="mt-1 text-surface-500 dark:text-surface-400">Tham gia các cuộc thi lập trình</p>
       </div>
 
-      <!-- Content Card -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12">
-        <div class="text-center max-w-md mx-auto">
-          <div class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center mx-auto mb-6">
-            <i class="pi pi-trophy text-4xl text-blue-600"></i>
+      <!-- Contest Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        @for (contest of contests; track contest.title) {
+          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 hover:border-primary/40 transition-colors cursor-pointer">
+            <div class="flex items-start justify-between mb-2">
+              <p-tag [value]="contest.status" [severity]="contest.status === 'Đang diễn ra' ? 'success' : contest.status === 'Sắp tới' ? 'info' : 'secondary'" />
+              <span class="text-xs text-surface-400">{{ contest.date }}</span>
+            </div>
+            <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-1">{{ contest.title }}</h3>
+            <div class="flex items-center gap-4 text-xs text-surface-500 mt-2">
+              <span><i class="pi pi-users mr-1"></i>{{ contest.participants }} người</span>
+              <span><i class="pi pi-code mr-1"></i>{{ contest.problems }} bài</span>
+            </div>
           </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-3">Coming Soon</h3>
-          <p class="text-gray-500 leading-relaxed">
-            This page is currently under development. Check back soon for updates.
-          </p>
-        </div>
+        }
       </div>
+
+      <p class="text-center text-xs text-surface-400"><i class="pi pi-info-circle mr-1"></i>Dữ liệu mẫu — Tính năng đầy đủ sẽ sớm được cập nhật</p>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class StudentContestsComponent {}
+export class StudentContestsComponent {
+  readonly contests = [
+    { title: 'CodeRank Weekly #1', status: 'Đang diễn ra', date: '15/02 - 22/02', participants: 45, problems: 5 },
+    { title: 'Thi cuối kỳ - CTDL&GT', status: 'Sắp tới', date: '01/03/2026', participants: 0, problems: 8 },
+    { title: 'Luyện tập OOP', status: 'Đã kết thúc', date: '01/02 - 08/02', participants: 32, problems: 4 },
+  ];
+}

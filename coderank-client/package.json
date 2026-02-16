@@ -35,6 +35,7 @@
     "marked": "^17.0.2",
     "monaco-editor": "^0.55.1",
     "ngx-monaco-editor-v2-alternative": "^21.0.1",
+    "primeicons": "^7.0.0",
     "primeng": "^21.1.1",
     "quill": "^2.0.3",
     "rxjs": "~7.8.0",

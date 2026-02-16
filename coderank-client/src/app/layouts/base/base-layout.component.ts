@@ -47,7 +47,7 @@ import { SidebarComponent, MenuItem } from '../shared/sidebar/sidebar.component'
           [class.lg:ml-0]="sidebarCollapsed()"
         >
           <div class="min-h-full bg-gradient-to-br from-gray-50 via-white to-gray-50">
-            <div class="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+            <div class="container mx-auto px-4 sm:px-6 py-4 sm:py-5">
               <!-- Page content with fade transition -->
               <div class="animate-fade-in">
                 <router-outlet />

@@ -1,210 +1,198 @@
-<!-- Minimalist Problem Detail -->
-<div class="min-h-screen bg-white dark:bg-black">
-  <p-toast />
+<p-toast position="top-right" />
 
-  <!-- Debug info -->
-  <div class="fixed bottom-4 right-4 bg-black/80 text-white text-xs p-2 rounded z-50">
-    Loading: {{ loading() }} | Problem: {{ problem() ? 'Yes' : 'No' }}
+@if (loading()) {
+  <div class="space-y-4">
+    <div class="h-5 w-20 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
+    <div class="h-7 w-80 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
+    <div class="grid lg:grid-cols-2 gap-4">
+      <div class="h-96 bg-surface-50 dark:bg-surface-800 rounded-xl animate-pulse"></div>
+      <div class="h-96 bg-surface-50 dark:bg-surface-800 rounded-xl animate-pulse"></div>
+    </div>
   </div>
-
-  @if (loading()) {
-    <div class="max-w-7xl mx-auto px-6 py-12">
-      <div class="h-8 w-64 bg-gray-100 animate-pulse mb-12"></div>
-      <div class="grid lg:grid-cols-2 gap-12">
-        <div class="h-96 bg-gray-50 animate-pulse"></div>
-        <div class="h-96 bg-gray-50 animate-pulse"></div>
-      </div>
-    </div>
-  } @else if (problem(); as prob) {
-    <!-- Header -->
-    <div class="border-b border-gray-100 dark:border-gray-900">
-      <div class="max-w-7xl mx-auto px-6 py-8">
-        <button
-          type="button"
-          (click)="goBack()"
-          class="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors"
-        >
-          ← Back
-        </button>
-
-        <h1 class="text-3xl font-light text-gray-900 dark:text-white mb-4">
-          {{ prob.title }}
-        </h1>
-
-        <div class="flex items-center gap-6 text-sm text-gray-500">
-          <span 
-            [class]="'font-light ' + 
-              (prob.difficulty === 'easy' ? 'text-green-600' : 
-               prob.difficulty === 'medium' ? 'text-yellow-600' : 
-               'text-red-600')"
-          >
-            {{ prob.difficulty }}
-          </span>
-          <span>{{ prob.points || 0 }} points</span>
-          <span>{{ prob.timeLimitMs }}ms</span>
-          <span>{{ prob.memoryLimitMb }}MB</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Content -->
-    <div class="max-w-7xl mx-auto px-6 py-12">
-      <div class="grid lg:grid-cols-2 gap-12">
-        
-        <!-- Left: Problem Info -->
-        <div>
-          <!-- Tabs -->
-          <div class="flex border-b border-gray-100 dark:border-gray-900 mb-8">
-            <button
-              type="button"
-              [class]="activeTabIndex() === 0 ? 'py-4 px-6 border-b-2 border-gray-900 dark:border-white font-normal' : 'py-4 px-6 text-gray-400 hover:text-gray-900 dark:hover:text-white font-light'"
-              (click)="activeTabIndex.set(0)"
-            >
-              Problem
-            </button>
-            <button
-              type="button"
-              [class]="activeTabIndex() === 1 ? 'py-4 px-6 border-b-2 border-gray-900 dark:border-white font-normal' : 'py-4 px-6 text-gray-400 hover:text-gray-900 dark:hover:text-white font-light'"
-              (click)="activeTabIndex.set(1)"
-            >
-              Examples
-            </button>
-            <button
-              type="button"
-              [class]="activeTabIndex() === 2 ? 'py-4 px-6 border-b-2 border-gray-900 dark:border-white font-normal' : 'py-4 px-6 text-gray-400 hover:text-gray-900 dark:hover:text-white font-light'"
-              (click)="activeTabIndex.set(2)"
-            >
-              Hints
-            </button>
-            <button
-              type="button"
-              [class]="activeTabIndex() === 3 ? 'py-4 px-6 border-b-2 border-gray-900 dark:border-white font-normal' : 'py-4 px-6 text-gray-400 hover:text-gray-900 dark:hover:text-white font-light'"
-              (click)="activeTabIndex.set(3)"
-            >
-              History
-            </button>
-          </div>
-
-          <!-- Tab Content -->
-          <div>
-            @if (activeTabIndex() === 0) {
-              <app-markdown-view [content]="prob.description" />
-              @if (prob.inputDescription) {
-                <h3 class="text-lg font-normal mt-8 mb-4">Input</h3>
-                <app-markdown-view [content]="prob.inputDescription" />
-              }
-              @if (prob.outputDescription) {
-                <h3 class="text-lg font-normal mt-8 mb-4">Output</h3>
-                <app-markdown-view [content]="prob.outputDescription" />
-              }
-            }
-
-            @if (activeTabIndex() === 1) {
-              <div class="space-y-8">
-                @for (tc of sampleTestcases(); track tc.id) {
-                  <div>
-                    <div class="text-xs text-gray-400 mb-2">Input</div>
-                    <pre class="p-4 bg-gray-50 dark:bg-gray-900 text-sm font-mono">{{ tc.input }}</pre>
-                    <div class="text-xs text-gray-400 mb-2 mt-4">Output</div>
-                    <pre class="p-4 bg-gray-50 dark:bg-gray-900 text-sm font-mono">{{ tc.expectedOutput }}</pre>
-                  </div>
-                } @empty {
-                  <p class="text-gray-400 font-light">No examples</p>
-                }
-              </div>
-            }
-
-            @if (activeTabIndex() === 2) {
-              <div class="space-y-4">
-                @for (hint of hints(); track hint.id; let idx = $index) {
-                  <div>
-                    <button
-                      type="button"
-                      (click)="toggleHint(hint.id)"
-                      class="w-full text-left py-3 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-white"
-                    >
-                      Hint {{ idx + 1 }} {{ isHintVisible(hint.id) ? '▼' : '▶' }}
-                    </button>
-                    @if (isHintVisible(hint.id)) {
-                      <div class="pl-4 py-3 text-gray-600 dark:text-gray-400 font-light">
-                        <app-markdown-view [content]="hint.content" format="markdown" />
-                      </div>
-                    }
-                  </div>
-                } @empty {
-                  <p class="text-gray-400 font-light">No hints</p>
-                }
-              </div>
-            }
-
-            @if (activeTabIndex() === 3) {
-              <div class="space-y-4">
-                @for (sub of submissionHistory(); track sub.id) {
-                  <div class="py-3 border-b border-gray-100 dark:border-gray-900">
-                    <div class="flex justify-between text-sm mb-2">
-                      <span class="text-gray-500 font-light">{{ sub.createdAt | date:'short' }}</span>
-                      <span [class]="sub.status === 'accepted' ? 'text-green-600' : 'text-red-600'">
-                        {{ sub.status }}
-                      </span>
-                    </div>
-                    <div class="flex gap-4 text-xs text-gray-400">
-                      <span>{{ sub.language }}</span>
-                      <span>{{ sub.passedTestCases }}/{{ sub.totalTestCases }}</span>
-                      <span>{{ sub.score }} pts</span>
-                    </div>
-                  </div>
-                } @empty {
-                  <p class="text-gray-400 font-light">No submissions yet</p>
-                }
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- Right: Code Editor -->
-        <div class="space-y-6">
-          <div class="flex justify-between items-center">
-            <h2 class="text-lg font-normal">Solution</h2>
-            <button
-              type="button"
-              (click)="onSubmit()"
-              [disabled]="isSubmitting()"
-              class="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-black text-sm font-normal hover:bg-gray-700 dark:hover:bg-gray-200 disabled:opacity-50 transition-colors"
-            >
-              {{ isSubmitting() ? 'Submitting...' : 'Submit' }}
-            </button>
-          </div>
-
-          <app-code-editor 
-            (codeChange)="onCodeChange($event)"
-            (languageChange)="onLanguageChange($event)"
-          />
-
-          @if (currentSubmission()) {
-            <app-submission-result [submission]="currentSubmission()!" />
-          }
-        </div>
-      </div>
-    </div>
-  } @else {
-    <!-- No problem loaded -->
-    <div class="max-w-7xl mx-auto px-6 py-12 text-center">
-      <div class="text-gray-400 mb-4">
-        <i class="pi pi-exclamation-triangle text-4xl"></i>
-      </div>
-      <h2 class="text-2xl font-light text-gray-900 dark:text-white mb-4">
-        Problem not found
-      </h2>
-      <p class="text-gray-500 mb-8">
-        The problem you're looking for doesn't exist or has been removed.
-      </p>
+} @else if (problem(); as prob) {
+  <div class="space-y-4">
+    <!-- Back + Title -->
+    <div>
       <button
         type="button"
         (click)="goBack()"
-        class="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-black text-sm font-normal hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors"
+        class="inline-flex items-center gap-1 text-sm text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 mb-3 transition-colors"
       >
-        Back to Problems
+        <i class="pi pi-arrow-left text-xs"></i>
+        Quay lại
       </button>
+
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">{{ prob.title }}</h1>
+          <div class="flex items-center gap-3 mt-1.5 text-xs text-surface-400">
+            <span
+              [class]="'font-medium ' +
+                (prob.difficulty === 'easy' ? 'text-green-600' :
+                 prob.difficulty === 'medium' ? 'text-yellow-600' :
+                 'text-red-600')"
+            >
+              {{ getDifficultyLabel(prob.difficulty) }}
+            </span>
+            <span class="w-1 h-1 rounded-full bg-surface-300"></span>
+            <span>{{ prob.points || 0 }} điểm</span>
+            <span class="w-1 h-1 rounded-full bg-surface-300"></span>
+            <span>{{ prob.timeLimitMs }}ms</span>
+            <span class="w-1 h-1 rounded-full bg-surface-300"></span>
+            <span>{{ prob.memoryLimitMb }}MB</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="onSubmit()"
+          [disabled]="isSubmitting()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-contrast text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
+        >
+          @if (isSubmitting()) {
+            <i class="pi pi-spin pi-spinner text-xs"></i>
+            Đang nộp...
+          } @else {
+            <i class="pi pi-play text-xs"></i>
+            Nộp bài
+          }
+        </button>
+      </div>
     </div>
-  }
-</div>
+
+    <!-- Two Column Layout -->
+    <div class="grid lg:grid-cols-2 gap-4">
+      <!-- Left: Problem Info -->
+      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+        <!-- Tabs -->
+        <div class="flex border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900">
+          @for (tab of tabs; track tab.index) {
+            <button
+              type="button"
+              [class]="'px-4 py-3 text-xs font-medium transition-colors relative ' +
+                (activeTabIndex() === tab.index ?
+                  'text-primary' :
+                  'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300')"
+              (click)="activeTabIndex.set(tab.index)"
+            >
+              {{ tab.label }}
+              @if (activeTabIndex() === tab.index) {
+                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
+              }
+            </button>
+          }
+        </div>
+
+        <!-- Tab Content -->
+        <div class="p-4 overflow-y-auto max-h-[calc(100vh-320px)]">
+          @if (activeTabIndex() === 0) {
+            <app-markdown-view [content]="prob.description" class="text-sm text-surface-700 dark:text-surface-300" />
+            @if (prob.inputDescription) {
+              <h4 class="text-sm font-semibold text-surface-900 dark:text-surface-0 mt-4 mb-1.5">Input</h4>
+              <app-markdown-view [content]="prob.inputDescription" class="text-sm text-surface-700 dark:text-surface-300" />
+            }
+            @if (prob.outputDescription) {
+              <h4 class="text-sm font-semibold text-surface-900 dark:text-surface-0 mt-4 mb-1.5">Output</h4>
+              <app-markdown-view [content]="prob.outputDescription" class="text-sm text-surface-700 dark:text-surface-300" />
+            }
+          }
+
+          @if (activeTabIndex() === 1) {
+            <div class="space-y-4">
+              @for (tc of sampleTestcases(); track tc.id; let idx = $index) {
+                <div>
+                  <p class="text-xs font-medium text-surface-400 mb-1.5">Ví dụ {{ idx + 1 }}</p>
+                  <div class="text-xs text-surface-500 mb-1">Input</div>
+                  <pre class="p-3 bg-surface-50 dark:bg-surface-900 rounded-lg text-xs font-mono text-surface-700 dark:text-surface-300 overflow-x-auto">{{ tc.input }}</pre>
+                  <div class="text-xs text-surface-500 mb-1 mt-2">Output</div>
+                  <pre class="p-3 bg-surface-50 dark:bg-surface-900 rounded-lg text-xs font-mono text-surface-700 dark:text-surface-300 overflow-x-auto">{{ tc.expectedOutput }}</pre>
+                </div>
+              } @empty {
+                <p class="text-sm text-surface-400 text-center py-6">Chưa có ví dụ</p>
+              }
+            </div>
+          }
+
+          @if (activeTabIndex() === 2) {
+            <div class="space-y-2">
+              @for (hint of hints(); track hint.id; let idx = $index) {
+                <div class="rounded-lg border border-surface-200 dark:border-surface-700 overflow-hidden">
+                  <button
+                    type="button"
+                    (click)="toggleHint(hint.id)"
+                    class="w-full flex items-center justify-between px-4 py-3 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-900 transition-colors"
+                  >
+                    <span>Gợi ý {{ idx + 1 }}</span>
+                    <i [class]="'pi text-xs ' + (isHintVisible(hint.id) ? 'pi-chevron-up' : 'pi-chevron-down')"></i>
+                  </button>
+                  @if (isHintVisible(hint.id)) {
+                    <div class="px-4 pb-3 text-sm text-surface-500 dark:text-surface-400">
+                      <app-markdown-view [content]="hint.content" format="markdown" />
+                    </div>
+                  }
+                </div>
+              } @empty {
+                <p class="text-sm text-surface-400 text-center py-6">Chưa có gợi ý</p>
+              }
+            </div>
+          }
+
+          @if (activeTabIndex() === 3) {
+            <div class="space-y-2">
+              @for (sub of submissionHistory(); track sub.id) {
+                <div class="flex items-center justify-between px-4 py-3 rounded-lg bg-surface-50 dark:bg-surface-900">
+                  <div class="flex items-center gap-3">
+                    <span
+                      [class]="'text-xs font-medium ' +
+                        (sub.status === 'accepted' ? 'text-green-600' : 'text-red-500')"
+                    >
+                      {{ sub.status }}
+                    </span>
+                    <span class="text-xs text-surface-400">{{ sub.language }}</span>
+                  </div>
+                  <div class="flex items-center gap-3 text-xs text-surface-400">
+                    <span>{{ sub.passedTestCases }}/{{ sub.totalTestCases }}</span>
+                    <span>{{ sub.score }} đ</span>
+                    <span>{{ sub.createdAt | date:'dd/MM HH:mm' }}</span>
+                  </div>
+                </div>
+              } @empty {
+                <p class="text-sm text-surface-400 text-center py-6">Chưa có bài nộp nào</p>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Right: Code Editor & Result -->
+      <div class="space-y-3">
+        <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+          <app-code-editor
+            (codeChange)="onCodeChange($event)"
+            (languageChange)="onLanguageChange($event)"
+          />
+        </div>
+
+        @if (currentSubmission()) {
+          <app-submission-result [submission]="currentSubmission()!" />
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <!-- Not Found -->
+  <div class="flex flex-col items-center justify-center py-16 text-center">
+    <div class="flex items-center justify-center w-14 h-14 rounded-full bg-surface-100 dark:bg-surface-700 mb-3">
+      <i class="pi pi-exclamation-triangle text-xl text-surface-400"></i>
+    </div>
+    <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0 mb-1.5">Không tìm thấy bài tập</h2>
+    <p class="text-sm text-surface-400 mb-4">Bài tập không tồn tại hoặc đã bị xóa.</p>
+    <button
+      type="button"
+      (click)="goBack()"
+      class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-contrast text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+    >
+      <i class="pi pi-arrow-left text-xs"></i>
+      Quay lại danh sách
+    </button>
+  </div>
+}

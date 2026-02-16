@@ -14,6 +14,14 @@ export abstract class BaseService<T extends BaseEntity> implements IRepository<T
   constructor(protected readonly repository: Repository<T>) {}
 
   /**
+   * Get the underlying TypeORM repository
+   * Useful for creating QueryBuilder when you need addSelect for columns with select: false
+   */
+  getRepository(): Repository<T> {
+    return this.repository;
+  }
+
+  /**
    * Find entity by ID
    * @param id - Entity ID
    * @returns Entity or null if not found

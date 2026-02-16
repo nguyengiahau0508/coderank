@@ -1,62 +1,251 @@
 <p-toast position="top-right" />
 
 <div class="space-y-4">
-  <div class="flex items-center justify-between">
-    <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Testcases</h3>
-    <p-button
-      label="Thêm"
-      icon="pi pi-plus"
-      size="small"
-      (onClick)="openCreateDialog()"
-      [disabled]="loading()"
-    />
+  <!-- Header + Actions -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div class="flex items-center gap-3">
+      <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Testcases</h3>
+      @if (testcases().length > 0) {
+        <div class="flex items-center gap-2 text-xs text-surface-400">
+          <span>{{ testcases().length }} tổng</span>
+          <span class="text-surface-300">|</span>
+          <span class="text-green-500">{{ sampleCount() }} mẫu</span>
+          <span class="text-surface-300">|</span>
+          <span class="text-orange-500">{{ hiddenCount() }} ẩn</span>
+        </div>
+      }
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- Bulk delete -->
+      @if (selectedTestcases().length > 0) {
+        <p-button
+          [label]="'Xóa (' + selectedTestcases().length + ')'"
+          icon="pi pi-trash"
+          severity="danger"
+          size="small"
+          [outlined]="true"
+          (onClick)="confirmBulkDelete()"
+          [loading]="isSubmitting()"
+        />
+      }
+
+      <!-- Import -->
+      <p-button
+        icon="pi pi-upload"
+        severity="secondary"
+        size="small"
+        [outlined]="true"
+        pTooltip="Import từ JSON"
+        tooltipPosition="top"
+        (onClick)="fileInput.click()"
+        [disabled]="loading() || isSubmitting()"
+      />
+      <input
+        #fileInput
+        type="file"
+        accept=".json"
+        class="hidden"
+        (change)="onImportFile($event)"
+        aria-label="Import testcases từ file JSON"
+      />
+
+      <!-- Export -->
+      @if (testcases().length > 0) {
+        <p-button
+          icon="pi pi-download"
+          severity="secondary"
+          size="small"
+          [outlined]="true"
+          pTooltip="Export JSON"
+          tooltipPosition="top"
+          (onClick)="exportTestcases()"
+          [disabled]="loading()"
+        />
+      }
+
+      <!-- Add -->
+      <p-button
+        label="Thêm"
+        icon="pi pi-plus"
+        size="small"
+        (onClick)="openCreateDialog()"
+        [disabled]="loading()"
+      />
+    </div>
   </div>
 
-  @if (testcases().length === 0) {
-    <div class="text-center py-10 rounded-xl border-2 border-dashed border-surface-200 dark:border-surface-700">
-      <div class="flex items-center justify-center w-12 h-12 rounded-full bg-surface-100 dark:bg-surface-700 mx-auto mb-3">
-        <i class="pi pi-file text-xl text-surface-400"></i>
+  <!-- Empty State -->
+  @if (!loading() && testcases().length === 0) {
+    <div class="text-center py-8 rounded-xl border-2 border-dashed border-surface-200 dark:border-surface-700">
+      <div class="flex items-center justify-center w-14 h-14 rounded-full bg-surface-100 dark:bg-surface-700 mx-auto mb-3">
+        <i class="pi pi-file text-2xl text-surface-400"></i>
       </div>
-      <p class="text-sm text-surface-500">Chưa có testcase nào</p>
-      <p class="text-xs text-surface-400 mt-1">Thêm testcase đầu tiên để bắt đầu</p>
+      <p class="text-sm font-medium text-surface-600 dark:text-surface-300">Chưa có testcase nào</p>
+      <p class="text-xs text-surface-400 mt-1 mb-3">Thêm testcase hoặc import từ file JSON</p>
+      <div class="flex items-center justify-center gap-2">
+        <p-button
+          label="Thêm testcase"
+          icon="pi pi-plus"
+          size="small"
+          (onClick)="openCreateDialog()"
+        />
+        <p-button
+          label="Import JSON"
+          icon="pi pi-upload"
+          severity="secondary"
+          size="small"
+          [outlined]="true"
+          (onClick)="fileInput.click()"
+        />
+      </div>
     </div>
-  } @else {
+  }
+
+  <!-- Loading skeleton -->
+  @if (loading()) {
     <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
-      <table class="w-full text-sm" aria-label="Testcases table">
+      @for (i of [1, 2, 3]; track i) {
+        <div class="px-4 py-3.5 border-b border-surface-100 dark:border-surface-800">
+          <div class="flex items-center gap-4">
+            <div class="w-5 h-5 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
+            <div class="w-6 h-4 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
+            <div class="flex-1 h-4 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
+            <div class="flex-1 h-4 bg-surface-50 dark:bg-surface-800 rounded animate-pulse"></div>
+            <div class="w-24 h-4 bg-surface-50 dark:bg-surface-800 rounded animate-pulse"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Table -->
+  @if (!loading() && testcases().length > 0) {
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+      <table class="w-full text-sm" aria-label="Bảng testcases">
         <thead>
           <tr class="border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900">
-            <th class="text-left px-4 py-2.5 text-xs font-medium text-surface-500">Input</th>
-            <th class="text-left px-4 py-2.5 text-xs font-medium text-surface-500">Output</th>
-            <th class="text-left px-4 py-2.5 text-xs font-medium text-surface-500">Kiểu so sánh</th>
-            <th class="text-center px-4 py-2.5 text-xs font-medium text-surface-500 w-20">Mẫu</th>
-            <th class="px-4 py-2.5 w-20"><span class="sr-only">Hành động</span></th>
+            <th class="px-3 py-2.5 w-10">
+              <input
+                type="checkbox"
+                [checked]="isAllSelected()"
+                (change)="toggleSelectAll()"
+                class="rounded border-surface-300 dark:border-surface-600 cursor-pointer"
+                aria-label="Chọn tất cả testcase"
+              />
+            </th>
+            <th class="px-3 py-2.5 text-left text-xs font-medium text-surface-500 w-12">#</th>
+            <th class="px-3 py-2.5 text-left text-xs font-medium text-surface-500">Input</th>
+            <th class="px-3 py-2.5 text-left text-xs font-medium text-surface-500">Output mong đợi</th>
+            <th class="px-3 py-2.5 text-left text-xs font-medium text-surface-500 w-36">Kiểu so sánh</th>
+            <th class="px-3 py-2.5 text-center text-xs font-medium text-surface-500 w-16">Loại</th>
+            <th class="px-3 py-2.5 w-24"><span class="sr-only">Hành động</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (tc of testcases(); track tc.id) {
-            <tr class="border-b border-surface-100 dark:border-surface-800 last:border-b-0 hover:bg-surface-50 dark:hover:bg-surface-900 transition-colors">
-              <td class="px-4 py-2.5">
-                <code class="text-xs bg-surface-100 dark:bg-surface-700 px-2 py-0.5 rounded font-mono">
-                  {{ truncateText(tc.input, 30) }}
-                </code>
+          @for (tc of testcases(); track tc.id; let i = $index) {
+            <tr
+              class="border-b border-surface-100 dark:border-surface-800 last:border-b-0 transition-colors"
+              [class.bg-primary-50]="isSelected(tc)"
+              [class.dark:bg-primary-950]="isSelected(tc)"
+              [class.hover:bg-surface-50]="!isSelected(tc)"
+              [class.dark:hover:bg-surface-900]="!isSelected(tc)"
+            >
+              <!-- Checkbox -->
+              <td class="px-3 py-2.5">
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(tc)"
+                  (change)="toggleSelect(tc)"
+                  class="rounded border-surface-300 dark:border-surface-600 cursor-pointer"
+                  [attr.aria-label]="'Chọn testcase ' + (i + 1)"
+                />
               </td>
-              <td class="px-4 py-2.5">
-                <code class="text-xs bg-surface-100 dark:bg-surface-700 px-2 py-0.5 rounded font-mono">
-                  {{ truncateText(tc.expectedOutput, 30) }}
-                </code>
+
+              <!-- STT -->
+              <td class="px-3 py-2.5">
+                <span class="text-xs font-medium text-surface-400">{{ i + 1 }}</span>
               </td>
-              <td class="px-4 py-2.5 text-xs text-surface-500">{{ tc.compareType }}</td>
-              <td class="px-4 py-2.5 text-center">
+
+              <!-- Input (clickable preview) -->
+              <td class="px-3 py-2.5">
+                <button
+                  type="button"
+                  class="group/code text-left w-full"
+                  (click)="openPreview('Input - Testcase #' + (i + 1), tc.input)"
+                >
+                  <code class="text-xs bg-surface-100 dark:bg-surface-700 px-2 py-1 rounded font-mono inline-flex items-center gap-1.5 max-w-full group-hover/code:bg-surface-200 dark:group-hover/code:bg-surface-600 transition-colors">
+                    <span class="truncate">{{ truncateText(tc.input, 30) }}</span>
+                    @if (lineCount(tc.input) > 1) {
+                      <span class="text-[10px] text-surface-400 flex-shrink-0">{{ lineCount(tc.input) }} dòng</span>
+                    }
+                  </code>
+                </button>
+              </td>
+
+              <!-- Expected Output (clickable preview) -->
+              <td class="px-3 py-2.5">
+                <button
+                  type="button"
+                  class="group/code text-left w-full"
+                  (click)="openPreview('Output - Testcase #' + (i + 1), tc.expectedOutput)"
+                >
+                  <code class="text-xs bg-surface-100 dark:bg-surface-700 px-2 py-1 rounded font-mono inline-flex items-center gap-1.5 max-w-full group-hover/code:bg-surface-200 dark:group-hover/code:bg-surface-600 transition-colors">
+                    <span class="truncate">{{ truncateText(tc.expectedOutput, 30) }}</span>
+                    @if (lineCount(tc.expectedOutput) > 1) {
+                      <span class="text-[10px] text-surface-400 flex-shrink-0">{{ lineCount(tc.expectedOutput) }} dòng</span>
+                    }
+                  </code>
+                </button>
+              </td>
+
+              <!-- Compare Type -->
+              <td class="px-3 py-2.5">
+                <span class="text-xs text-surface-500">{{ getCompareTypeLabel(tc.compareType) }}</span>
+              </td>
+
+              <!-- Sample/Hidden -->
+              <td class="px-3 py-2.5 text-center">
                 @if (tc.isSample) {
-                  <i class="pi pi-check text-green-500 text-xs"></i>
+                  <p-tag value="Mẫu" severity="success" styleClass="text-[10px]" />
                 } @else {
-                  <i class="pi pi-times text-surface-300 text-xs"></i>
+                  <p-tag value="Ẩn" severity="warn" styleClass="text-[10px]" />
                 }
               </td>
-              <td class="px-4 py-2.5">
-                <div class="flex gap-1 justify-end">
-                  <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" size="small" severity="secondary" (onClick)="openEditDialog(tc)" />
-                  <p-button icon="pi pi-trash" [text]="true" [rounded]="true" size="small" severity="danger" (onClick)="confirmDelete(tc)" />
+
+              <!-- Actions -->
+              <td class="px-3 py-2.5">
+                <div class="flex gap-0.5 justify-end">
+                  <p-button
+                    icon="pi pi-copy"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    severity="secondary"
+                    pTooltip="Sao chép input"
+                    tooltipPosition="top"
+                    (onClick)="copyToClipboard(tc.input)"
+                  />
+                  <p-button
+                    icon="pi pi-pencil"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    severity="secondary"
+                    pTooltip="Chỉnh sửa"
+                    tooltipPosition="top"
+                    (onClick)="openEditDialog(tc)"
+                  />
+                  <p-button
+                    icon="pi pi-trash"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    severity="danger"
+                    pTooltip="Xóa"
+                    tooltipPosition="top"
+                    (onClick)="confirmDelete(tc)"
+                  />
                 </div>
               </td>
             </tr>
@@ -68,22 +257,28 @@
 
   <!-- Create/Edit Dialog -->
   <p-dialog
-    [header]="editingTestcase() ? 'Chỉnh sửa Testcase' : 'Thêm Testcase'"
+    [header]="editingTestcase() ? 'Chỉnh sửa Testcase' : 'Thêm Testcase mới'"
     [visible]="showDialog()"
     (visibleChange)="!$event && closeDialog()"
     [modal]="true"
     [draggable]="false"
     [dismissableMask]="true"
-    [style]="{ width: '90vw', maxWidth: '600px' }"
+    [style]="{ width: '90vw', maxWidth: '650px' }"
   >
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4 pt-2">
+      <!-- Input -->
       <div class="flex flex-col gap-1.5">
-        <label for="input" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-          Input <span class="text-red-500">*</span>
-        </label>
+        <div class="flex items-center justify-between">
+          <label for="tc-input" class="text-xs font-medium text-surface-600 dark:text-surface-300">
+            Input <span class="text-red-500">*</span>
+          </label>
+          @if (form.get('input')?.value) {
+            <span class="text-[10px] text-surface-400">{{ lineCount(form.get('input')?.value) }} dòng</span>
+          }
+        </div>
         <textarea
           pTextarea
-          id="input"
+          id="tc-input"
           formControlName="input"
           [rows]="5"
           placeholder="Nhập dữ liệu input..."
@@ -94,13 +289,19 @@
         }
       </div>
 
+      <!-- Expected Output -->
       <div class="flex flex-col gap-1.5">
-        <label for="expectedOutput" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-          Output mong đợi <span class="text-red-500">*</span>
-        </label>
+        <div class="flex items-center justify-between">
+          <label for="tc-expectedOutput" class="text-xs font-medium text-surface-600 dark:text-surface-300">
+            Output mong đợi <span class="text-red-500">*</span>
+          </label>
+          @if (form.get('expectedOutput')?.value) {
+            <span class="text-[10px] text-surface-400">{{ lineCount(form.get('expectedOutput')?.value) }} dòng</span>
+          }
+        </div>
         <textarea
           pTextarea
-          id="expectedOutput"
+          id="tc-expectedOutput"
           formControlName="expectedOutput"
           [rows]="5"
           placeholder="Nhập output mong đợi..."
@@ -111,32 +312,42 @@
         }
       </div>
 
-      <div class="flex flex-col gap-1.5">
-        <label for="compareType" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-          Kiểu so sánh <span class="text-red-500">*</span>
-        </label>
-        <p-select
-          inputId="compareType"
-          formControlName="compareType"
-          [options]="compareTypeOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Chọn kiểu so sánh"
-          class="w-full"
-        />
-      </div>
+      <!-- Compare Type + Sample -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label for="tc-compareType" class="text-xs font-medium text-surface-600 dark:text-surface-300">
+            Kiểu so sánh <span class="text-red-500">*</span>
+          </label>
+          <p-select
+            inputId="tc-compareType"
+            formControlName="compareType"
+            [options]="compareTypeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Chọn kiểu so sánh"
+            class="w-full"
+          />
+        </div>
 
-      <div class="flex items-center gap-2">
-        <p-checkbox inputId="isSample" formControlName="isSample" [binary]="true" />
-        <label for="isSample" class="text-sm text-surface-700 dark:text-surface-300 cursor-pointer">
-          Testcase mẫu (hiển thị cho sinh viên)
-        </label>
+        <div class="flex items-end pb-1">
+          <div class="flex items-center gap-2">
+            <p-checkbox inputId="tc-isSample" formControlName="isSample" [binary]="true" />
+            <label for="tc-isSample" class="text-sm text-surface-700 dark:text-surface-300 cursor-pointer">
+              Testcase mẫu
+            </label>
+          </div>
+        </div>
       </div>
     </form>
 
-    <ng-template pTemplate="footer">
+    <ng-template #footer>
       <div class="flex justify-end gap-2">
-        <p-button label="Hủy" severity="secondary" [outlined]="true" (onClick)="closeDialog()" />
+        <p-button
+          label="Hủy"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="closeDialog()"
+        />
         <p-button
           [label]="editingTestcase() ? 'Cập nhật' : 'Thêm'"
           icon="pi pi-check"
@@ -146,6 +357,31 @@
         />
       </div>
     </ng-template>
+  </p-dialog>
+
+  <!-- Preview Dialog -->
+  <p-dialog
+    [header]="previewTitle()"
+    [visible]="showPreviewDialog()"
+    (visibleChange)="!$event && closePreview()"
+    [modal]="true"
+    [draggable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: '90vw', maxWidth: '600px' }"
+  >
+    <div class="relative">
+      <pre class="bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 rounded-lg p-4 text-sm font-mono whitespace-pre-wrap break-all max-h-96 overflow-auto">{{ previewContent() }}</pre>
+      <div class="flex justify-end mt-3">
+        <p-button
+          label="Sao chép"
+          icon="pi pi-copy"
+          severity="secondary"
+          size="small"
+          [outlined]="true"
+          (onClick)="copyToClipboard(previewContent())"
+        />
+      </div>
+    </div>
   </p-dialog>
 
   <p-confirmDialog />

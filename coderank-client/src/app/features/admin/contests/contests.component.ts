@@ -6,7 +6,7 @@ import { Tag } from 'primeng/tag';
   selector: 'app-admin-contests',
   imports: [Button, Tag],
   template: `
-    <div class="space-y-6">
+    <div class="space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Cuộc thi</h1>
@@ -33,13 +33,13 @@ import { Tag } from 'primeng/tag';
       <!-- Contest Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (contest of contests; track contest.title) {
-          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5 transition-shadow hover:shadow-md">
-            <div class="flex items-start justify-between mb-3">
+          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 transition-shadow hover:shadow-md">
+            <div class="flex items-start justify-between mb-2">
               <p-tag [value]="contest.status" [severity]="contest.status === 'Đang diễn ra' ? 'success' : contest.status === 'Sắp tới' ? 'info' : 'secondary'" />
               <i class="pi pi-ellipsis-v text-surface-400 cursor-pointer"></i>
             </div>
             <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0 mb-1">{{ contest.title }}</h3>
-            <p class="text-xs text-surface-400 mb-4">{{ contest.date }}</p>
+            <p class="text-xs text-surface-400 mb-3">{{ contest.date }}</p>
             <div class="flex items-center justify-between text-xs text-surface-500">
               <span><i class="pi pi-users mr-1"></i>{{ contest.participants }} người</span>
               <span><i class="pi pi-code mr-1"></i>{{ contest.problems }} bài</span>

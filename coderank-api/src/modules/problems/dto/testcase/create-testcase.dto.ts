@@ -16,7 +16,7 @@ export class CreateTestcaseDto {
   })
   @IsOptional()
   @IsString()
-  output?: string;
+  expectedOutput?: string;
 
   @ApiPropertyOptional({
     description: 'Whether this testcase is shown as sample',
@@ -25,14 +25,6 @@ export class CreateTestcaseDto {
   @IsOptional()
   @IsBoolean()
   isSample?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Whether testcase is hidden (used for judging)',
-    example: true,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isHidden?: boolean;
 
   @ApiPropertyOptional({
     description: 'Compare type used to validate output',

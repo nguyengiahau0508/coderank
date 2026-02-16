@@ -1,6 +1,7 @@
 /* Minimalist Design System */
 
 @import "tailwindcss";
+@import "primeicons/primeicons.css";
 
 /* Custom Prose Styling for Markdown */
 .prose-custom {

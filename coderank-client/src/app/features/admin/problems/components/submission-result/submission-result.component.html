@@ -1,8 +1,8 @@
 <!-- Submission Result -->
 @if (submission(); as sub) {
-  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
+  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
     <!-- Status -->
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between mb-3">
       <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Kết quả</h3>
       <span
         [class]="'text-xs font-medium px-2.5 py-1 rounded-full ' +
@@ -16,7 +16,7 @@
 
     @if (isFinal()) {
       <!-- Progress -->
-      <div class="mb-4">
+      <div class="mb-3">
         <div class="flex items-center justify-between text-xs text-surface-400 mb-1.5">
           <span>{{ sub.passedTestCases }}/{{ sub.totalTestCases }} tests</span>
           <span>{{ getSuccessRate() }}%</span>
@@ -51,7 +51,7 @@
 
       <!-- Error -->
       @if (sub.errorMessage) {
-        <div class="mt-4 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-900/30">
+        <div class="mt-3 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-900/30">
           <div class="text-[10px] text-red-500 font-medium mb-1">LỖI</div>
           <pre class="text-xs text-red-700 dark:text-red-300 font-mono whitespace-pre-wrap">{{ sub.errorMessage }}</pre>
         </div>
