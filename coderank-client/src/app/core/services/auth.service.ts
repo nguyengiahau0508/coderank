@@ -31,6 +31,7 @@ export class AuthService {
   
   readonly currentUser = this.currentUserSignal.asReadonly();
   readonly isAuthenticated = computed(() => !!this.currentUserSignal());
+  readonly userRoles = computed(() => this.currentUserSignal()?.roles || []);
 
   private loadUserFromStorage(): User | null {
     const userJson = localStorage.getItem(this.USER_KEY);
@@ -82,5 +83,27 @@ export class AuthService {
       this.clearAuth();
       return false;
     }
+  }
+
+  hasRole(role: string): boolean {
+    return this.userRoles().includes(role);
+  }
+
+  hasAnyRole(roles: string[]): boolean {
+    const userRoles = this.userRoles();
+    return roles.some(role => userRoles.includes(role));
+  }
+
+  hasAllRoles(roles: string[]): boolean {
+    const userRoles = this.userRoles();
+    return roles.every(role => userRoles.includes(role));
+  }
+
+  getPrimaryRole(): string | null {
+    const roles = this.userRoles();
+    if (roles.includes('admin')) return 'admin';
+    if (roles.includes('instructor')) return 'instructor';
+    if (roles.includes('student')) return 'student';
+    return roles[0] || null;
   }
 }

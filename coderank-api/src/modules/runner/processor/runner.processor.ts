@@ -24,10 +24,6 @@ export class RunnerProcessor extends WorkerHost {
     if (!submissionId || !language || !testcases || !code || timeLimitMs == null || memoryLimitMb == null) {
       throw new Error('Invalid job data');
     }
-    if (!Array.isArray(testcases) || testcases.length === 0) {
-      throw new Error('Testcases must be a non-empty array');
-    }
-
     this.logger.log(`Processing submission ${submissionId} with ${testcases.length} testcases`);
 
     try {

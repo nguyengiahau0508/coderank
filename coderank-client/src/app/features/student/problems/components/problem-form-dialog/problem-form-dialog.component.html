@@ -1,0 +1,202 @@
+<p-dialog
+  [header]="isEditMode() ? 'Edit Problem' : 'Create New Problem'"
+  [visible]="visible()"
+  (visibleChange)="onHide()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '90vw', maxWidth: '800px' }"
+  styleClass="problem-form-dialog"
+>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-6">
+    <!-- Title -->
+    <div class="flex flex-col gap-2">
+      <label for="title" class="font-semibold text-gray-700">
+        Title <span class="text-red-500">*</span>
+      </label>
+      <input
+        pInputText
+        id="title"
+        formControlName="title"
+        placeholder="Enter problem title"
+        class="w-full"
+        [class.ng-invalid]="form.get('title')?.invalid && form.get('title')?.touched"
+      />
+      @if (form.get('title')?.invalid && form.get('title')?.touched) {
+        <small class="text-red-500">{{ getFieldError('title') }}</small>
+      }
+    </div>
+
+    <!-- Slug -->
+    <div class="flex flex-col gap-2">
+      <label for="slug" class="font-semibold text-gray-700">
+        Slug <small class="text-gray-500">(optional, auto-generated if empty)</small>
+      </label>
+      <input
+        pInputText
+        id="slug"
+        formControlName="slug"
+        placeholder="problem-slug-example"
+        class="w-full"
+        [class.ng-invalid]="form.get('slug')?.invalid && form.get('slug')?.touched"
+      />
+      @if (form.get('slug')?.invalid && form.get('slug')?.touched) {
+        <small class="text-red-500">{{ getFieldError('slug') }}</small>
+      }
+    </div>
+
+    <!-- Description -->
+    <div class="flex flex-col gap-2">
+      <label for="description" class="font-semibold text-gray-700">Description</label>
+      <textarea
+        pInputTextarea
+        id="description"
+        formControlName="description"
+        [rows]="5"
+        placeholder="Describe the problem statement..."
+        class="w-full"
+      ></textarea>
+    </div>
+
+    <!-- Input/Output Description Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="flex flex-col gap-2">
+        <label for="inputDescription" class="font-semibold text-gray-700">Input Description</label>
+        <textarea
+          pInputTextarea
+          id="inputDescription"
+          formControlName="inputDescription"
+          [rows]="3"
+          placeholder="Describe input format..."
+          class="w-full"
+        ></textarea>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="outputDescription" class="font-semibold text-gray-700">Output Description</label>
+        <textarea
+          pInputTextarea
+          id="outputDescription"
+          formControlName="outputDescription"
+          [rows]="3"
+          placeholder="Describe output format..."
+          class="w-full"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- Limits Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="flex flex-col gap-2">
+        <label for="timeLimitMs" class="font-semibold text-gray-700">
+          Time Limit (ms) <span class="text-red-500">*</span>
+        </label>
+        <p-inputNumber
+          inputId="timeLimitMs"
+          formControlName="timeLimitMs"
+          [min]="100"
+          [max]="30000"
+          [step]="100"
+          suffix=" ms"
+          [showButtons]="true"
+          class="w-full"
+        />
+        @if (form.get('timeLimitMs')?.invalid && form.get('timeLimitMs')?.touched) {
+          <small class="text-red-500">{{ getFieldError('timeLimitMs') }}</small>
+        }
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="memoryLimitMb" class="font-semibold text-gray-700">
+          Memory Limit (MB) <span class="text-red-500">*</span>
+        </label>
+        <p-inputNumber
+          inputId="memoryLimitMb"
+          formControlName="memoryLimitMb"
+          [min]="16"
+          [max]="1024"
+          [step]="16"
+          suffix=" MB"
+          [showButtons]="true"
+          class="w-full"
+        />
+        @if (form.get('memoryLimitMb')?.invalid && form.get('memoryLimitMb')?.touched) {
+          <small class="text-red-500">{{ getFieldError('memoryLimitMb') }}</small>
+        }
+      </div>
+    </div>
+
+    <!-- Difficulty and Points Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="flex flex-col gap-2">
+        <label for="difficulty" class="font-semibold text-gray-700">
+          Difficulty <span class="text-red-500">*</span>
+        </label>
+        <p-select
+          inputId="difficulty"
+          formControlName="difficulty"
+          [options]="difficultyOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select difficulty"
+          class="w-full"
+        >
+          <ng-template let-option pTemplate="item">
+            <span [class]="getDifficultyClass(option.value)">
+              {{ option.label }}
+            </span>
+          </ng-template>
+        </p-select>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="points" class="font-semibold text-gray-700">
+          Points <span class="text-red-500">*</span>
+        </label>
+        <p-inputNumber
+          inputId="points"
+          formControlName="points"
+          [min]="0"
+          [max]="1000"
+          [step]="10"
+          [showButtons]="true"
+          class="w-full"
+        />
+        @if (form.get('points')?.invalid && form.get('points')?.touched) {
+          <small class="text-red-500">{{ getFieldError('points') }}</small>
+        }
+      </div>
+    </div>
+
+    <!-- Published Checkbox -->
+    <div class="flex items-center gap-2">
+      <p-checkbox
+        inputId="isPublished"
+        formControlName="isPublished"
+        [binary]="true"
+      />
+      <label for="isPublished" class="font-semibold text-gray-700 cursor-pointer">
+        Publish this problem (students can view and solve)
+      </label>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="onHide()"
+        [disabled]="loading()"
+      />
+      <p-button
+        [label]="isEditMode() ? 'Update' : 'Create'"
+        icon="pi pi-check"
+        (onClick)="onSubmit()"
+        [loading]="loading()"
+        [disabled]="form.invalid"
+      />
+    </div>
+  </ng-template>
+</p-dialog>

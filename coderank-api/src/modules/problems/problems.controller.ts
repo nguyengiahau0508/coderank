@@ -55,6 +55,7 @@ export class ProblemsController {
   async getProblem(@Param('problemId') problemId: string) {
     return this.problemsService.findOne({
       where: { id: problemId },
+      select: ['id', 'title', 'slug', 'description', 'inputDescription', 'outputDescription', 'notes', 'timeLimitMs', 'memoryLimitMb', 'difficulty', 'isPublished'],
       relations: { tags: true, hints: true },
     });
   }
@@ -290,7 +291,8 @@ export class ProblemsController {
       where: {
         problemId: problemId,
         authorId: currentUser.userId
-      }
+      },
+      order: { createdAt: 'DESC' },
     });
   }
 }

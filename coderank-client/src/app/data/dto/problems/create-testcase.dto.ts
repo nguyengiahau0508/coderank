@@ -2,8 +2,7 @@ import { TestcaseCompareTypeEnum } from '../../enums/enums';
 
 export interface CreateTestcaseDto {
   input?: string;
-  output?: string;
+  expectedOutput?: string;
   isSample?: boolean;
-  isHidden?: boolean;
   compareType?: TestcaseCompareTypeEnum;
 }
