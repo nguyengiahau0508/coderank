@@ -11,15 +11,22 @@ import {
 import { FormsModule } from '@angular/forms';
 import { MonacoEditorModule, NgxEditorModel } from 'ngx-monaco-editor-v2-alternative';
 import { Select } from 'primeng/select';
-import { ProgrammingLanguageEnum } from '../../../../../data/enums/enums';
+import { ProgrammingLanguageEnum } from '../../../data/enums/enums';
 
-interface LanguageOption { label: string; value: ProgrammingLanguageEnum; monacoLang: string; template: string; } @Component({
-  selector: 'app-admin-code-editor',
+interface LanguageOption {
+  label: string;
+  value: ProgrammingLanguageEnum;
+  monacoLang: string;
+  template: string;
+}
+
+@Component({
+  selector: 'app-code-editor',
   imports: [FormsModule, MonacoEditorModule, Select],
   templateUrl: './code-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminCodeEditorComponent implements OnInit, OnDestroy {
+export class CodeEditorComponent implements OnInit, OnDestroy {
   // Inputs
   readonly initialCode = input<string>('');
   readonly initialLanguage = input<ProgrammingLanguageEnum>(ProgrammingLanguageEnum.Python);
@@ -32,7 +39,7 @@ export class AdminCodeEditorComponent implements OnInit, OnDestroy {
   // State
   readonly code = signal<string>('');
   readonly selectedLanguage = signal<ProgrammingLanguageEnum>(ProgrammingLanguageEnum.Python);
-  
+
   // ngModel binding (two-way)
   codeValue: string = '';
 
@@ -137,7 +144,7 @@ export class AdminCodeEditorComponent implements OnInit, OnDestroy {
     // Load code from localStorage if exists, otherwise use initialCode or template
     const savedCode = this.getSavedCode();
     const initialCode = this.initialCode();
-    
+
     if (initialCode) {
       this.code.set(initialCode);
       this.codeValue = initialCode;

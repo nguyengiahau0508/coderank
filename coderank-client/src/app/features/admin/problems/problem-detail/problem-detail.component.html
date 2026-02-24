@@ -64,11 +64,11 @@
       <!-- Left: Problem Info -->
       <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
         <!-- Tabs -->
-        <div class="flex border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900">
+        <div class="flex border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 overflow-x-auto scrollbar-none">
           @for (tab of tabs; track tab.index; let idx = $index) {
             <button
               type="button"
-              [class]="'px-4 py-3 text-xs font-medium transition-colors relative ' +
+              [class]="'px-4 py-3 text-xs font-medium transition-colors relative whitespace-nowrap shrink-0 ' +
                 (activeTabIndex() === tab.index ?
                   'text-primary' :
                   'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300')"
@@ -160,13 +160,26 @@
               }
             </div>
           }
+
+          @if (activeTabIndex() === 4) {
+            <app-solution-list
+              [solutions]="solutions()"
+              [mySolutions]="mySolutions()"
+              [hasAccepted]="hasAccepted()"
+              [loading]="solutionsLoading()"
+              [mySolutionsLoading]="mySolutionsLoading()"
+              (shareSolution)="openSolutionForm()"
+              (editSolution)="onEditSolution($event)"
+              (deleteSolution)="onDeleteSolution($event)"
+            />
+          }
         </div>
       </div>
 
       <!-- Right: Code Editor & Result -->
       <div class="space-y-3">
         <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
-          <app-admin-code-editor
+          <app-code-editor
             (codeChange)="onCodeChange($event)"
             (languageChange)="onLanguageChange($event)"
           />
@@ -178,6 +191,16 @@
       </div>
     </div>
   </div>
+
+  <!-- Solution Form Dialog -->
+  <app-solution-form-dialog
+    [problemId]="prob.id.toString()"
+    [visible]="showSolutionForm()"
+    [editingSolution]="editingSolution()"
+    (visibleChange)="showSolutionForm.set($event)"
+    (solutionCreated)="onSolutionCreated()"
+    (solutionUpdated)="onSolutionUpdated()"
+  />
 } @else {
   <!-- Not Found -->
   <div class="flex flex-col items-center justify-center py-16 text-center">

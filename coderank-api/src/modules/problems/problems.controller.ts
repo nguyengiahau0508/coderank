@@ -25,7 +25,7 @@ import { HintsService } from './services/hints.service';
 import { CreateHintDto } from './dto/hint/create-hint.dto';
 import { UpdateHintDto } from './dto/hint/update-hint.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import { SubmissionsService } from './services/submissions.serivce';
+import { SubmissionsService } from './services/submissions.service';
 import { CreateSubmissionDto } from './dto/submission';
 import { TagsService } from './services/tags.service';
 import { SolutionsService } from './services/solutions.service';
@@ -336,6 +336,27 @@ export class ProblemsController {
     @Param('problemId') problemId: string,
   ) {
     return this.solutionsService.getSolutionsByProblemId(problemId);
+  }
+
+  @Get(':problemId/solutions/me')
+  @ApiBearerAuth('JWT-auth')
+  async getMySolutions(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('problemId') problemId: string,
+  ) {
+    return this.solutionsService.find({
+      where: { problemId: problemId, authorId: currentUser.userId },
+      relations: { author: true },
+      order: { upvotes: 'DESC', createdAt: 'DESC' },
+      select: {
+        author: {
+          id: true,
+          fullName: true,
+          username: true,
+          avatarUrl: true,
+        },
+      },
+    });
   }
 
   @Get(':problemId/solutions/:solutionId')

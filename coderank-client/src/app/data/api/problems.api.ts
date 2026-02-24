@@ -6,6 +6,7 @@ import { ProblemsModel } from '../models/problems.model';
 import { TestcasesModel } from '../models/testcases.model';
 import { HintsModel } from '../models/hints.model';
 import { SubmissionsModel } from '../models/submissions.model';
+import { SolutionsModel } from '../models/solutions.model';
 import {
   PaginationQueryParams,
   CreateProblemDto,
@@ -15,6 +16,8 @@ import {
   CreateHintDto,
   UpdateHintDto,
   CreateSubmissionDto,
+  CreateSolutionDto,
+  UpdateSolutionDto,
 } from '../dto/problems';
 import { TagsModel } from '../models/tags.model';
 
@@ -226,6 +229,65 @@ export class ProblemsApi extends BaseApi {
   getSubmissions(problemId: string): Observable<ApiResponse<SubmissionsModel[]>> {
     return this.apiService.get<ApiResponse<SubmissionsModel[]>>(
       this.getUrl(`/${problemId}/submissions`)
+    );
+  }
+
+  // ==================== Solutions ====================
+
+  /**
+   * Create a new solution for a problem (requires Accepted submission)
+   */
+  createSolution(problemId: string, dto: CreateSolutionDto): Observable<ApiResponse<SolutionsModel>> {
+    return this.apiService.post<ApiResponse<SolutionsModel>>(
+      this.getUrl(`/${problemId}/solutions`),
+      dto
+    );
+  }
+
+  /**
+   * Get all solutions for a problem
+   */
+  getSolutions(problemId: string): Observable<ApiResponse<SolutionsModel[]>> {
+    return this.apiService.get<ApiResponse<SolutionsModel[]>>(
+      this.getUrl(`/${problemId}/solutions`)
+    );
+  }
+
+  getMySolutions(problemId: string): Observable<ApiResponse<SolutionsModel[]>> {
+    return this.apiService.get<ApiResponse<SolutionsModel[]>>(
+      this.getUrl(`/${problemId}/solutions/me`)
+    );
+  }
+
+  /**
+   * Get a specific solution by ID
+   */
+  getSolution(problemId: string, solutionId: string): Observable<ApiResponse<SolutionsModel>> {
+    return this.apiService.get<ApiResponse<SolutionsModel>>(
+      this.getUrl(`/${problemId}/solutions/${solutionId}`)
+    );
+  }
+
+  /**
+   * Update a solution (owner only)
+   */
+  updateSolution(
+    problemId: string,
+    solutionId: string,
+    dto: UpdateSolutionDto
+  ): Observable<ApiResponse<SolutionsModel>> {
+    return this.apiService.patch<ApiResponse<SolutionsModel>>(
+      this.getUrl(`/${problemId}/solutions/${solutionId}`),
+      dto
+    );
+  }
+
+  /**
+   * Delete a solution (owner only)
+   */
+  deleteSolution(problemId: string, solutionId: string): Observable<ApiResponse<void>> {
+    return this.apiService.delete<ApiResponse<void>>(
+      this.getUrl(`/${problemId}/solutions/${solutionId}`)
     );
   }
 }

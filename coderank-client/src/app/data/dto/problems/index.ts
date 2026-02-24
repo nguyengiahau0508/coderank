@@ -6,3 +6,5 @@ export * from './update-testcase.dto';
 export * from './create-hint.dto';
 export * from './update-hint.dto';
 export * from './create-submission.dto';
+export * from './create-solution.dto';
+export * from './update-solution.dto';

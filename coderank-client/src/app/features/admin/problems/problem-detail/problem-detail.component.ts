@@ -13,27 +13,33 @@ import { Toast } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
 // Components
-import { AdminCodeEditorComponent } from '../components/code-editor/code-editor.component';
+import { CodeEditorComponent } from '../../../../shared/components/code-editor/code-editor.component';
 import { AdminSubmissionResultComponent } from '../components/submission-result/submission-result.component';
 import { MarkdownViewComponent } from '../../../../shared/components/markdown-view/markdown-view.component';
+import { SolutionListComponent } from '../components/solution-list/solution-list.component';
+import { SolutionFormDialogComponent } from '../components/solution-form-dialog/solution-form-dialog.component';
 
 // Services & Models
 import { ProblemsService } from '../services/problems.service';
 import { SubmissionsService } from '../services/submissions.service';
+import { SolutionsService } from '../services/solutions.service';
 import { ProblemsModel } from '../../../../data/models/problems.model';
 import { TestcasesModel } from '../../../../data/models/testcases.model';
 import { HintsModel } from '../../../../data/models/hints.model';
 import { SubmissionsModel } from '../../../../data/models/submissions.model';
-import { DifficultyEnum, ProgrammingLanguageEnum } from '../../../../data/enums/enums';
+import { SolutionsModel } from '../../../../data/models/solutions.model';
+import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../data/enums/enums';
 
 @Component({
   selector: 'app-admin-problem-detail',
   imports: [
     CommonModule,
     Toast,
-    AdminCodeEditorComponent,
+    CodeEditorComponent,
     AdminSubmissionResultComponent,
     MarkdownViewComponent,
+    SolutionListComponent,
+    SolutionFormDialogComponent,
   ],
   providers: [MessageService],
   templateUrl: './problem-detail.component.html',
@@ -44,6 +50,7 @@ export class AdminProblemDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly problemsService = inject(ProblemsService);
   private readonly submissionsService = inject(SubmissionsService);
+  private readonly solutionsService = inject(SolutionsService);
   private readonly messageService = inject(MessageService);
 
   // State
@@ -51,9 +58,16 @@ export class AdminProblemDetailComponent implements OnInit {
   readonly sampleTestcases = signal<TestcasesModel[]>([]);
   readonly hints = signal<HintsModel[]>([]);
   readonly submissionHistory = signal<SubmissionsModel[]>([]);
+  readonly solutions = signal<SolutionsModel[]>([]);
+  readonly mySolutions = signal<SolutionsModel[]>([]);
   readonly loading = signal<boolean>(true);
   readonly currentSubmission = signal<SubmissionsModel | null>(null);
   readonly isSubmitting = signal<boolean>(false);
+  readonly hasAccepted = signal<boolean>(false);
+  readonly showSolutionForm = signal<boolean>(false);
+  readonly solutionsLoading = signal<boolean>(false);
+  readonly mySolutionsLoading = signal<boolean>(false);
+  readonly editingSolution = signal<SolutionsModel | null>(null);
   
   // Code editor state
   readonly currentCode = signal<string>('');
@@ -68,6 +82,7 @@ export class AdminProblemDetailComponent implements OnInit {
     { label: 'Ví dụ', index: 1 },
     { label: 'Gợi ý', index: 2 },
     { label: 'Lịch sử', index: 3 },
+    { label: 'Solutions', index: 4 },
   ];
 
   ngOnInit(): void {
@@ -77,6 +92,8 @@ export class AdminProblemDetailComponent implements OnInit {
       this.loadTestcases(problemId);
       this.loadHints(problemId);
       this.loadSubmissionHistory(problemId);
+      this.loadSolutions(problemId);
+      this.loadMySolutions(problemId);
     }
   }
 
@@ -150,12 +167,118 @@ export class AdminProblemDetailComponent implements OnInit {
   private loadSubmissionHistory(problemId: string): void {
     this.problemsService.getSubmissionHistory(problemId).subscribe({
       next: (response) => {
-        this.submissionHistory.set(response.data || []);
+        const history = response.data || [];
+        this.submissionHistory.set(history);
+        // Kiểm tra user đã có submission Accepted chưa
+        const accepted = history.some(
+          (s) => s.status === SubmissionStatusEnum.Accepted
+        );
+        this.hasAccepted.set(accepted);
       },
       error: () => {
         // Silent fail for submission history
       },
     });
+  }
+
+  /**
+   * Load solutions for the problem
+   */
+  private loadSolutions(problemId: string): void {
+    this.solutionsLoading.set(true);
+    this.solutionsService.getSolutions(problemId).subscribe({
+      next: (response) => {
+        this.solutions.set(response.data || []);
+        this.solutionsLoading.set(false);
+      },
+      error: () => {
+        this.solutionsLoading.set(false);
+      },
+    });
+  }
+
+  /**
+   * Load my solutions for the problem
+   */
+  private loadMySolutions(problemId: string): void {
+    this.mySolutionsLoading.set(true);
+    this.solutionsService.getMySolutions(problemId).subscribe({
+      next: (response) => {
+        this.mySolutions.set(response.data || []);
+        this.mySolutionsLoading.set(false);
+      },
+      error: () => {
+        this.mySolutionsLoading.set(false);
+      },
+    });
+  }
+
+  /**
+   * Open solution form dialog
+   */
+  openSolutionForm(): void {
+    this.editingSolution.set(null);
+    this.showSolutionForm.set(true);
+  }
+
+  /**
+   * Open solution form dialog in edit mode
+   */
+  onEditSolution(solution: SolutionsModel): void {
+    this.editingSolution.set(solution);
+    this.showSolutionForm.set(true);
+  }
+
+  /**
+   * Delete a solution
+   */
+  onDeleteSolution(solution: SolutionsModel): void {
+    const problemId = this.problem()?.id?.toString();
+    if (!problemId) return;
+
+    if (!confirm('Bạn có chắc muốn xóa solution này?')) return;
+
+    this.solutionsService.deleteSolution(problemId, solution.id.toString()).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Thành công',
+          detail: 'Đã xóa solution thành công!',
+        });
+        this.loadMySolutions(problemId);
+        this.loadSolutions(problemId);
+      },
+      error: (err) => {
+        const message = err?.error?.message || 'Không thể xóa solution.';
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi',
+          detail: message,
+        });
+      },
+    });
+  }
+
+  /**
+   * Handle solution created event
+   */
+  onSolutionCreated(): void {
+    const problemId = this.problem()?.id?.toString();
+    if (problemId) {
+      this.loadSolutions(problemId);
+      this.loadMySolutions(problemId);
+    }
+  }
+
+  /**
+   * Handle solution updated event
+   */
+  onSolutionUpdated(): void {
+    const problemId = this.problem()?.id?.toString();
+    if (problemId) {
+      this.loadSolutions(problemId);
+      this.loadMySolutions(problemId);
+    }
   }
 
   /**

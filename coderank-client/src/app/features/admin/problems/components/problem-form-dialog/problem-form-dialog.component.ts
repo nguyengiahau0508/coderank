@@ -5,7 +5,7 @@ import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { InputNumber } from 'primeng/inputnumber';
 import { Checkbox } from 'primeng/checkbox';
-import { AdminTextEditorComponent } from '../text-editor/text-editor.component';
+import { TextEditorComponent } from '../../../../../shared/components/text-editor/text-editor.component';
 import { DifficultyEnum } from '../../../../../data/enums/enums';
 import { ProblemsModel } from '../../../../../data/models/problems.model';
 import { CreateProblemDto, UpdateProblemDto } from '../../../../../data/dto/problems';
@@ -25,7 +25,7 @@ interface DifficultyOption {
     InputNumber,
     Checkbox,
     ReactiveFormsModule,
-    AdminTextEditorComponent,
+    TextEditorComponent,
   ],
   templateUrl: './problem-form-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush

@@ -8,14 +8,14 @@ import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/f
 import { Editor, EditorTextChangeEvent } from 'primeng/editor';
 
 @Component({
-  selector: 'app-admin-text-editor',
+  selector: 'app-text-editor',
   imports: [FormsModule, Editor],
   templateUrl: './text-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => AdminTextEditorComponent),
+      useExisting: forwardRef(() => TextEditorComponent),
       multi: true,
     },
   ],
@@ -23,7 +23,7 @@ import { Editor, EditorTextChangeEvent } from 'primeng/editor';
     class: 'block',
   },
 })
-export class AdminTextEditorComponent implements ControlValueAccessor {
+export class TextEditorComponent implements ControlValueAccessor {
   // State
   readonly content = signal<string>('');
   readonly disabled = signal(false);

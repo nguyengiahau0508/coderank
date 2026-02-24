@@ -12,7 +12,7 @@ import { HintsService } from './services/hints.service';
 import { SubmissionsEntity } from './entities/submissions.entity';
 import { SolutionsEntity } from './entities/solutions.entity';
 import { BullModule } from '@nestjs/bullmq';
-import { SubmissionsService } from './services/submissions.serivce';
+import { SubmissionsService } from './services/submissions.service';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { SubmissionCompletedListener } from './listeners/submission-completed.listener';
