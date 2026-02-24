@@ -16,6 +16,7 @@ import {
   UpdateHintDto,
   CreateSubmissionDto,
 } from '../dto/problems';
+import { TagsModel } from '../models/tags.model';
 
 /**
  * Problems API Service
@@ -136,6 +137,12 @@ export class ProblemsApi extends BaseApi {
     return this.apiService.post<ApiResponse<ProblemsModel>>(
       this.getUrl(`/${problemId}/tags/${tagId}`),
       {}
+    );
+  }
+
+  getTags(): Observable<ApiResponse<TagsModel[]>> {
+    return this.apiService.get<ApiResponse<TagsModel[]>>(
+      this.getUrl(`/tags`)
     );
   }
 

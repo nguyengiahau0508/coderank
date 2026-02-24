@@ -21,14 +21,13 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Services & Models
-import { ProblemsService } from '../services/problems.service';
-import { AdminProblemsService } from '../services/admin-problems.service';
 import { ProblemsModel } from '../../../../data/models/problems.model';
 import { DifficultyEnum } from '../../../../data/enums/enums';
 import { TagsModel } from '../../../../data/models/tags.model';
 import { AdminProblemFormDialogComponent } from '../components/problem-form-dialog/problem-form-dialog.component';
 import { AdminTestcaseManagerComponent } from '../components/testcase-manager/testcase-manager.component';
 import { AdminHintManagerComponent } from '../components/hint-manager/hint-manager.component';
+import { ProblemsApi } from '../../../../data/api';
 
 @Component({
   selector: 'app-problem-list',
@@ -61,8 +60,7 @@ import { AdminHintManagerComponent } from '../components/hint-manager/hint-manag
 export class ProblemListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly problemsService = inject(ProblemsService);
-  private readonly adminService = inject(AdminProblemsService);
+  private readonly problemsApi = inject(ProblemsApi)
   private readonly messageService = inject(MessageService);
   private readonly confirmService = inject(ConfirmationService);
 
@@ -70,9 +68,9 @@ export class ProblemListComponent implements OnInit {
   readonly problems = signal<ProblemsModel[]>([]);
   readonly loading = signal<boolean>(false);
   readonly totalRecords = signal<number>(0);
-  readonly allTags = signal<TagsModel[]>([]);
+  readonly tags = signal<TagsModel[]>([]);
   readonly showAdvancedFilters = signal<boolean>(false);
-  
+
   // Dialog states
   readonly showProblemDialog = signal<boolean>(false);
   readonly showTestcaseDialog = signal<boolean>(false);
@@ -106,7 +104,7 @@ export class ProblemListComponent implements OnInit {
   );
 
   readonly tagOptions = computed(() =>
-    this.allTags().map(tag => ({ label: tag.name, value: tag.id }))
+    this.tags().map(tag => ({ label: tag.name, value: tag.id }))
   );
 
   ngOnInit(): void {
@@ -120,17 +118,16 @@ export class ProblemListComponent implements OnInit {
   loadTags(): void {
     // Extract unique tags from all problems
     // In real scenario, you should have a separate tags API endpoint
-    this.problemsService.getProblems({ limit: 1000 }).subscribe({
+    this.problemsApi.getTags().subscribe({
       next: (response) => {
-        const tagsMap = new Map<number, TagsModel>();
-        response.data.forEach((problem: any) => {
-          problem.tags?.forEach((tag: any) => {
-            if (!tagsMap.has(tag.id)) {
-              tagsMap.set(tag.id, tag);
-            }
-          });
+        console.log('Loaded tags:', response);
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load tags',
         });
-        this.allTags.set(Array.from(tagsMap.values()));
       }
     });
   }
@@ -167,7 +164,7 @@ export class ProblemListComponent implements OnInit {
       params.maxPoints = this.pointsRange()[1];
     }
 
-    this.problemsService.getProblems(params).subscribe({
+    this.problemsApi.getProblems(params).subscribe({
       next: (response) => {
         this.problems.set(response.data);
         this.totalRecords.set(response.meta.totalItems);
@@ -236,7 +233,7 @@ export class ProblemListComponent implements OnInit {
   editProblem(event: Event, problem: ProblemsModel): void {
     event.stopPropagation();
     this.loading.set(true);
-    this.adminService.getProblem(problem.id.toString()).subscribe({
+    this.problemsApi.getProblem(problem.id.toString()).subscribe({
       next: (response) => {
         if (response.data) {
           this.editingProblem.set(response.data);
@@ -272,7 +269,7 @@ export class ProblemListComponent implements OnInit {
       header: 'Confirm',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.adminService.deleteProblem(problem.id.toString()).subscribe({
+        this.problemsApi.deleteProblem(problem.id.toString()).subscribe({
           next: () => {
             this.messageService.add({
               severity: 'success',
@@ -318,7 +315,7 @@ export class ProblemListComponent implements OnInit {
     this.isSubmittingDialog.set(true);
     if (this.editingProblem()) {
       // Update
-      this.adminService.updateProblem(this.editingProblem()!.id.toString(), data).subscribe({
+      this.problemsApi.updateProblem(this.editingProblem()!.id.toString(), data).subscribe({
         next: () => {
           this.messageService.add({
             severity: 'success',
@@ -340,7 +337,7 @@ export class ProblemListComponent implements OnInit {
       });
     } else {
       // Create
-      this.adminService.createProblem(data).subscribe({
+      this.problemsApi.createProblem(data).subscribe({
         next: () => {
           this.messageService.add({
             severity: 'success',

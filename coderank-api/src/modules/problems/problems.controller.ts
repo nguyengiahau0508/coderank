@@ -27,6 +27,7 @@ import { UpdateHintDto } from './dto/hint/update-hint.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { SubmissionsService } from './services/submissions.serivce';
 import { CreateSubmissionDto } from './dto/submission';
+import { TagsService } from './services/tags.service';
 
 @Controller('problems')
 export class ProblemsController {
@@ -34,7 +35,8 @@ export class ProblemsController {
     private readonly problemsService: ProblemsService,
     private readonly testcasesService: TestcasesService,
     private readonly hintsService: HintsService,
-    private readonly submissionsService: SubmissionsService
+    private readonly submissionsService: SubmissionsService,
+    private readonly tagsService: TagsService
   ) { }
 
   @Post()
@@ -193,6 +195,12 @@ export class ProblemsController {
     @Param('tagId') tagId: string,
   ) {
     return this.problemsService.addTag(problemId, tagId);
+  }
+
+  @Get('tags')
+  @ApiBearerAuth('JWT-auth')
+  async getAllTags() {
+    return this.tagsService.findAll();
   }
 
   @Delete(':problemId/tags/:tagId')
