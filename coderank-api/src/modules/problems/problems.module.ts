@@ -10,11 +10,13 @@ import { TagsService } from './services/tags.service';
 import { HintsEntity } from './entities/hints.entity';
 import { HintsService } from './services/hints.service';
 import { SubmissionsEntity } from './entities/submissions.entity';
+import { SolutionsEntity } from './entities/solutions.entity';
 import { BullModule } from '@nestjs/bullmq';
 import { SubmissionsService } from './services/submissions.serivce';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { SubmissionCompletedListener } from './listeners/submission-completed.listener';
+import { SolutionsService } from './services/solutions.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -23,6 +25,7 @@ import { SubmissionCompletedListener } from './listeners/submission-completed.li
       TagsEntity,
       HintsEntity,
       SubmissionsEntity,
+      SolutionsEntity,
     ]),
     BullModule.registerQueue({
       name: 'runner-queue',
@@ -33,7 +36,7 @@ import { SubmissionCompletedListener } from './listeners/submission-completed.li
     }),
   ],
   controllers: [ProblemsController],
-  providers: [ProblemsService, TestcasesService, TagsService, HintsService, SubmissionsService, SubmissionCompletedListener],
+  providers: [ProblemsService, TestcasesService, TagsService, HintsService, SubmissionsService, SubmissionCompletedListener, SolutionsService],
   exports: [],
 })
 export class ProblemsModule { }

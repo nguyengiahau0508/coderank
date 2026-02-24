@@ -14,6 +14,7 @@ import { TagsEntity } from './tags.entity';
 import { TestcasesEntity } from './testcases.entity';
 import { HintsEntity } from './hints.entity';
 import { DifficultyEnum } from 'src/common/enums/enums';
+import { SolutionsEntity } from './solutions.entity';
 // ... imports decorators
 
 @Entity('problems')
@@ -80,5 +81,8 @@ export class ProblemsEntity extends BaseEntity {
 
   @OneToMany(() => HintsEntity, (h) => h.problem, { cascade: true })
   hints: HintsEntity[];
+
+  @OneToMany(() => SolutionsEntity, (s) => s.problem)
+  solutions: SolutionsEntity[];
 }
 

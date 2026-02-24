@@ -28,6 +28,10 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { SubmissionsService } from './services/submissions.serivce';
 import { CreateSubmissionDto } from './dto/submission';
 import { TagsService } from './services/tags.service';
+import { SolutionsService } from './services/solutions.service';
+import { CreateSolutionDto } from './dto/solution/create-solution.dto';
+import { UpdateSolutionDto } from './dto/solution/update-solution.dto';
+import { SolutionsEntity } from './entities/solutions.entity';
 
 @Controller('problems')
 export class ProblemsController {
@@ -36,7 +40,8 @@ export class ProblemsController {
     private readonly testcasesService: TestcasesService,
     private readonly hintsService: HintsService,
     private readonly submissionsService: SubmissionsService,
-    private readonly tagsService: TagsService
+    private readonly tagsService: TagsService,
+    private readonly solutionsService: SolutionsService,
   ) { }
 
   @Post()
@@ -307,5 +312,65 @@ export class ProblemsController {
       },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  // ==================== SOLUTIONS ====================
+
+  @Post(':problemId/solutions')
+  @ApiBearerAuth('JWT-auth')
+  async createSolution(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('problemId') problemId: string,
+    @Body() dto: CreateSolutionDto,
+  ) {
+    return this.solutionsService.createSolution(
+      currentUser.userId,
+      problemId,
+      dto,
+    );
+  }
+
+  @Get(':problemId/solutions')
+  @ApiBearerAuth('JWT-auth')
+  async getSolutionsByProblemId(
+    @Param('problemId') problemId: string,
+  ) {
+    return this.solutionsService.getSolutionsByProblemId(problemId);
+  }
+
+  @Get(':problemId/solutions/:solutionId')
+  @ApiBearerAuth('JWT-auth')
+  async getSolutionById(
+    @Param('problemId') problemId: string,
+    @Param('solutionId') solutionId: string,
+  ) {
+    return this.solutionsService.findOne({
+      where: { id: solutionId, problemId },
+      relations: { author: true },
+    });
+  }
+
+  @Patch(':problemId/solutions/:solutionId')
+  @Owner(SolutionsEntity, 'authorId', 'solutionId')
+  @ApiBearerAuth('JWT-auth')
+  async updateSolution(
+    @Body() dto: UpdateSolutionDto,
+    @Param('problemId') problemId: string,
+    @Param('solutionId') solutionId: string,
+  ) {
+    return this.solutionsService.update(solutionId, {
+      ...dto,
+      problemId,
+    });
+  }
+
+  @Delete(':problemId/solutions/:solutionId')
+  @Owner(SolutionsEntity, 'authorId', 'solutionId')
+  @ApiBearerAuth('JWT-auth')
+  async deleteSolution(
+    @Param('problemId') problemId: string,
+    @Param('solutionId') solutionId: string,
+  ) {
+    return this.solutionsService.delete(solutionId);
   }
 }
