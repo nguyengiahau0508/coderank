@@ -52,6 +52,12 @@ export class ProblemsController {
     });
   }
 
+  @Get('/tags')
+  @ApiBearerAuth('JWT-auth')
+  async getAllTags() {
+    return this.tagsService.findAll();
+  }
+
   @Get(':problemId')
   @ApiBearerAuth('JWT-auth')
   async getProblem(@Param('problemId') problemId: string) {
@@ -195,12 +201,6 @@ export class ProblemsController {
     @Param('tagId') tagId: string,
   ) {
     return this.problemsService.addTag(problemId, tagId);
-  }
-
-  @Get('tags')
-  @ApiBearerAuth('JWT-auth')
-  async getAllTags() {
-    return this.tagsService.findAll();
   }
 
   @Delete(':problemId/tags/:tagId')

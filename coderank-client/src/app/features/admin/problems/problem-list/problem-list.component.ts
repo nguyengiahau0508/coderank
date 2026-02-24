@@ -120,7 +120,15 @@ export class ProblemListComponent implements OnInit {
     // In real scenario, you should have a separate tags API endpoint
     this.problemsApi.getTags().subscribe({
       next: (response) => {
-        console.log('Loaded tags:', response);
+        if (!response.data) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load tags',
+          });
+          return;
+        }
+        this.tags.set(response.data);
       },
       error: () => {
         this.messageService.add({
