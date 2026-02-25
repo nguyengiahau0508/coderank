@@ -97,6 +97,12 @@ export class ProblemsApi extends BaseApi {
     );
   }
 
+  getSampleTestcases(problemId: string): Observable<ApiResponse<TestcasesModel[]>> {
+    return this.apiService.get<ApiResponse<TestcasesModel[]>>(
+      this.getUrl(`/${problemId}/testcases/sample`)
+    );
+  }
+
   /**
    * Get all testcases for a problem
    */

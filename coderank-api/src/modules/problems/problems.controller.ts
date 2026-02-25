@@ -166,22 +166,23 @@ export class ProblemsController {
 
   @Get(':problemId/testcases')
   @ApiBearerAuth('JWT-auth')
+  @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
+  @Owner(ProblemsEntity, 'authorId', 'problemId')
   async getTestcasesByProblemId(@CurrentUser() currentUser: IJwtPayload, @Param('problemId') problemId: string) {
-    const isSample = !(currentUser.roles.includes(RolesEnum.Admin) || currentUser.roles.includes(RolesEnum.ProblemSetter));
-
-    const qb = this.testcasesService.getRepository()
-      .createQueryBuilder('tc')
-      .addSelect(['tc.input', 'tc.expectedOutput'])
-      .where('tc.problemId = :problemId', { problemId });
-
-    if (isSample) {
-      qb.andWhere('tc.isSample = :isSample', { isSample: true });
-    }
-
-    qb.orderBy('tc.testcaseOrder', 'ASC');
-
-    return qb.getMany();
+    return this.testcasesService.find({
+      where: { problemId: problemId },
+      order: { testcaseOrder: 'ASC' },
+    });
   }
+
+  @Get(':problemId/testcases/sample')
+  @ApiBearerAuth('JWT-auth')
+  async getSampleTestcasesByProblemId(@Param('problemId') problemId: string) {
+    return this.testcasesService.find({
+      where: { problemId: problemId, isSample: true },
+      order: { testcaseOrder: 'ASC' },
+    });
+  } 
 
   @Get(':problemId/testcases/:testcaseId')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
