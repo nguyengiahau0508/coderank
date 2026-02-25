@@ -18,7 +18,7 @@ export const smartRedirectGuard: CanActivateFn = () => {
     case 'instructor':
       return router.createUrlTree(['/lecturer/dashboard']);
     case 'student':
-      return router.createUrlTree(['/student/dashboard']);
+      return router.createUrlTree(['/student/problems']);
     default:
       return router.createUrlTree(['/login']);
   }

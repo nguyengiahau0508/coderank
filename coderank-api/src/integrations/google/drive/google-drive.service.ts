@@ -32,18 +32,18 @@ export class GoogleDriveService {
    */
   async uploadFile(file: Express.Multer.File): Promise<string> {
     const fileStream = this.bufferToStream(file.buffer);
-
     try {
       const response = await this.driveClient.files.create({
         requestBody: {
           name: file.originalname,
-          parents: [this.googleConfigService.driveFolderId], // Thay bằng folder ID thực tế
+          parents: ['1WnqLm5pw07qGYBhhroMz5qzbQiwfCjjr'],
         },
         media: {
           mimeType: file.mimetype,
-          body: fileStream, // Sử dụng stream thay vì buffer
+          body: fileStream,
         },
         fields: 'id',
+        supportsAllDrives: true,
       });
 
       if (!response.data.id) {
@@ -63,7 +63,7 @@ export class GoogleDriveService {
    * @returns Thông báo thành công hoặc lỗi
    */
   async deleteFile(fileId: string): Promise<void> {
-    await this.driveClient.files.delete({ fileId });
+    await this.driveClient.files.delete({ fileId, supportsAllDrives: true });
   }
 
   /**
@@ -74,6 +74,8 @@ export class GoogleDriveService {
     const response = await this.driveClient.files.list({
       pageSize: 10,
       fields: 'files(id, name)',
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
     });
 
     return response.data.files || [];

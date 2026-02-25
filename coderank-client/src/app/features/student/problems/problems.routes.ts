@@ -1,0 +1,14 @@
+import { Routes } from '@angular/router';
+
+export const studentProblemsRoutes: Routes = [
+  {
+    path: '',
+    loadComponent: () =>
+      import('./problem-list/problem-list.component').then(m => m.StudentProblemListComponent),
+  },
+  {
+    path: ':id',
+    loadComponent: () =>
+      import('./problem-detail/problem-detail.component').then(m => m.StudentProblemDetailComponent),
+  },
+];

@@ -11,29 +11,14 @@ import { MenuItem } from '../shared/sidebar/sidebar.component';
 export class StudentLayoutComponent {
   protected menuItems: MenuItem[] = [
     {
-      label: 'Dashboard',
-      icon: 'pi pi-home',
-      route: '/student/dashboard'
-    },
-    {
       label: 'Problems',
       icon: 'pi pi-code',
       route: '/student/problems'
     },
     {
-      label: 'My Submissions',
-      icon: 'pi pi-send',
-      route: '/student/submissions'
+      label: 'Courses',
+      icon: 'pi pi-book',
+      route: '/student/courses'
     },
-    {
-      label: 'Contests',
-      icon: 'pi pi-trophy',
-      route: '/student/contests'
-    },
-    {
-      label: 'Leaderboard',
-      icon: 'pi pi-star',
-      route: '/student/leaderboard'
-    }
   ];
 }

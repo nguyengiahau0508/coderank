@@ -1,0 +1,592 @@
+<p-toast position="top-right" />
+
+@if (loading()) {
+  <div class="space-y-4 animate-pulse">
+    <div class="h-6 bg-surface-200 dark:bg-surface-700 rounded w-1/4"></div>
+    <div class="h-8 bg-surface-200 dark:bg-surface-700 rounded w-2/3"></div>
+    <div class="h-64 bg-surface-200 dark:bg-surface-700 rounded-xl"></div>
+  </div>
+} @else if (lesson(); as l) {
+  <div class="space-y-4">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          (click)="goBack()"
+          class="flex items-center justify-center w-9 h-9 rounded-lg border border-surface-200 dark:border-surface-700 text-surface-500 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
+        >
+          <i class="pi pi-arrow-left text-sm"></i>
+        </button>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-xl font-semibold text-surface-900 dark:text-surface-0">{{ l.title }}</h1>
+            <p-tag [value]="getLessonTypeLabel(l.type)" [severity]="getLessonTypeSeverity(l.type)" [rounded]="true" />
+          </div>
+          <div class="flex items-center gap-3 mt-1 text-xs text-surface-400">
+            <span>Bài {{ l.lessonOrder }}</span>
+            @if (l.estimatedMinutes) {
+              <span>· {{ l.estimatedMinutes }} phút</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Mark Complete -->
+      <button
+        type="button"
+        (click)="markComplete()"
+        [disabled]="markingComplete()"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-600 border border-green-300 dark:border-green-700 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 disabled:opacity-50 transition-colors"
+      >
+        @if (markingComplete()) {
+          <i class="pi pi-spin pi-spinner text-xs"></i>
+        } @else {
+          <i class="pi pi-check-circle text-xs"></i>
+        }
+        Hoàn thành bài học
+      </button>
+    </div>
+
+    <!-- Two Column: Sidebar + Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <!-- Sidebar: Lesson list -->
+      <div class="lg:col-span-1 order-2 lg:order-1">
+        <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden sticky top-4">
+          <div class="p-3 border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900">
+            <h3 class="text-xs font-semibold text-surface-500 uppercase tracking-wider">Danh sách bài học</h3>
+          </div>
+          <div class="max-h-[calc(100vh-300px)] overflow-y-auto">
+            @for (sl of sectionLessons(); track sl.id) {
+              <button
+                type="button"
+                [class]="'w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-sm transition-colors border-b border-surface-100 dark:border-surface-800 last:border-b-0 ' +
+                  (sl.id === l.id
+                    ? 'bg-primary/5 text-primary font-medium'
+                    : 'text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-900')"
+                (click)="navigateToLesson(sl.id)"
+              >
+                <i [class]="'pi ' + getLessonTypeIcon(sl.type) + ' text-xs flex-shrink-0'"></i>
+                <span class="line-clamp-1">{{ sl.lessonOrder }}. {{ sl.title }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="lg:col-span-3 order-1 lg:order-2">
+        <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
+          <p-tablist>
+            <p-tab value="content"><i class="pi pi-file mr-2"></i>Nội dung</p-tab>
+            @if (lessonProblems().length > 0) {
+              <p-tab value="problems"><i class="pi pi-code mr-2"></i>Bài tập ({{ lessonProblems().length }})</p-tab>
+            }
+            @if (quizzes().length > 0) {
+              <p-tab value="quizzes"><i class="pi pi-question-circle mr-2"></i>Quiz ({{ quizzes().length }})</p-tab>
+            }
+            @if (assignments().length > 0) {
+              <p-tab value="assignments"><i class="pi pi-file-export mr-2"></i>Bài tập nộp ({{ assignments().length }})</p-tab>
+            }
+          </p-tablist>
+
+          <p-tabpanels>
+            <!-- ==================== TAB: NỘI DUNG ==================== -->
+            <p-tabpanel value="content">
+              <div class="pt-4 space-y-4">
+                <!-- Video -->
+                @if (l.type === 'video' && l.videoUrl) {
+                  <div class="rounded-xl overflow-hidden border border-surface-200 dark:border-surface-700 bg-black">
+                    @if (isYouTubeUrl(l.videoUrl)) {
+                      <div class="aspect-video">
+                        <iframe
+                          [src]="getSafeYouTubeUrl(l.videoUrl)"
+                          class="w-full h-full"
+                          frameborder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowfullscreen
+                        ></iframe>
+                      </div>
+                    } @else {
+                      <div class="aspect-video">
+                        <video [src]="l.videoUrl" controls class="w-full h-full"></video>
+                      </div>
+                    }
+                  </div>
+                  @if (l.videoDurationSeconds) {
+                    <p class="text-xs text-surface-400">
+                      <i class="pi pi-clock mr-1"></i>{{ formatDuration(l.videoDurationSeconds) }}
+                    </p>
+                  }
+                }
+
+                <!-- Text Content -->
+                @if (l.content) {
+                  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-6">
+                    <div class="text-sm text-surface-700 dark:text-surface-300 ql-editor p-0" [innerHTML]="l.content"></div>
+                  </div>
+                } @else if (l.type !== 'video') {
+                  <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-8 text-center text-surface-400">
+                    <i class="pi pi-file text-3xl mb-2"></i>
+                    <p>Nội dung bài học sẽ được cập nhật sớm.</p>
+                  </div>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- ==================== TAB: BÀI TẬP (PROBLEMS) ==================== -->
+            @if (lessonProblems().length > 0) {
+              <p-tabpanel value="problems">
+                <div class="pt-4 space-y-3">
+                  <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0">Bài tập lập trình</h3>
+                  @for (lp of lessonProblems(); track lp.id; let idx = $index) {
+                    <div
+                      class="flex items-center justify-between rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 px-4 py-3 hover:bg-surface-100 dark:hover:bg-surface-800 cursor-pointer transition-colors"
+                      (click)="navigateToProblem(lp.problemId)"
+                    >
+                      <div class="flex items-center gap-3">
+                        <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold">{{ idx + 1 }}</span>
+                        <div>
+                          <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium text-surface-900 dark:text-surface-0">
+                              {{ lp.label || lp.problem?.title || 'Bài tập #' + (idx + 1) }}
+                            </span>
+                            @if (lp.isRequired) {
+                              <span class="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-500 px-1.5 py-0.5 rounded">Bắt buộc</span>
+                            }
+                          </div>
+                          @if (lp.problem) {
+                            <div class="flex items-center gap-2 text-xs text-surface-400 mt-0.5">
+                              <span [class]="'font-medium ' + (lp.problem.difficulty === 'easy' ? 'text-green-500' : lp.problem.difficulty === 'medium' ? 'text-yellow-500' : 'text-red-500')">
+                                {{ lp.problem.difficulty === 'easy' ? 'Dễ' : lp.problem.difficulty === 'medium' ? 'Trung bình' : 'Khó' }}
+                              </span>
+                              @if (lp.problem.points) {
+                                <span>· {{ lp.problem.points }} điểm</span>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                      <i class="pi pi-chevron-right text-surface-300 text-xs"></i>
+                    </div>
+                  }
+                </div>
+              </p-tabpanel>
+            }
+
+            <!-- ==================== TAB: QUIZ ==================== -->
+            @if (quizzes().length > 0) {
+              <p-tabpanel value="quizzes">
+                <div class="pt-4 space-y-4">
+                  @if (selectedQuiz(); as quiz) {
+                    <!-- Quiz Detail View -->
+                    <div class="space-y-4">
+                      <button
+                        type="button"
+                        (click)="backToQuizList()"
+                        class="inline-flex items-center gap-1.5 text-xs text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-colors"
+                      >
+                        <i class="pi pi-arrow-left text-[10px]"></i>
+                        Quay lại danh sách quiz
+                      </button>
+
+                      <div class="flex items-center justify-between">
+                        <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0">{{ quiz.title }}</h3>
+                        <div class="flex items-center gap-2 text-xs text-surface-400">
+                          @if (quiz.timeLimitMinutes) {
+                            <span><i class="pi pi-clock mr-1"></i>{{ quiz.timeLimitMinutes }} phút</span>
+                          }
+                          <span>Điểm đạt: {{ quiz.passingScore }}</span>
+                          <span>Tối đa {{ quiz.maxAttempts }} lần</span>
+                        </div>
+                      </div>
+
+                      @if (quiz.description) {
+                        <p class="text-sm text-surface-500 dark:text-surface-400">{{ quiz.description }}</p>
+                      }
+
+                      <!-- Quiz Result -->
+                      @if (quizResult(); as result) {
+                        <div [class]="'rounded-xl border p-5 ' + (result.isPassed ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10' : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10')">
+                          <div class="flex items-center gap-3 mb-2">
+                            <i [class]="'pi text-xl ' + (result.isPassed ? 'pi-check-circle text-green-500' : 'pi-times-circle text-red-500')"></i>
+                            <span class="text-base font-semibold" [class]="result.isPassed ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'">
+                              {{ result.isPassed ? 'Đạt!' : 'Chưa đạt' }}
+                            </span>
+                          </div>
+                          <div class="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <span class="text-surface-400 block text-xs">Điểm</span>
+                              <span class="font-bold text-surface-900 dark:text-surface-0">{{ result.pointsEarned }}/{{ result.totalPoints }}</span>
+                            </div>
+                            <div>
+                              <span class="text-surface-400 block text-xs">Score</span>
+                              <span class="font-bold text-surface-900 dark:text-surface-0">{{ result.score }}</span>
+                            </div>
+                            @if (result.timeTakenSeconds) {
+                              <div>
+                                <span class="text-surface-400 block text-xs">Thời gian</span>
+                                <span class="font-bold text-surface-900 dark:text-surface-0">{{ formatDuration(result.timeTakenSeconds) }}</span>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+
+                      <!-- Questions -->
+                      @if (loadingQuestions()) {
+                        <div class="animate-pulse space-y-3">
+                          @for (i of [1,2,3]; track i) {
+                            <div class="h-24 bg-surface-200 dark:bg-surface-700 rounded-lg"></div>
+                          }
+                        </div>
+                      } @else {
+                        <div class="space-y-4">
+                          @for (q of quizQuestions(); track q.id; let idx = $index) {
+                            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+                              <div class="flex items-start gap-3 mb-3">
+                                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex-shrink-0">{{ idx + 1 }}</span>
+                                <div class="flex-1">
+                                  <p class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ q.questionText }}</p>
+                                  <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-[10px] text-surface-400">{{ getQuestionTypeLabel(q.questionType) }}</span>
+                                    <span class="text-[10px] text-surface-400">· {{ q.points }} điểm</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Multiple choice / True-False -->
+                              @if (q.questionType === 'multiple_choice' || q.questionType === 'true_false') {
+                                <div class="space-y-2 ml-10">
+                                  @for (option of q.options; track $index) {
+                                    <button
+                                      type="button"
+                                      [class]="'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm text-left transition-colors ' +
+                                        (quizAnswers()[q.id.toString()] === (option['value'] || option['label'] || $index.toString())
+                                          ? 'border-primary bg-primary/5 text-primary font-medium'
+                                          : 'border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-900')"
+                                      (click)="setQuizAnswer(q.id.toString(), option['value'] || option['label'] || $index.toString())"
+                                    >
+                                      <span class="flex items-center justify-center w-5 h-5 rounded-full border text-[10px] flex-shrink-0"
+                                        [class]="quizAnswers()[q.id.toString()] === (option['value'] || option['label'] || $index.toString())
+                                          ? 'border-primary bg-primary text-primary-contrast'
+                                          : 'border-surface-300 dark:border-surface-600'"
+                                      >
+                                        {{ 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[$index] }}
+                                      </span>
+                                      <span>{{ option['label'] || option['text'] || option['value'] }}</span>
+                                    </button>
+                                  }
+                                </div>
+                              }
+
+                              <!-- Short answer / Code -->
+                              @if (q.questionType === 'short_answer' || q.questionType === 'code') {
+                                <div class="ml-10">
+                                  <textarea
+                                    pTextarea
+                                    [rows]="q.questionType === 'code' ? 6 : 2"
+                                    [placeholder]="q.questionType === 'code' ? 'Nhập code...' : 'Nhập câu trả lời...'"
+                                    [value]="quizAnswers()[q.id.toString()] || ''"
+                                    (input)="setQuizAnswer(q.id.toString(), $any($event.target).value)"
+                                    [class]="'w-full ' + (q.questionType === 'code' ? 'font-mono text-xs' : '')"
+                                  ></textarea>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+
+                        <!-- Submit quiz -->
+                        <div class="flex justify-end">
+                          <button
+                            type="button"
+                            (click)="submitQuiz()"
+                            [disabled]="submittingQuiz()"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-contrast text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                          >
+                            @if (submittingQuiz()) {
+                              <i class="pi pi-spin pi-spinner text-xs"></i>
+                              Đang nộp...
+                            } @else {
+                              <i class="pi pi-send text-xs"></i>
+                              Nộp bài
+                            }
+                          </button>
+                        </div>
+                      }
+
+                      <!-- My Attempts -->
+                      @if (myAttempts().length > 0) {
+                        <div class="mt-4">
+                          <h4 class="text-sm font-semibold text-surface-700 dark:text-surface-200 mb-2">Lịch sử làm bài</h4>
+                          <div class="space-y-2">
+                            @for (attempt of myAttempts(); track attempt.id) {
+                              <div class="flex items-center justify-between px-4 py-3 rounded-lg bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700">
+                                <div class="flex items-center gap-3">
+                                  <span [class]="'text-xs font-medium ' + (attempt.isPassed ? 'text-green-600' : 'text-red-500')">
+                                    {{ attempt.isPassed ? 'Đạt' : 'Chưa đạt' }}
+                                  </span>
+                                  <span class="text-xs text-surface-400">Lần {{ attempt.attemptNumber }}</span>
+                                </div>
+                                <div class="flex items-center gap-3 text-xs text-surface-400">
+                                  <span>{{ attempt.pointsEarned }}/{{ attempt.totalPoints }} điểm</span>
+                                  @if (attempt.timeTakenSeconds) {
+                                    <span>{{ formatDuration(attempt.timeTakenSeconds) }}</span>
+                                  }
+                                  <span>{{ attempt.completedAt | date:'dd/MM HH:mm' }}</span>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <!-- Quiz List -->
+                    <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0">Bài kiểm tra</h3>
+                    @for (quiz of quizzes(); track quiz.id) {
+                      <div
+                        class="flex items-center justify-between rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 px-4 py-3 hover:bg-surface-100 dark:hover:bg-surface-800 cursor-pointer transition-colors"
+                        (click)="selectQuiz(quiz)"
+                      >
+                        <div>
+                          <span class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ quiz.title }}</span>
+                          <div class="flex items-center gap-2 text-xs text-surface-400 mt-0.5">
+                            @if (quiz.timeLimitMinutes) {
+                              <span>{{ quiz.timeLimitMinutes }} phút</span>
+                            }
+                            <span>· Đạt: {{ quiz.passingScore }} điểm</span>
+                            <span>· Tối đa {{ quiz.maxAttempts }} lần</span>
+                          </div>
+                        </div>
+                        <i class="pi pi-chevron-right text-surface-300 text-xs"></i>
+                      </div>
+                    }
+                  }
+                </div>
+              </p-tabpanel>
+            }
+
+            <!-- ==================== TAB: BÀI TẬP NỘP ==================== -->
+            @if (assignments().length > 0) {
+              <p-tabpanel value="assignments">
+                <div class="pt-4 space-y-4">
+                  @if (selectedAssignment(); as assignment) {
+                    <!-- Assignment Detail -->
+                    <div class="space-y-4">
+                      <button
+                        type="button"
+                        (click)="backToAssignmentList()"
+                        class="inline-flex items-center gap-1.5 text-xs text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-colors"
+                      >
+                        <i class="pi pi-arrow-left text-[10px]"></i>
+                        Quay lại danh sách
+                      </button>
+
+                      <div class="flex items-center justify-between">
+                        <div>
+                          <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0">{{ assignment.title }}</h3>
+                          <div class="flex items-center gap-2 text-xs text-surface-400 mt-1">
+                            <span>{{ getAssignmentTypeLabel(assignment.type) }}</span>
+                            <span>· Điểm tối đa: {{ assignment.maxScore }}</span>
+                            @if (assignment.dueDate) {
+                              <span>· Hạn: {{ assignment.dueDate | date:'dd/MM/yyyy HH:mm' }}</span>
+                            }
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          (click)="openSubmitDialog()"
+                          class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-contrast text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                        >
+                          <i class="pi pi-upload text-xs"></i>
+                          Nộp bài
+                        </button>
+                      </div>
+
+                      @if (assignment.description) {
+                        <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+                          <div class="text-sm text-surface-700 dark:text-surface-300 ql-editor p-0" [innerHTML]="assignment.description"></div>
+                        </div>
+                      }
+
+                      <!-- My Submissions -->
+                      <h4 class="text-sm font-semibold text-surface-700 dark:text-surface-200">Bài nộp của tôi</h4>
+                      @if (loadingSubmissions()) {
+                        <div class="animate-pulse space-y-2">
+                          @for (i of [1,2]; track i) {
+                            <div class="h-16 bg-surface-200 dark:bg-surface-700 rounded-lg"></div>
+                          }
+                        </div>
+                      } @else if (mySubmissions().length === 0) {
+                        <p class="text-sm text-surface-400 text-center py-6">Chưa có bài nộp nào</p>
+                      } @else {
+                        <div class="space-y-2">
+                          @for (sub of mySubmissions(); track sub.id) {
+                            <div class="rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 p-4">
+                              <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-2">
+                                  <span class="text-xs text-surface-400">Lần {{ sub.attemptNumber }}</span>
+                                  <p-tag [value]="getSubmissionStatusLabel(sub.status)" [severity]="getSubmissionStatusSeverity(sub.status)" [rounded]="true" />
+                                </div>
+                                <span class="text-xs text-surface-400">{{ sub.submittedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                              </div>
+                              @if (sub.score !== null) {
+                                <div class="flex items-center gap-2 text-sm">
+                                  <span class="text-surface-400">Điểm:</span>
+                                  <span class="font-bold text-surface-900 dark:text-surface-0">{{ sub.score }}/{{ assignment.maxScore }}</span>
+                                </div>
+                              }
+                              @if (sub.feedback) {
+                                <div class="mt-2 p-3 bg-surface-100 dark:bg-surface-800 rounded-lg">
+                                  <p class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1">Nhận xét</p>
+                                  <p class="text-sm text-surface-700 dark:text-surface-300">{{ sub.feedback }}</p>
+                                </div>
+                              }
+                              @if (sub.content) {
+                                <div class="mt-2">
+                                  <p class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1">Nội dung</p>
+                                  <pre class="text-xs text-surface-600 dark:text-surface-400 bg-surface-100 dark:bg-surface-800 p-2 rounded overflow-x-auto">{{ sub.content }}</pre>
+                                </div>
+                              }
+                              @if (sub.submissionFileName) {
+                                <div class="mt-2 flex items-center gap-2 text-xs text-surface-400">
+                                  <i class="pi pi-file text-xs"></i>
+                                  <span>{{ sub.submissionFileName }}</span>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <!-- Assignment List -->
+                    <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0">Bài tập nộp</h3>
+                    @for (assignment of assignments(); track assignment.id) {
+                      <div
+                        class="flex items-center justify-between rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 px-4 py-3 hover:bg-surface-100 dark:hover:bg-surface-800 cursor-pointer transition-colors"
+                        (click)="selectAssignment(assignment)"
+                      >
+                        <div>
+                          <span class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ assignment.title }}</span>
+                          <div class="flex items-center gap-2 text-xs text-surface-400 mt-0.5">
+                            <span>{{ getAssignmentTypeLabel(assignment.type) }}</span>
+                            <span>· {{ assignment.maxScore }} điểm</span>
+                            @if (assignment.dueDate) {
+                              <span>· Hạn: {{ assignment.dueDate | date:'dd/MM/yyyy' }}</span>
+                            }
+                          </div>
+                        </div>
+                        <i class="pi pi-chevron-right text-surface-300 text-xs"></i>
+                      </div>
+                    }
+                  }
+                </div>
+              </p-tabpanel>
+            }
+          </p-tabpanels>
+        </p-tabs>
+
+        <!-- Navigation: Prev / Next -->
+        <div class="flex items-center justify-between mt-4 pt-4 border-t border-surface-200 dark:border-surface-700">
+          @if (prevLesson(); as prev) {
+            <button
+              type="button"
+              (click)="navigateToLesson(prev.id)"
+              class="inline-flex items-center gap-2 px-4 py-2.5 text-sm text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200 bg-surface-50 dark:bg-surface-900 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+            >
+              <i class="pi pi-arrow-left text-xs"></i>
+              <span class="line-clamp-1 max-w-48">{{ prev.title }}</span>
+            </button>
+          } @else {
+            <div></div>
+          }
+
+          @if (nextLesson(); as next) {
+            <button
+              type="button"
+              (click)="navigateToLesson(next.id)"
+              class="inline-flex items-center gap-2 px-4 py-2.5 text-sm text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200 bg-surface-50 dark:bg-surface-900 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+            >
+              <span class="line-clamp-1 max-w-48">{{ next.title }}</span>
+              <i class="pi pi-arrow-right text-xs"></i>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assignment Submit Dialog -->
+  <p-dialog
+    header="Nộp bài tập"
+    [(visible)]="showSubmitDialog"
+    [modal]="true"
+    [style]="{ width: '32rem' }"
+    [closable]="true"
+  >
+    <div class="space-y-4">
+      <!-- Content -->
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-2">Nội dung (không bắt buộc)</label>
+        <textarea
+          pTextarea
+          [(ngModel)]="assignmentContent"
+          [rows]="6"
+          placeholder="Nhập nội dung bài làm..."
+          class="w-full font-mono text-xs"
+        ></textarea>
+      </div>
+
+      <!-- File Upload -->
+      @if (selectedAssignment()?.type !== 'code_submit') {
+        <div>
+          <label class="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-2">Tệp đính kèm</label>
+          <p-fileUpload
+            mode="basic"
+            [auto]="false"
+            chooseLabel="Chọn file"
+            (onSelect)="onFileSelect($event)"
+            [maxFileSize]="(selectedAssignment()?.maxFileSizeMb || 10) * 1024 * 1024"
+          />
+          @if (assignmentFile) {
+            <p class="text-xs text-surface-400 mt-1">
+              <i class="pi pi-file mr-1"></i>{{ assignmentFile.name }}
+            </p>
+          }
+        </div>
+      }
+    </div>
+
+    <ng-template #footer>
+      <div class="flex items-center justify-end gap-2">
+        <p-button label="Hủy" severity="secondary" [text]="true" (onClick)="showSubmitDialog.set(false)" />
+        <p-button
+          label="Nộp bài"
+          icon="pi pi-upload"
+          [loading]="submittingAssignment()"
+          (onClick)="submitAssignment()"
+        />
+      </div>
+    </ng-template>
+  </p-dialog>
+} @else {
+  <!-- Not Found -->
+  <div class="flex flex-col items-center justify-center py-16 text-center">
+    <div class="flex items-center justify-center w-16 h-16 rounded-full bg-surface-100 dark:bg-surface-700 mb-3">
+      <i class="pi pi-exclamation-triangle text-2xl text-surface-400"></i>
+    </div>
+    <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0 mb-1.5">Không tìm thấy bài học</h2>
+    <p class="text-sm text-surface-400 mb-4">Bài học không tồn tại hoặc đã bị xóa.</p>
+    <button
+      type="button"
+      (click)="goBack()"
+      class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-contrast text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+    >
+      <i class="pi pi-arrow-left text-xs"></i>
+      Quay lại khóa học
+    </button>
+  </div>
+}

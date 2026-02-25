@@ -1,0 +1,368 @@
+<p-toast />
+
+@if (loading()) {
+  <div class="space-y-4">
+    <div class="h-6 w-20 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
+    <div class="h-8 w-80 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
+    <div class="grid lg:grid-cols-2 gap-4">
+      <div class="h-96 bg-surface-50 dark:bg-surface-800 rounded-xl animate-pulse"></div>
+      <div class="h-96 bg-surface-50 dark:bg-surface-800 rounded-xl animate-pulse"></div>
+    </div>
+  </div>
+} @else if (problem(); as prob) {
+  <div class="space-y-4">
+    <!-- Back + Title -->
+    <div>
+      <button
+        type="button"
+        (click)="goBack()"
+        class="inline-flex items-center gap-1 text-sm text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 mb-3 transition-colors"
+      >
+        <i class="pi pi-arrow-left text-xs"></i>
+        Quay lại
+      </button>
+
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">{{ prob.title }}</h1>
+          <div class="flex items-center gap-3 mt-2 text-xs text-surface-400">
+            <span
+              [class]="'font-medium ' +
+                (prob.difficulty === 'easy' ? 'text-green-600' :
+                 prob.difficulty === 'medium' ? 'text-yellow-600' :
+                 'text-red-600')"
+            >
+              {{ getDifficultyLabel(prob.difficulty) }}
+            </span>
+            <span class="w-1 h-1 rounded-full bg-surface-300"></span>
+            <span>{{ prob.points || 0 }} điểm</span>
+            <span class="w-1 h-1 rounded-full bg-surface-300"></span>
+            <span>{{ prob.timeLimitMs }}ms</span>
+            <span class="w-1 h-1 rounded-full bg-surface-300"></span>
+            <span>{{ prob.memoryLimitMb }}MB</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="onSubmit()"
+          [disabled]="isSubmitting()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-contrast text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
+        >
+          @if (isSubmitting()) {
+            <i class="pi pi-spin pi-spinner text-xs"></i>
+            Đang nộp...
+          } @else {
+            <i class="pi pi-play text-xs"></i>
+            Nộp bài
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="grid lg:grid-cols-2 gap-4">
+      <!-- Left: Problem Info -->
+      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+        <!-- Tabs -->
+        <div class="flex border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 overflow-x-auto scrollbar-none">
+          @for (tab of tabs; track tab.index; let idx = $index) {
+            <button
+              type="button"
+              [class]="'px-4 py-3 text-xs font-medium transition-colors relative whitespace-nowrap shrink-0 ' +
+                (activeTabIndex() === tab.index ?
+                  'text-primary' :
+                  'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300')"
+              (click)="activeTabIndex.set(tab.index)"
+            >
+              {{ tab.label }}
+              @if (activeTabIndex() === tab.index) {
+                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
+              }
+            </button>
+          }
+        </div>
+
+        <!-- Tab Content -->
+        <div class="p-4 overflow-y-auto max-h-[calc(100vh-320px)]">
+          @if (activeTabIndex() === 0) {
+            <app-markdown-view [content]="prob.description" class="text-sm text-surface-700 dark:text-surface-300" />
+            @if (prob.inputDescription) {
+              <h4 class="text-sm font-semibold text-surface-900 dark:text-surface-0 mt-4 mb-1.5">Input</h4>
+              <app-markdown-view [content]="prob.inputDescription" class="text-sm text-surface-700 dark:text-surface-300" />
+            }
+            @if (prob.outputDescription) {
+              <h4 class="text-sm font-semibold text-surface-900 dark:text-surface-0 mt-4 mb-1.5">Output</h4>
+              <app-markdown-view [content]="prob.outputDescription" class="text-sm text-surface-700 dark:text-surface-300" />
+            }
+          }
+
+          @if (activeTabIndex() === 1) {
+            <div class="space-y-5">
+              @for (tc of sampleTestcases(); track tc.id; let idx = $index) {
+                <div class="rounded-lg border border-surface-200 dark:border-surface-700 overflow-hidden">
+                  <!-- Header -->
+                  <div class="flex items-center gap-2 px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border-b border-surface-200 dark:border-surface-700">
+                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">{{ idx + 1 }}</span>
+                    <span class="text-xs font-semibold text-surface-700 dark:text-surface-200">Ví dụ {{ idx + 1 }}</span>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-surface-200 dark:divide-surface-700">
+                    <!-- Input -->
+                    <div class="p-3">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider">Input</span>
+                        <button
+                          type="button"
+                          (click)="copyToClipboard(tc.input)"
+                          class="text-[10px] text-surface-400 hover:text-primary transition-colors inline-flex items-center gap-1"
+                          title="Copy"
+                        >
+                          <i class="pi pi-copy text-[10px]"></i>
+                        </button>
+                      </div>
+                      <pre class="p-2.5 bg-surface-50 dark:bg-surface-900 rounded-md text-xs font-mono text-surface-700 dark:text-surface-300 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">{{ tc.input }}</pre>
+                    </div>
+
+                    <!-- Output -->
+                    <div class="p-3">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider">Output</span>
+                        <button
+                          type="button"
+                          (click)="copyToClipboard(tc.expectedOutput)"
+                          class="text-[10px] text-surface-400 hover:text-primary transition-colors inline-flex items-center gap-1"
+                          title="Copy"
+                        >
+                          <i class="pi pi-copy text-[10px]"></i>
+                        </button>
+                      </div>
+                      <pre class="p-2.5 bg-surface-50 dark:bg-surface-900 rounded-md text-xs font-mono text-surface-700 dark:text-surface-300 overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">{{ tc.expectedOutput }}</pre>
+                    </div>
+                  </div>
+                </div>
+              } @empty {
+                <div class="flex flex-col items-center justify-center py-12 text-center">
+                  <div class="flex items-center justify-center w-12 h-12 rounded-full bg-surface-100 dark:bg-surface-700 mb-3">
+                    <i class="pi pi-list text-xl text-surface-400"></i>
+                  </div>
+                  <p class="text-sm font-medium text-surface-500 dark:text-surface-400">Chưa có ví dụ</p>
+                  <p class="text-xs text-surface-400 mt-1">Các ví dụ sẽ hiển thị tại đây</p>
+                </div>
+              }
+            </div>
+          }
+
+          @if (activeTabIndex() === 2) {
+            <div class="space-y-2">
+              @for (hint of hints(); track hint.id; let idx = $index) {
+                <div class="rounded-lg border border-surface-200 dark:border-surface-700 overflow-hidden">
+                  <button
+                    type="button"
+                    (click)="toggleHint(hint.id)"
+                    class="w-full flex items-center justify-between px-4 py-3 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-900 transition-colors"
+                  >
+                    <span>Gợi ý {{ idx + 1 }}</span>
+                    <i [class]="'pi text-xs ' + (isHintVisible(hint.id) ? 'pi-chevron-up' : 'pi-chevron-down')"></i>
+                  </button>
+                  @if (isHintVisible(hint.id)) {
+                    <div class="px-4 pb-3 text-sm text-surface-500 dark:text-surface-400">
+                      <app-markdown-view [content]="hint.content" format="markdown" />
+                    </div>
+                  }
+                </div>
+              } @empty {
+                <p class="text-sm text-surface-400 text-center py-8">Chưa có gợi ý</p>
+              }
+            </div>
+          }
+
+          @if (activeTabIndex() === 3) {
+            @if (selectedSubmission(); as sub) {
+              <!-- Submission Detail View -->
+              <div class="space-y-4">
+                <!-- Back button -->
+                <button
+                  type="button"
+                  (click)="backToSubmissionList()"
+                  class="inline-flex items-center gap-1.5 text-xs text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-colors"
+                >
+                  <i class="pi pi-arrow-left text-[10px]"></i>
+                  Quay lại danh sách
+                </button>
+
+                <!-- Status header -->
+                <div class="flex items-center justify-between">
+                  <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0">Chi tiết bài nộp</h3>
+                  <span
+                    [class]="'text-xs font-medium px-2.5 py-1 rounded-full ' +
+                      (sub.status === 'accepted' ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400' :
+                       sub.status === 'pending' || sub.status === 'running' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' :
+                       'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400')"
+                  >
+                    {{ getStatusLabel(sub.status) }}
+                  </span>
+                </div>
+
+                <!-- Meta info -->
+                <div class="flex items-center gap-2 flex-wrap text-xs text-surface-400">
+                  <span class="inline-flex items-center gap-1">
+                    <i class="pi pi-code text-[10px]"></i>
+                    {{ getLanguageLabel(sub.language) }}
+                  </span>
+                  <span class="w-1 h-1 rounded-full bg-surface-300"></span>
+                  <span class="inline-flex items-center gap-1">
+                    <i class="pi pi-calendar text-[10px]"></i>
+                    {{ sub.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}
+                  </span>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div class="p-3 bg-surface-50 dark:bg-surface-900 rounded-lg">
+                    <span class="text-surface-400 block mb-0.5">Điểm</span>
+                    <span class="text-base font-bold text-surface-900 dark:text-surface-0">{{ sub.score }}</span>
+                  </div>
+                  <div class="p-3 bg-surface-50 dark:bg-surface-900 rounded-lg">
+                    <span class="text-surface-400 block mb-0.5">Test cases</span>
+                    <span class="text-base font-bold text-surface-900 dark:text-surface-0">{{ sub.passedTestcases }}/{{ sub.totalTestcases }}</span>
+                  </div>
+                  @if (sub.executionTimeMs !== null) {
+                    <div class="p-3 bg-surface-50 dark:bg-surface-900 rounded-lg">
+                      <span class="text-surface-400 block mb-0.5">Thời gian</span>
+                      <span class="text-base font-bold text-surface-900 dark:text-surface-0">{{ sub.executionTimeMs }} ms</span>
+                    </div>
+                  }
+                  @if (sub.memoryUsageMb !== null) {
+                    <div class="p-3 bg-surface-50 dark:bg-surface-900 rounded-lg">
+                      <span class="text-surface-400 block mb-0.5">Bộ nhớ</span>
+                      <span class="text-base font-bold text-surface-900 dark:text-surface-0">{{ sub.memoryUsageMb }} MB</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Progress bar -->
+                <div>
+                  <div class="flex items-center justify-between text-xs text-surface-400 mb-1.5">
+                    <span>Tỷ lệ pass</span>
+                    <span>{{ getSuccessRate(sub) }}%</span>
+                  </div>
+                  <div class="h-2 bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden">
+                    <div
+                      [style.width.%]="getSuccessRate(sub)"
+                      [class]="'h-full rounded-full transition-all duration-500 ' + (getSuccessRate(sub) === 100 ? 'bg-green-500' : getSuccessRate(sub) > 0 ? 'bg-yellow-500' : 'bg-red-500')"
+                    ></div>
+                  </div>
+                </div>
+
+                <!-- Error message -->
+                @if (sub.errorMessage) {
+                  <div class="p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-900/30">
+                    <div class="text-[10px] text-red-500 font-semibold uppercase tracking-wider mb-1">Lỗi</div>
+                    <pre class="text-xs text-red-700 dark:text-red-300 font-mono whitespace-pre-wrap">{{ sub.errorMessage }}</pre>
+                  </div>
+                }
+
+                <!-- Output -->
+                @if (sub.output) {
+                  <div>
+                    <p class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1.5">Output</p>
+                    <pre class="p-3 text-xs font-mono text-surface-700 dark:text-surface-300 bg-surface-50 dark:bg-surface-900 rounded-lg overflow-x-auto max-h-48 border border-surface-200 dark:border-surface-700">{{ sub.output }}</pre>
+                  </div>
+                }
+
+                <!-- Source Code -->
+                <div>
+                  <p class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1.5">Source code</p>
+                  <pre class="p-4 text-xs font-mono text-surface-700 dark:text-surface-300 bg-surface-50 dark:bg-surface-900 rounded-lg overflow-x-auto border border-surface-200 dark:border-surface-700">{{ sub.code }}</pre>
+                </div>
+              </div>
+            } @else {
+              <!-- Submission List -->
+              <div class="space-y-2">
+                @for (sub of submissionHistory(); track sub.id) {
+                  <button
+                    type="button"
+                    (click)="viewSubmissionDetail(sub)"
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-surface-50 dark:bg-surface-900 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors text-left group"
+                  >
+                    <div class="flex items-center gap-3">
+                      <span
+                        [class]="'text-xs font-medium ' +
+                          (sub.status === 'accepted' ? 'text-green-600' : 'text-red-500')"
+                      >
+                        {{ getStatusLabel(sub.status) }}
+                      </span>
+                      <span class="text-xs text-surface-400">{{ getLanguageLabel(sub.language) }}</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs text-surface-400">
+                      <span>{{ sub.passedTestcases }}/{{ sub.totalTestcases }}</span>
+                      <span>{{ sub.score }} đ</span>
+                      <span>{{ sub.createdAt | date:'dd/MM HH:mm' }}</span>
+                      <i class="pi pi-chevron-right text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    </div>
+                  </button>
+                } @empty {
+                  <p class="text-sm text-surface-400 text-center py-8">Chưa có bài nộp nào</p>
+                }
+              </div>
+            }
+          }
+
+          @if (activeTabIndex() === 4) {
+            <app-student-solution-list
+              [solutions]="solutions()"
+              [mySolutions]="mySolutions()"
+              [hasAccepted]="hasAccepted()"
+              [loading]="solutionsLoading()"
+              [mySolutionsLoading]="mySolutionsLoading()"
+              (shareSolution)="openSolutionForm()"
+              (editSolution)="onEditSolution($event)"
+              (deleteSolution)="onDeleteSolution($event)"
+            />
+          }
+        </div>
+      </div>
+
+      <!-- Right: Code Editor & Result -->
+      <div class="space-y-3">
+        <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+          <app-code-editor
+            (codeChange)="onCodeChange($event)"
+            (languageChange)="onLanguageChange($event)"
+          />
+        </div>
+
+        @if (currentSubmission()) {
+          <app-student-submission-result [submission]="currentSubmission()!" />
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Solution Form Dialog -->
+  <app-student-solution-form-dialog
+    [problemId]="prob.id.toString()"
+    [visible]="showSolutionForm()"
+    [editingSolution]="editingSolution()"
+    (visibleChange)="showSolutionForm.set($event)"
+    (solutionCreated)="onSolutionCreated()"
+    (solutionUpdated)="onSolutionUpdated()"
+  />
+} @else {
+  <!-- Not Found -->
+  <div class="flex flex-col items-center justify-center py-16 text-center">
+    <div class="flex items-center justify-center w-16 h-16 rounded-full bg-surface-100 dark:bg-surface-700 mb-3">
+      <i class="pi pi-exclamation-triangle text-2xl text-surface-400"></i>
+    </div>
+    <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0 mb-1.5">Không tìm thấy bài tập</h2>
+    <p class="text-sm text-surface-400 mb-4">Bài tập không tồn tại hoặc đã bị xóa.</p>
+    <button
+      type="button"
+      (click)="goBack()"
+      class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-contrast text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+    >
+      <i class="pi pi-arrow-left text-xs"></i>
+      Quay lại danh sách
+    </button>
+  </div>
+}

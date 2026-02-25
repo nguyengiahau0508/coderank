@@ -14,7 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, Public, Roles } from 'src/auth/decorators';
 import { Owner } from 'src/auth/decorators/owner.decorator';
-import { RolesEnum } from 'src/common/enums/enums';
+import { RolesEnum, EnrollmentStatusEnum } from 'src/common/enums/enums';
 import type { IJwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { PaginatedResponseDto } from 'src/common/dto';
 
@@ -67,6 +67,38 @@ export class CoursesController {
     private readonly googleDriveService: GoogleDriveService,
   ) {}
 
+  /**
+   * Recalculate averageRating & reviewCount for a course
+   */
+  private async recalculateCourseRating(courseId: string): Promise<void> {
+    const result = await this.reviewsService
+      .getRepository()
+      .createQueryBuilder('r')
+      .select('COUNT(r.id)', 'cnt')
+      .addSelect('COALESCE(AVG(r.rating), 0)', 'avg')
+      .where('r.courseId = :courseId', { courseId })
+      .andWhere('r.isVisible = true')
+      .getRawOne();
+
+    await this.coursesService.update(courseId, {
+      reviewCount: parseInt(result.cnt, 10) || 0,
+      averageRating: parseFloat(parseFloat(result.avg).toFixed(2)) || 0,
+    });
+  }
+
+  /**
+   * Recalculate enrollmentCount for a course (only active enrollments)
+   */
+  private async recalculateEnrollmentCount(courseId: string): Promise<void> {
+    const count = await this.enrollmentsService
+      .getRepository()
+      .count({ where: { courseId, status: EnrollmentStatusEnum.Active } as any });
+
+    await this.coursesService.update(courseId, {
+      enrollmentCount: count,
+    });
+  }
+
   // ==================== COURSES ====================
 
   @Post()
@@ -116,7 +148,6 @@ export class CoursesController {
       .take(limit);
 
     const [items, totalItems] = await queryBuilder.getManyAndCount();
-
     return {
       success: true,
       statusCode: 200,
@@ -573,12 +604,14 @@ export class CoursesController {
     @CurrentUser() currentUser: IJwtPayload,
     @Param('courseId') courseId: string,
   ) {
-    return this.enrollmentsService.create({
+    const enrollment = await this.enrollmentsService.create({
       courseId,
       userId: currentUser.userId,
       enrolledAt: new Date(),
       authorId: currentUser.userId,
     });
+    await this.recalculateEnrollmentCount(courseId);
+    return enrollment;
   }
 
   @Delete(':courseId/enroll')
@@ -592,7 +625,9 @@ export class CoursesController {
       where: { courseId, userId: currentUser.userId },
     });
     if (enrollment) {
-      return this.enrollmentsService.delete(enrollment.id);
+      const result = await this.enrollmentsService.delete(enrollment.id);
+      await this.recalculateEnrollmentCount(courseId);
+      return result;
     }
     return { message: 'Not enrolled' };
   }
@@ -698,12 +733,14 @@ export class CoursesController {
     @Param('courseId') courseId: string,
     @Body() dto: CreateReviewDto,
   ) {
-    return this.reviewsService.create({
+    const review = await this.reviewsService.create({
       ...dto,
       courseId,
       userId: currentUser.userId,
       authorId: currentUser.userId,
     });
+    await this.recalculateCourseRating(courseId);
+    return review;
   }
 
   @Get(':courseId/reviews')
@@ -720,6 +757,7 @@ export class CoursesController {
   @ApiBearerAuth('JWT-auth')
   async updateReview(
     @CurrentUser() currentUser: IJwtPayload,
+    @Param('courseId') courseId: string,
     @Param('reviewId') reviewId: string,
     @Body() dto: UpdateReviewDto,
   ) {
@@ -730,13 +768,16 @@ export class CoursesController {
     if (!review) {
       return { message: 'Review not found or not owned by you' };
     }
-    return this.reviewsService.update(reviewId, dto);
+    const updated = await this.reviewsService.update(reviewId, dto);
+    await this.recalculateCourseRating(courseId);
+    return updated;
   }
 
   @Delete(':courseId/reviews/:reviewId')
   @ApiBearerAuth('JWT-auth')
   async deleteReview(
     @CurrentUser() currentUser: IJwtPayload,
+    @Param('courseId') courseId: string,
     @Param('reviewId') reviewId: string,
   ) {
     const review = await this.reviewsService.findOne({
@@ -745,7 +786,9 @@ export class CoursesController {
     if (!review) {
       return { message: 'Review not found or not owned by you' };
     }
-    return this.reviewsService.delete(reviewId);
+    const result = await this.reviewsService.delete(reviewId);
+    await this.recalculateCourseRating(courseId);
+    return result;
   }
 
   // ==================== ASSIGNMENTS ====================
