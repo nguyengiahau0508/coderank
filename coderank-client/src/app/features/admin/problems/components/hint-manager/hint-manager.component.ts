@@ -26,7 +26,7 @@ import { Tag } from 'primeng/tag';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { HintsModel } from '../../../../../data/models/hints.model';
 import { CreateHintDto } from '../../../../../data/dto/problems';
-import { AdminProblemsService } from '../../services/admin-problems.service';
+import { HintsService } from '../../services/hints.service';
 
 @Component({
   selector: 'app-admin-hint-manager',
@@ -48,7 +48,7 @@ import { AdminProblemsService } from '../../services/admin-problems.service';
 })
 export class AdminHintManagerComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
-  private readonly adminService = inject(AdminProblemsService);
+  private readonly hintsService = inject(HintsService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
 
@@ -105,7 +105,7 @@ export class AdminHintManagerComponent implements OnInit {
     if (!this.problemId()) return;
 
     this.loading.set(true);
-    this.adminService.getHints(this.problemId()).subscribe({
+    this.hintsService.getHints(this.problemId()).subscribe({
       next: (res) => {
         this.hints.set(res.data ?? []);
         this.selectedHints.set([]);
@@ -171,7 +171,7 @@ export class AdminHintManagerComponent implements OnInit {
     this.isSubmitting.set(true);
 
     if (editing) {
-      this.adminService
+      this.hintsService
         .updateHint(this.problemId(), editing.id.toString(), formValue)
         .subscribe({
           next: () => {
@@ -186,7 +186,7 @@ export class AdminHintManagerComponent implements OnInit {
           },
         });
     } else {
-      this.adminService
+      this.hintsService
         .createHint(this.problemId(), formValue)
         .subscribe({
           next: () => {
@@ -236,7 +236,7 @@ export class AdminHintManagerComponent implements OnInit {
     if (!this.problemId()) return;
 
     this.isSubmitting.set(true);
-    this.adminService
+    this.hintsService
       .deleteHint(this.problemId(), hintId)
       .subscribe({
         next: () => {
@@ -261,7 +261,7 @@ export class AdminHintManagerComponent implements OnInit {
     let failed = 0;
 
     ids.forEach((id) => {
-      this.adminService.deleteHint(this.problemId(), id).subscribe({
+      this.hintsService.deleteHint(this.problemId(), id).subscribe({
         next: () => {
           completed++;
           if (completed + failed === ids.length) {
@@ -383,7 +383,7 @@ export class AdminHintManagerComponent implements OnInit {
     let failed = 0;
 
     dtos.forEach((dto) => {
-      this.adminService.createHint(this.problemId(), dto).subscribe({
+      this.hintsService.createHint(this.problemId(), dto).subscribe({
         next: () => {
           completed++;
           if (completed + failed === dtos.length) {

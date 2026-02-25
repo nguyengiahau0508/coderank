@@ -27,7 +27,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { TestcasesModel } from '../../../../../data/models/testcases.model';
 import { CreateTestcaseDto, UpdateTestcaseDto } from '../../../../../data/dto/problems';
 import { TestcaseCompareTypeEnum } from '../../../../../data/enums/enums';
-import { AdminProblemsService } from '../../services/admin-problems.service';
+import { TestcasesService } from '../../services/testcases.service';
 
 interface CompareTypeOption {
   label: string;
@@ -54,7 +54,7 @@ interface CompareTypeOption {
 })
 export class AdminTestcaseManagerComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
-  private readonly adminService = inject(AdminProblemsService);
+  private readonly testcasesService = inject(TestcasesService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
 
@@ -117,7 +117,7 @@ export class AdminTestcaseManagerComponent implements OnInit {
     if (!this.problemId()) return;
 
     this.loading.set(true);
-    this.adminService.getTestcases(this.problemId()).subscribe({
+    this.testcasesService.getTestcases(this.problemId()).subscribe({
       next: (res) => {
         this.testcases.set(res.data ?? []);
         this.selectedTestcases.set([]);
@@ -185,7 +185,7 @@ export class AdminTestcaseManagerComponent implements OnInit {
     this.isSubmitting.set(true);
 
     if (editing) {
-      this.adminService
+      this.testcasesService
         .updateTestcase(this.problemId(), editing.id.toString(), formValue)
         .subscribe({
           next: () => {
@@ -200,7 +200,7 @@ export class AdminTestcaseManagerComponent implements OnInit {
           },
         });
     } else {
-      this.adminService
+      this.testcasesService
         .createTestcase(this.problemId(), formValue)
         .subscribe({
           next: () => {
@@ -250,7 +250,7 @@ export class AdminTestcaseManagerComponent implements OnInit {
     if (!this.problemId()) return;
 
     this.isSubmitting.set(true);
-    this.adminService
+    this.testcasesService
       .deleteTestcase(this.problemId(), testcaseId)
       .subscribe({
         next: () => {
@@ -275,7 +275,7 @@ export class AdminTestcaseManagerComponent implements OnInit {
     let failed = 0;
 
     ids.forEach((id) => {
-      this.adminService.deleteTestcase(this.problemId(), id).subscribe({
+      this.testcasesService.deleteTestcase(this.problemId(), id).subscribe({
         next: () => {
           completed++;
           if (completed + failed === ids.length) {
@@ -401,7 +401,7 @@ export class AdminTestcaseManagerComponent implements OnInit {
     let failed = 0;
 
     dtos.forEach((dto) => {
-      this.adminService.createTestcase(this.problemId(), dto).subscribe({
+      this.testcasesService.createTestcase(this.problemId(), dto).subscribe({
         next: () => {
           completed++;
           if (completed + failed === dtos.length) {

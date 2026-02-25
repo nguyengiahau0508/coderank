@@ -21,6 +21,8 @@ import { SolutionFormDialogComponent } from '../components/solution-form-dialog/
 
 // Services & Models
 import { ProblemsService } from '../services/problems.service';
+import { TestcasesService } from '../services/testcases.service';
+import { HintsService } from '../services/hints.service';
 import { SubmissionsService } from '../services/submissions.service';
 import { SolutionsService } from '../services/solutions.service';
 import { ProblemsModel } from '../../../../data/models/problems.model';
@@ -49,6 +51,8 @@ export class AdminProblemDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly problemsService = inject(ProblemsService);
+  private readonly testcasesService = inject(TestcasesService);
+  private readonly hintsService = inject(HintsService);
   private readonly submissionsService = inject(SubmissionsService);
   private readonly solutionsService = inject(SolutionsService);
   private readonly messageService = inject(MessageService);
@@ -104,7 +108,7 @@ export class AdminProblemDetailComponent implements OnInit {
    */
   private loadProblem(problemId: string): void {
     this.loading.set(true);
-    this.problemsService.getProblemById(problemId).subscribe({
+    this.problemsService.getProblem(problemId).subscribe({
       next: (response) => {
         this.problem.set(response.data || null);
         this.loading.set(false);
@@ -124,7 +128,7 @@ export class AdminProblemDetailComponent implements OnInit {
    * Load testcases
    */
   private loadTestcases(problemId: string): void {
-    this.problemsService.getSampleTestcases(problemId).subscribe({
+    this.testcasesService.getSampleTestcases(problemId).subscribe({
       next: (response) => {
         // Only show sample testcases
         this.sampleTestcases.set(
@@ -145,7 +149,7 @@ export class AdminProblemDetailComponent implements OnInit {
    * Load hints
    */
   private loadHints(problemId: string): void {
-    this.problemsService.getHints(problemId).subscribe({
+    this.hintsService.getHints(problemId).subscribe({
       next: (response) => {
         // Only show public hints, sorted by hintOrder
         const publicHints = (response.data || [])
@@ -167,7 +171,7 @@ export class AdminProblemDetailComponent implements OnInit {
    * Load submission history
    */
   private loadSubmissionHistory(problemId: string): void {
-    this.problemsService.getSubmissionHistory(problemId).subscribe({
+    this.submissionsService.getSubmissions(problemId).subscribe({
       next: (response) => {
         const history = response.data || [];
         this.submissionHistory.set(history);
@@ -365,7 +369,7 @@ export class AdminProblemDetailComponent implements OnInit {
     this.isSubmitting.set(true);
     this.submissionsService.setSubmitting(true);
 
-    this.problemsService
+    this.submissionsService
       .submitSolution(problem.id.toString(), { code, language })
       .subscribe({
         next: (response) => {
@@ -470,5 +474,18 @@ export class AdminProblemDetailComponent implements OnInit {
    */
   goBack(): void {
     this.router.navigate(['..'], { relativeTo: this.route });
+  }
+
+  /**
+   * Copy text to clipboard
+   */
+  copyToClipboard(text: string): void {
+    navigator.clipboard.writeText(text).then(() => {
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Đã sao chép',
+        life: 1500,
+      });
+    });
   }
 }

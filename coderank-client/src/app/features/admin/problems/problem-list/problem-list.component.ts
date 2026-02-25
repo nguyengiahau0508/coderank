@@ -28,7 +28,8 @@ import { TagsModel } from '../../../../data/models/tags.model';
 import { AdminProblemFormDialogComponent } from '../components/problem-form-dialog/problem-form-dialog.component';
 import { AdminTestcaseManagerComponent } from '../components/testcase-manager/testcase-manager.component';
 import { AdminHintManagerComponent } from '../components/hint-manager/hint-manager.component';
-import { ProblemsApi } from '../../../../data/api';
+import { ProblemsService } from '../services/problems.service';
+import { TagsService } from '../services/tags.service';
 
 @Component({
   selector: 'app-problem-list',
@@ -61,7 +62,8 @@ import { ProblemsApi } from '../../../../data/api';
 export class ProblemListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly problemsApi = inject(ProblemsApi)
+  private readonly problemsService = inject(ProblemsService);
+  private readonly tagsService = inject(TagsService);
   private readonly messageService = inject(MessageService);
   private readonly confirmService = inject(ConfirmationService);
 
@@ -121,7 +123,7 @@ export class ProblemListComponent implements OnInit {
   loadTags(): void {
     // Extract unique tags from all problems
     // In real scenario, you should have a separate tags API endpoint
-    this.problemsApi.getTags().subscribe({
+    this.tagsService.getTags().subscribe({
       next: (response) => {
         if (!response.data) {
           this.messageService.add({
@@ -175,7 +177,7 @@ export class ProblemListComponent implements OnInit {
       params.maxPoints = this.pointsRange()[1];
     }
 
-    this.problemsApi.getProblems(params).subscribe({
+    this.problemsService.getProblems(params).subscribe({
       next: (response) => {
         this.problems.set(response.data || []);
         this.totalRecords.set(response.meta?.totalItems ?? 0);
@@ -217,7 +219,7 @@ export class ProblemListComponent implements OnInit {
       params.maxPoints = this.pointsRange()[1];
     }
 
-    this.problemsApi.getMyProblems(params).subscribe({
+    this.problemsService.getMyProblems(params).subscribe({
       next: (response) => {
         this.problems.set(response.data || []);
         this.totalRecords.set(response.meta?.totalItems ?? 0);
@@ -304,7 +306,7 @@ export class ProblemListComponent implements OnInit {
   editProblem(event: Event, problem: ProblemsModel): void {
     event.stopPropagation();
     this.loading.set(true);
-    this.problemsApi.getProblem(problem.id.toString()).subscribe({
+    this.problemsService.getProblem(problem.id.toString()).subscribe({
       next: (response) => {
         if (response.data) {
           this.editingProblem.set(response.data);
@@ -340,7 +342,7 @@ export class ProblemListComponent implements OnInit {
       header: 'Confirm',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.problemsApi.deleteProblem(problem.id.toString()).subscribe({
+        this.problemsService.deleteProblem(problem.id.toString()).subscribe({
           next: () => {
             this.messageService.add({
               severity: 'success',
@@ -388,7 +390,7 @@ export class ProblemListComponent implements OnInit {
 
     if (this.editingProblem()) {
       // Update
-      this.problemsApi.updateProblem(this.editingProblem()!.id.toString(), problemData).subscribe({
+      this.problemsService.updateProblem(this.editingProblem()!.id.toString(), problemData).subscribe({
         next: () => {
           this.syncTags(this.editingProblem()!.id.toString(), tagIds ?? []).then(() => {
             this.messageService.add({
@@ -412,7 +414,7 @@ export class ProblemListComponent implements OnInit {
       });
     } else {
       // Create
-      this.problemsApi.createProblem(problemData).subscribe({
+      this.problemsService.createProblem(problemData).subscribe({
         next: (response) => {
           const newProblemId = response.data?.id?.toString();
           const afterTags = newProblemId && tagIds?.length
@@ -452,8 +454,8 @@ export class ProblemListComponent implements OnInit {
     const toRemove = currentTags.filter(id => !newTagIds.includes(id));
 
     const operations: Observable<any>[] = [
-      ...toAdd.map(tagId => this.problemsApi.addTag(problemId, tagId.toString())),
-      ...toRemove.map(tagId => this.problemsApi.removeTag(problemId, tagId.toString())),
+      ...toAdd.map(tagId => this.tagsService.addTag(problemId, tagId.toString())),
+      ...toRemove.map(tagId => this.tagsService.removeTag(problemId, tagId.toString())),
     ];
 
     if (operations.length === 0) return Promise.resolve();

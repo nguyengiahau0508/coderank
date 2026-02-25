@@ -1,17 +1,48 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+import { Observable } from 'rxjs';
+import { ProblemsApi } from '../../../../data/api/problems.api';
+import { ApiResponse } from '../../../../data/interfaces';
 import { SubmissionsModel } from '../../../../data/models/submissions.model';
 import { SubmissionStatusEnum } from '../../../../data/enums/enums';
+import { CreateSubmissionDto } from '../../../../data/dto/problems';
 
 /**
- * Submissions Service - Manage submission state and results
+ * Submissions Service - API calls and state management for submissions
  */
 @Injectable({
   providedIn: 'root'
 })
 export class SubmissionsService {
+  private readonly problemsApi = inject(ProblemsApi);
+
   // Current submission being processed
   private readonly currentSubmission = signal<SubmissionsModel | null>(null);
   readonly currentSubmission$ = this.currentSubmission.asReadonly();
+
+  // ==================== API Calls ====================
+
+  /**
+   * Submit a solution for a problem
+   */
+  submitSolution(problemId: string, dto: CreateSubmissionDto): Observable<ApiResponse<SubmissionsModel>> {
+    return this.problemsApi.submitSolution(problemId, dto);
+  }
+
+  /**
+   * Get all submissions for a problem
+   */
+  getSubmissions(problemId: string): Observable<ApiResponse<SubmissionsModel[]>> {
+    return this.problemsApi.getSubmissions(problemId);
+  }
+
+  /**
+   * Get a specific submission
+   */
+  getSubmission(problemId: string, submissionId: string): Observable<ApiResponse<SubmissionsModel>> {
+    return this.problemsApi.getSubmission(problemId, submissionId);
+  }
+
+  // ==================== State Management ====================
 
   // Loading state
   private readonly isSubmitting = signal<boolean>(false);

@@ -19,6 +19,8 @@ import { MarkdownViewComponent } from '../../../../shared/components/markdown-vi
 
 // Services & Models
 import { ProblemsService } from '../services/problems.service';
+import { TestcasesService } from '../services/testcases.service';
+import { HintsService } from '../services/hints.service';
 import { SubmissionsService } from '../services/submissions.service';
 import { ProblemsModel } from '../../../../data/models/problems.model';
 import { TestcasesModel } from '../../../../data/models/testcases.model';
@@ -43,6 +45,8 @@ export class ProblemDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly problemsService = inject(ProblemsService);
+  private readonly testcasesService = inject(TestcasesService);
+  private readonly hintsService = inject(HintsService);
   private readonly submissionsService = inject(SubmissionsService);
   private readonly messageService = inject(MessageService);
 
@@ -82,7 +86,7 @@ export class ProblemDetailComponent implements OnInit {
   private loadProblem(problemId: string): void {
     console.log('[ProblemDetail] Loading problem:', problemId);
     this.loading.set(true);
-    this.problemsService.getProblemById(problemId).subscribe({
+    this.problemsService.getProblem(problemId).subscribe({
       next: (response) => {
         console.log('[ProblemDetail] Problem loaded:', response);
         this.problem.set(response.data || null);
@@ -104,7 +108,7 @@ export class ProblemDetailComponent implements OnInit {
    * Load testcases
    */
   private loadTestcases(problemId: string): void {
-    this.problemsService.getSampleTestcases(problemId).subscribe({
+    this.testcasesService.getSampleTestcases(problemId).subscribe({
       next: (response) => {
         // Only show sample testcases
         this.sampleTestcases.set(
@@ -125,7 +129,7 @@ export class ProblemDetailComponent implements OnInit {
    * Load hints
    */
   private loadHints(problemId: string): void {
-    this.problemsService.getHints(problemId).subscribe({
+    this.hintsService.getHints(problemId).subscribe({
       next: (response) => {
         // Only show public hints, sorted by hintOrder
         const publicHints = (response.data || [])
@@ -147,7 +151,7 @@ export class ProblemDetailComponent implements OnInit {
    * Load submission history
    */
   private loadSubmissionHistory(problemId: string): void {
-    this.problemsService.getSubmissionHistory(problemId).subscribe({
+    this.submissionsService.getSubmissions(problemId).subscribe({
       next: (response) => {
         this.submissionHistory.set(response.data || []);
       },
@@ -193,7 +197,7 @@ export class ProblemDetailComponent implements OnInit {
     this.isSubmitting.set(true);
     this.submissionsService.setSubmitting(true);
 
-    this.problemsService
+    this.submissionsService
       .submitSolution(problem.id.toString(), { code, language })
       .subscribe({
         next: (response) => {
