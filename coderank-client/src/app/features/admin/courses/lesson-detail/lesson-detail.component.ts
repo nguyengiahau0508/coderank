@@ -28,7 +28,7 @@ import { LessonTypeEnum, QuizQuestionTypeEnum, AssignmentTypeEnum, AssignmentSub
 import { CoursesService } from '../services/courses.service';
 
 @Component({
-  selector: 'app-lesson-detail',
+  selector: 'app-admin-lesson-detail',
   imports: [
     CommonModule,
     FormsModule,
@@ -52,7 +52,7 @@ import { CoursesService } from '../services/courses.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [MessageService, ConfirmationService],
 })
-export class LessonDetailComponent implements OnInit {
+export class AdminLessonDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);

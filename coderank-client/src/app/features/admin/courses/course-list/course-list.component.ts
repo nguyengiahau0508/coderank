@@ -25,10 +25,10 @@ import { CourseLevelEnum, CourseStatusEnum } from '../../../../data/enums/enums'
 import { CoursesService } from '../services/courses.service';
 
 // Components
-import { CourseFormDialogComponent } from '../components/course-form-dialog/course-form-dialog.component';
+import { AdminCourseFormDialogComponent } from '../components/course-form-dialog/course-form-dialog.component';
 
 @Component({
-  selector: 'app-course-list',
+  selector: 'app-admin-course-list',
   imports: [
     CommonModule,
     FormsModule,
@@ -43,13 +43,13 @@ import { CourseFormDialogComponent } from '../components/course-form-dialog/cour
     Toast,
     Tooltip,
     ConfirmDialog,
-    CourseFormDialogComponent,
+    AdminCourseFormDialogComponent,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './course-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CourseListComponent implements OnInit {
+export class AdminCourseListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly coursesService = inject(CoursesService);

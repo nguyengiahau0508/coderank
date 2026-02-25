@@ -34,7 +34,7 @@ import { CourseLevelEnum, CourseStatusEnum, LessonTypeEnum } from '../../../../d
 import { CoursesService } from '../services/courses.service';
 
 @Component({
-  selector: 'app-course-detail',
+  selector: 'app-admin-course-detail',
   imports: [
     CommonModule,
     FormsModule,
@@ -63,7 +63,7 @@ import { CoursesService } from '../services/courses.service';
   templateUrl: './course-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CourseDetailComponent implements OnInit {
+export class AdminCourseDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly coursesService = inject(CoursesService);

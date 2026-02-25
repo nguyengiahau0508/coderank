@@ -13,7 +13,7 @@ import { CoursesModel } from '../../../../../data/models/courses.model';
 import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/enums/enums';
 
 @Component({
-  selector: 'app-course-form-dialog',
+  selector: 'app-admin-course-form-dialog',
   imports: [
     CommonModule,
     FormsModule,
@@ -181,7 +181,7 @@ import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/enums/enu
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CourseFormDialogComponent {
+export class AdminCourseFormDialogComponent {
   readonly visible = input<boolean>(false);
   readonly course = input<CoursesModel | null>(null);
   readonly submitting = input<boolean>(false);
