@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, OnInit, signal, computed, inject } 
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Observable, forkJoin } from 'rxjs';
 
 // PrimeNG
 import { TableModule } from 'primeng/table';
@@ -383,18 +384,22 @@ export class ProblemListComponent implements OnInit {
    */
   onProblemSave(data: any): void {
     this.isSubmittingDialog.set(true);
+    const { tagIds, ...problemData } = data;
+
     if (this.editingProblem()) {
       // Update
-      this.problemsApi.updateProblem(this.editingProblem()!.id.toString(), data).subscribe({
+      this.problemsApi.updateProblem(this.editingProblem()!.id.toString(), problemData).subscribe({
         next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Problem updated successfully',
+          this.syncTags(this.editingProblem()!.id.toString(), tagIds ?? []).then(() => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Problem updated successfully',
+            });
+            this.showProblemDialog.set(false);
+            this.isSubmittingDialog.set(false);
+            this.reload();
           });
-          this.showProblemDialog.set(false);
-          this.isSubmittingDialog.set(false);
-          this.reload();
         },
         error: () => {
           this.messageService.add({
@@ -407,17 +412,24 @@ export class ProblemListComponent implements OnInit {
       });
     } else {
       // Create
-      this.problemsApi.createProblem(data).subscribe({
-        next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Problem created successfully',
+      this.problemsApi.createProblem(problemData).subscribe({
+        next: (response) => {
+          const newProblemId = response.data?.id?.toString();
+          const afterTags = newProblemId && tagIds?.length
+            ? this.syncTags(newProblemId, tagIds)
+            : Promise.resolve();
+
+          afterTags.then(() => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Problem created successfully',
+            });
+            this.showProblemDialog.set(false);
+            this.isSubmittingDialog.set(false);
+            this.page.set(1);
+            this.reload();
           });
-          this.showProblemDialog.set(false);
-          this.isSubmittingDialog.set(false);
-          this.page.set(1);
-          this.reload();
         },
         error: () => {
           this.messageService.add({
@@ -429,6 +441,36 @@ export class ProblemListComponent implements OnInit {
         },
       });
     }
+  }
+
+  /**
+   * Sync tags for a problem: add new tags and remove old ones
+   */
+  private syncTags(problemId: string, newTagIds: number[]): Promise<void> {
+    const currentTags = this.editingProblem()?.tags?.map(t => t.id) ?? [];
+    const toAdd = newTagIds.filter(id => !currentTags.includes(id));
+    const toRemove = currentTags.filter(id => !newTagIds.includes(id));
+
+    const operations: Observable<any>[] = [
+      ...toAdd.map(tagId => this.problemsApi.addTag(problemId, tagId.toString())),
+      ...toRemove.map(tagId => this.problemsApi.removeTag(problemId, tagId.toString())),
+    ];
+
+    if (operations.length === 0) return Promise.resolve();
+
+    return new Promise((resolve) => {
+      forkJoin(operations).subscribe({
+        next: () => resolve(),
+        error: () => {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Warning',
+            detail: 'Some tags may not have been updated',
+          });
+          resolve();
+        },
+      });
+    });
   }
 
   /**

@@ -1,13 +1,15 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, effect, inject } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
+import { MultiSelect } from 'primeng/multiselect';
 import { InputNumber } from 'primeng/inputnumber';
 import { Checkbox } from 'primeng/checkbox';
 import { TextEditorComponent } from '../../../../../shared/components/text-editor/text-editor.component';
 import { DifficultyEnum } from '../../../../../data/enums/enums';
 import { ProblemsModel } from '../../../../../data/models/problems.model';
+import { TagsModel } from '../../../../../data/models/tags.model';
 import { CreateProblemDto, UpdateProblemDto } from '../../../../../data/dto/problems';
 
 interface DifficultyOption {
@@ -22,9 +24,11 @@ interface DifficultyOption {
     Button,
     InputText,
     Select,
+    MultiSelect,
     InputNumber,
     Checkbox,
     ReactiveFormsModule,
+    FormsModule,
     TextEditorComponent,
   ],
   templateUrl: './problem-form-dialog.component.html',
@@ -36,14 +40,20 @@ export class AdminProblemFormDialogComponent {
   // Inputs
   readonly problem = input<ProblemsModel | null>(null);
   readonly loading = input<boolean>(false);
+  readonly availableTags = input<TagsModel[]>([]);
 
   // Outputs
-  readonly save = output<CreateProblemDto | UpdateProblemDto>();
+  readonly save = output<(CreateProblemDto | UpdateProblemDto) & { tagIds?: number[] }>();
   readonly cancel = output<void>();
 
   // State
   form!: FormGroup;
   isEditMode = signal<boolean>(false);
+  selectedTagIds = signal<number[]>([]);
+
+  get tagOptions() {
+    return this.availableTags().map(tag => ({ label: tag.name, value: tag.id }));
+  }
 
   difficultyOptions: DifficultyOption[] = [
     { label: 'Easy', value: DifficultyEnum.Easy, severity: 'success' },
@@ -60,9 +70,11 @@ export class AdminProblemFormDialogComponent {
       if (problemData) {
         this.isEditMode.set(true);
         this.patchForm(problemData);
+        this.selectedTagIds.set(problemData.tags?.map(t => t.id) ?? []);
       } else {
         this.isEditMode.set(false);
         this.form.reset(this.getDefaultValues());
+        this.selectedTagIds.set([]);
       }
     });
   }
@@ -115,6 +127,7 @@ export class AdminProblemFormDialogComponent {
   onCancel(): void {
     this.cancel.emit();
     this.form.reset(this.getDefaultValues());
+    this.selectedTagIds.set([]);
   }
 
   onSubmit(): void {
@@ -124,7 +137,7 @@ export class AdminProblemFormDialogComponent {
     }
 
     const formValue = this.form.value;
-    this.save.emit(formValue);
+    this.save.emit({ ...formValue, tagIds: this.selectedTagIds() });
   }
 
   getFieldError(fieldName: string): string {

@@ -283,6 +283,7 @@
   <app-admin-problem-form-dialog
     [problem]="editingProblem()"
     [loading]="isSubmittingDialog()"
+    [availableTags]="tags()"
     (save)="onProblemSave($event)"
     (cancel)="closeProblemDialog()"
   />

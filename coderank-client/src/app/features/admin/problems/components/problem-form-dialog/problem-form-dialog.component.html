@@ -41,6 +41,28 @@
     </div>
   </fieldset>
 
+  <!-- Section: Tags -->
+  <fieldset class="space-y-4">
+    <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-2">Tags</legend>
+
+    <div class="flex flex-col gap-1.5">
+      <label for="tags" class="text-xs font-medium text-surface-600 dark:text-surface-300">Chọn tags</label>
+      <p-multiselect
+        inputId="tags"
+        [options]="tagOptions"
+        [(ngModel)]="selectedTagIds"
+        [ngModelOptions]="{ standalone: true }"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Chọn tags cho bài tập"
+        display="chip"
+        [filter]="true"
+        filterPlaceHolder="Tìm tag..."
+        class="w-full"
+      />
+    </div>
+  </fieldset>
+
   <!-- Section: Description -->
   <fieldset class="space-y-4">
     <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-2">Mô tả</legend>
