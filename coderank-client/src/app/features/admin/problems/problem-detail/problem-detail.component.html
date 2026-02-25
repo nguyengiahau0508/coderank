@@ -137,28 +137,135 @@
           }
 
           @if (activeTabIndex() === 3) {
-            <div class="space-y-2">
-              @for (sub of submissionHistory(); track sub.id) {
-                <div class="flex items-center justify-between px-4 py-3 rounded-lg bg-surface-50 dark:bg-surface-900">
-                  <div class="flex items-center gap-3">
-                    <span
-                      [class]="'text-xs font-medium ' +
-                        (sub.status === 'accepted' ? 'text-green-600' : 'text-red-500')"
-                    >
-                      {{ sub.status }}
-                    </span>
-                    <span class="text-xs text-surface-400">{{ sub.language }}</span>
+            @if (selectedSubmission(); as sub) {
+              <!-- Submission Detail View -->
+              <div class="space-y-4">
+                <!-- Back button -->
+                <button
+                  type="button"
+                  (click)="backToSubmissionList()"
+                  class="inline-flex items-center gap-1.5 text-xs text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-colors"
+                >
+                  <i class="pi pi-arrow-left text-[10px]"></i>
+                  Quay lại danh sách
+                </button>
+
+                <!-- Status header -->
+                <div class="flex items-center justify-between">
+                  <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0">Chi tiết bài nộp</h3>
+                  <span
+                    [class]="'text-xs font-medium px-2.5 py-1 rounded-full ' +
+                      (sub.status === 'accepted' ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400' :
+                       sub.status === 'pending' || sub.status === 'running' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' :
+                       'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400')"
+                  >
+                    {{ getStatusLabel(sub.status) }}
+                  </span>
+                </div>
+
+                <!-- Meta info -->
+                <div class="flex items-center gap-2 flex-wrap text-xs text-surface-400">
+                  <span class="inline-flex items-center gap-1">
+                    <i class="pi pi-code text-[10px]"></i>
+                    {{ getLanguageLabel(sub.language) }}
+                  </span>
+                  <span class="w-1 h-1 rounded-full bg-surface-300"></span>
+                  <span class="inline-flex items-center gap-1">
+                    <i class="pi pi-calendar text-[10px]"></i>
+                    {{ sub.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}
+                  </span>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div class="p-3 bg-surface-50 dark:bg-surface-900 rounded-lg">
+                    <span class="text-surface-400 block mb-0.5">Điểm</span>
+                    <span class="text-base font-bold text-surface-900 dark:text-surface-0">{{ sub.score }}</span>
                   </div>
-                  <div class="flex items-center gap-3 text-xs text-surface-400">
-                    <span>{{ sub.passedTestCases }}/{{ sub.totalTestCases }}</span>
-                    <span>{{ sub.score }} đ</span>
-                    <span>{{ sub.createdAt | date:'dd/MM HH:mm' }}</span>
+                  <div class="p-3 bg-surface-50 dark:bg-surface-900 rounded-lg">
+                    <span class="text-surface-400 block mb-0.5">Test cases</span>
+                    <span class="text-base font-bold text-surface-900 dark:text-surface-0">{{ sub.passedTestcases }}/{{ sub.totalTestcases }}</span>
+                  </div>
+                  @if (sub.executionTimeMs !== null) {
+                    <div class="p-3 bg-surface-50 dark:bg-surface-900 rounded-lg">
+                      <span class="text-surface-400 block mb-0.5">Thời gian</span>
+                      <span class="text-base font-bold text-surface-900 dark:text-surface-0">{{ sub.executionTimeMs }} ms</span>
+                    </div>
+                  }
+                  @if (sub.memoryUsageMb !== null) {
+                    <div class="p-3 bg-surface-50 dark:bg-surface-900 rounded-lg">
+                      <span class="text-surface-400 block mb-0.5">Bộ nhớ</span>
+                      <span class="text-base font-bold text-surface-900 dark:text-surface-0">{{ sub.memoryUsageMb }} MB</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Progress bar -->
+                <div>
+                  <div class="flex items-center justify-between text-xs text-surface-400 mb-1.5">
+                    <span>Tỷ lệ pass</span>
+                    <span>{{ getSuccessRate(sub) }}%</span>
+                  </div>
+                  <div class="h-2 bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden">
+                    <div
+                      [style.width.%]="getSuccessRate(sub)"
+                      [class]="'h-full rounded-full transition-all duration-500 ' + (getSuccessRate(sub) === 100 ? 'bg-green-500' : getSuccessRate(sub) > 0 ? 'bg-yellow-500' : 'bg-red-500')"
+                    ></div>
                   </div>
                 </div>
-              } @empty {
-                <p class="text-sm text-surface-400 text-center py-8">Chưa có bài nộp nào</p>
-              }
-            </div>
+
+                <!-- Error message -->
+                @if (sub.errorMessage) {
+                  <div class="p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-900/30">
+                    <div class="text-[10px] text-red-500 font-semibold uppercase tracking-wider mb-1">Lỗi</div>
+                    <pre class="text-xs text-red-700 dark:text-red-300 font-mono whitespace-pre-wrap">{{ sub.errorMessage }}</pre>
+                  </div>
+                }
+
+                <!-- Output -->
+                @if (sub.output) {
+                  <div>
+                    <p class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1.5">Output</p>
+                    <pre class="p-3 text-xs font-mono text-surface-700 dark:text-surface-300 bg-surface-50 dark:bg-surface-900 rounded-lg overflow-x-auto max-h-48 border border-surface-200 dark:border-surface-700">{{ sub.output }}</pre>
+                  </div>
+                }
+
+                <!-- Source Code -->
+                <div>
+                  <p class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1.5">Source code</p>
+                  <pre class="p-4 text-xs font-mono text-surface-700 dark:text-surface-300 bg-surface-50 dark:bg-surface-900 rounded-lg overflow-x-auto border border-surface-200 dark:border-surface-700">{{ sub.code }}</pre>
+                </div>
+              </div>
+            } @else {
+              <!-- Submission List -->
+              <div class="space-y-2">
+                @for (sub of submissionHistory(); track sub.id) {
+                  <button
+                    type="button"
+                    (click)="viewSubmissionDetail(sub)"
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-surface-50 dark:bg-surface-900 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors text-left group"
+                  >
+                    <div class="flex items-center gap-3">
+                      <span
+                        [class]="'text-xs font-medium ' +
+                          (sub.status === 'accepted' ? 'text-green-600' : 'text-red-500')"
+                      >
+                        {{ getStatusLabel(sub.status) }}
+                      </span>
+                      <span class="text-xs text-surface-400">{{ getLanguageLabel(sub.language) }}</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-xs text-surface-400">
+                      <span>{{ sub.passedTestcases }}/{{ sub.totalTestcases }}</span>
+                      <span>{{ sub.score }} đ</span>
+                      <span>{{ sub.createdAt | date:'dd/MM HH:mm' }}</span>
+                      <i class="pi pi-chevron-right text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    </div>
+                  </button>
+                } @empty {
+                  <p class="text-sm text-surface-400 text-center py-8">Chưa có bài nộp nào</p>
+                }
+              </div>
+            }
           }
 
           @if (activeTabIndex() === 4) {

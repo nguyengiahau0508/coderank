@@ -57,6 +57,32 @@ export class ProblemsController {
     });
   }
 
+    @Get('me')
+  @ApiBearerAuth('JWT-auth')
+  async getMyProblems(
+    @Query() dto: PaginationQueryProblemsDto,
+    @CurrentUser() currentUser: IJwtPayload,
+  ): Promise<PaginatedResponseDto<ProblemsEntity>> {
+    const result = await this.problemsService.getProblem(dto, currentUser.userId);
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Success',
+      data: result.items,
+      meta: {
+        totalItems: result.totalItems,
+        page: result.currentPage,
+        totalPages: result.totalPages,
+        limit: dto.limit || 10,
+        hasNext: result.currentPage < result.totalPages,
+        hasPrevious: result.currentPage > 1,
+      },
+      timestamp: new Date().toISOString(),
+      path: '/problems',
+    };
+  }
+
   @Get('/tags')
   @ApiBearerAuth('JWT-auth')
   async getAllTags() {
@@ -96,6 +122,8 @@ export class ProblemsController {
       path: '/problems',
     };
   }
+
+
 
   @Patch(':problemId')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
@@ -311,6 +339,23 @@ export class ProblemsController {
         authorId: currentUser.userId
       },
       order: { createdAt: 'DESC' },
+    });
+  }
+
+  @Get(':problemId/submissions/:submissionId')
+  @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
+  @ApiBearerAuth('JWT-auth')
+  async getSubmissionById(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('problemId') problemId: string,
+    @Param('submissionId') submissionId: string
+  ) {
+    return this.submissionsService.findOne({
+      where: {
+        id: submissionId,
+        problemId: problemId,
+        authorId: currentUser.userId
+      },
     });
   }
 

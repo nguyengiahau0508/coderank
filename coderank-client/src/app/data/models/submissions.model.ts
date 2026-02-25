@@ -11,8 +11,8 @@ export interface SubmissionsModel extends BaseModel {
   score: number;
   executionTimeMs: number | null;
   memoryUsageMb: number | null;
-  passedTestCases: number;
-  totalTestCases: number;
+  passedTestcases: number;
+  totalTestcases: number;
   errorMessage: string | null;
   output: string | null;
   problem: ProblemsModel;

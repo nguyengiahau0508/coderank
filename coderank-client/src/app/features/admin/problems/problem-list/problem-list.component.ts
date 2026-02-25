@@ -80,12 +80,13 @@ export class ProblemListComponent implements OnInit {
   readonly isSubmittingDialog = signal<boolean>(false);
 
   // Filters
-  readonly searchTerm = signal<string>('');
+  readonly searchTerm = signal<string>('');  
   readonly selectedDifficulty = signal<DifficultyEnum | null>(null);
   readonly selectedTags = signal<number[]>([]);
   readonly pointsRange = signal<number[]>([0, 100]);
   readonly page = signal<number>(1);
   readonly limit = signal<number>(20);
+  readonly myProblemsOnly = signal<boolean>(false);
 
   // Options
   readonly difficultyOptions = [
@@ -100,7 +101,8 @@ export class ProblemListComponent implements OnInit {
     !!this.selectedDifficulty() ||
     this.selectedTags().length > 0 ||
     this.pointsRange()[0] > 0 ||
-    this.pointsRange()[1] < 1000
+    this.pointsRange()[1] < 1000 ||
+    this.myProblemsOnly()
   );
 
   readonly tagOptions = computed(() =>
@@ -174,8 +176,50 @@ export class ProblemListComponent implements OnInit {
 
     this.problemsApi.getProblems(params).subscribe({
       next: (response) => {
-        this.problems.set(response.data);
-        this.totalRecords.set(response.meta.totalItems);
+        this.problems.set(response.data || []);
+        this.totalRecords.set(response.meta?.totalItems ?? 0);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+      }
+    });
+  }
+
+  /**
+   * Load my problems from API
+   */
+  private loadMyProblems(): void {
+    this.loading.set(true);
+
+    const params: any = {
+      page: this.page(),
+      limit: this.limit(),
+    };
+
+    if (this.searchTerm()) {
+      params.search = this.searchTerm();
+    }
+
+    if (this.selectedDifficulty()) {
+      params.difficulty = this.selectedDifficulty();
+    }
+
+    if (this.selectedTags().length > 0) {
+      params.tagIds = this.selectedTags();
+    }
+
+    if (this.pointsRange()[0] > 0) {
+      params.minPoints = this.pointsRange()[0];
+    }
+    if (this.pointsRange()[1] < 1000) {
+      params.maxPoints = this.pointsRange()[1];
+    }
+
+    this.problemsApi.getMyProblems(params).subscribe({
+      next: (response) => {
+        this.problems.set(response.data || []);
+        this.totalRecords.set(response.meta?.totalItems ?? 0);
         this.loading.set(false);
       },
       error: () => {
@@ -187,27 +231,44 @@ export class ProblemListComponent implements OnInit {
   onPageChange(event: any): void {
     this.page.set(event.page + 1);
     this.limit.set(event.rows);
-    this.loadProblems();
+    this.reload();
   }
 
   onSearch(): void {
     this.page.set(1);
-    this.loadProblems();
+    this.reload();
   }
 
   onDifficultyChange(): void {
     this.page.set(1);
-    this.loadProblems();
+    this.reload();
   }
 
   onTagsChange(): void {
     this.page.set(1);
-    this.loadProblems();
+    this.reload();
   }
 
   onPointsChange(): void {
     this.page.set(1);
-    this.loadProblems();
+    this.reload();
+  }
+
+  onMyProblemsToggle(value: boolean): void {
+    this.myProblemsOnly.set(value);
+    this.page.set(1);
+    this.reload();
+  }
+
+  /**
+   * Reload problems based on current filter mode
+   */
+  private reload(): void {
+    if (this.myProblemsOnly()) {
+      this.loadMyProblems();
+    } else {
+      this.loadProblems();
+    }
   }
 
   toggleAdvancedFilters(): void {
@@ -219,6 +280,7 @@ export class ProblemListComponent implements OnInit {
     this.selectedDifficulty.set(null);
     this.selectedTags.set([]);
     this.pointsRange.set([0, 1000]);
+    this.myProblemsOnly.set(false);
     this.page.set(1);
     this.loadProblems();
   }
@@ -284,7 +346,7 @@ export class ProblemListComponent implements OnInit {
               summary: 'Success',
               detail: 'Problem deleted successfully',
             });
-            this.loadProblems();
+            this.reload();
           },
           error: () => {
             this.messageService.add({
@@ -332,7 +394,7 @@ export class ProblemListComponent implements OnInit {
           });
           this.showProblemDialog.set(false);
           this.isSubmittingDialog.set(false);
-          this.loadProblems();
+          this.reload();
         },
         error: () => {
           this.messageService.add({
@@ -355,7 +417,7 @@ export class ProblemListComponent implements OnInit {
           this.showProblemDialog.set(false);
           this.isSubmittingDialog.set(false);
           this.page.set(1);
-          this.loadProblems();
+          this.reload();
         },
         error: () => {
           this.messageService.add({
@@ -379,7 +441,7 @@ export class ProblemListComponent implements OnInit {
   closeTestcaseDialog(): void {
     this.showTestcaseDialog.set(false);
     this.selectedProblem.set(null);
-    this.loadProblems();
+    this.reload();
   }
 
   closeHintDialog(): void {

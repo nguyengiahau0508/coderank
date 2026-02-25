@@ -68,6 +68,8 @@ export class AdminProblemDetailComponent implements OnInit {
   readonly solutionsLoading = signal<boolean>(false);
   readonly mySolutionsLoading = signal<boolean>(false);
   readonly editingSolution = signal<SolutionsModel | null>(null);
+  readonly selectedSubmission = signal<SubmissionsModel | null>(null);
+  readonly selectedSubmissionLoading = signal<boolean>(false);
   
   // Code editor state
   readonly currentCode = signal<string>('');
@@ -179,6 +181,52 @@ export class AdminProblemDetailComponent implements OnInit {
         // Silent fail for submission history
       },
     });
+  }
+
+  /**
+   * View submission detail
+   */
+  viewSubmissionDetail(submission: SubmissionsModel): void {
+    this.selectedSubmission.set(submission);
+  }
+
+  /**
+   * Back to submission list
+   */
+  backToSubmissionList(): void {
+    this.selectedSubmission.set(null);
+  }
+
+  /**
+   * Get language label
+   */
+  getLanguageLabel(lang: string): string {
+    const labels: Record<string, string> = {
+      python: 'Python',
+      javascript: 'JavaScript',
+      typescript: 'TypeScript',
+      java: 'Java',
+      cpp: 'C++',
+      c: 'C',
+      go: 'Go',
+      rust: 'Rust',
+    };
+    return labels[lang] || lang;
+  }
+
+  /**
+   * Get status label
+   */
+  getStatusLabel(status: SubmissionStatusEnum): string {
+    return this.submissionsService.getStatusLabel(status);
+  }
+
+  /**
+   * Get success rate percentage
+   */
+  getSuccessRate(sub: SubmissionsModel): number {
+    if (sub.totalTestcases === 0) return 0;
+    return Math.round((sub.passedTestcases / sub.totalTestcases) * 100);
   }
 
   /**

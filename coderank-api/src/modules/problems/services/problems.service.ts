@@ -14,7 +14,7 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
     super(repository);
   }
 
-  async getProblem(dto: PaginationQueryProblemsDto) {
+  async getProblem(dto: PaginationQueryProblemsDto, currentUserId?: string) {
     const {
       page = 1,
       limit = 10,
@@ -29,6 +29,10 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
     } = dto;
 
     const queryBuilder = this.repository.createQueryBuilder('problem');
+
+    if (currentUserId) {
+      queryBuilder.andWhere('problem.authorId = :authorId', { authorId: currentUserId });
+    }
 
     // Join tags relation
     queryBuilder.leftJoinAndSelect('problem.tags', 'tag');

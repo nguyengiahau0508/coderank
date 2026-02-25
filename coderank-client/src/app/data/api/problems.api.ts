@@ -59,6 +59,13 @@ export class ProblemsApi extends BaseApi {
     );
   }
 
+  getMyProblems(params?: PaginationQueryParams): Observable<PaginatedResponse<ProblemsModel>> {
+    return this.apiService.get<PaginatedResponse<ProblemsModel>>(
+      this.getUrl('/me'),
+      this.buildParams(params)
+    );
+  }
+
   /**
    * Update a problem (Admin/ProblemSetter/Owner only)
    */
@@ -229,6 +236,12 @@ export class ProblemsApi extends BaseApi {
   getSubmissions(problemId: string): Observable<ApiResponse<SubmissionsModel[]>> {
     return this.apiService.get<ApiResponse<SubmissionsModel[]>>(
       this.getUrl(`/${problemId}/submissions`)
+    );
+  }
+
+  getSubmission(problemId: string, submissionId: string): Observable<ApiResponse<SubmissionsModel>> {
+    return this.apiService.get<ApiResponse<SubmissionsModel>>(
+      this.getUrl(`/${problemId}/submissions/${submissionId}`)
     );
   }
 

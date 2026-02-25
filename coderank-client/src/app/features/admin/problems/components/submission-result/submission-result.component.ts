@@ -33,8 +33,8 @@ export class AdminSubmissionResultComponent {
    */
   getSuccessRate(): number {
     const sub = this.submission();
-    if (sub.totalTestCases === 0) return 0;
-    return Math.round((sub.passedTestCases / sub.totalTestCases) * 100);
+    if (sub.totalTestcases === 0) return 0;
+    return Math.round((sub.passedTestcases / sub.totalTestcases) * 100);
   }
 
   /**
