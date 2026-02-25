@@ -19,7 +19,7 @@ export const adminRoutes: Routes = [
   {
     path: 'problems',
     loadChildren: () =>
-      import('./problems/problems.routes').then(m => m.problemsRoutes),
+      import('./problems/problems.routes').then(m => m.adminProblemsRoutes),
   },
   {
     path: 'contests',
@@ -29,7 +29,7 @@ export const adminRoutes: Routes = [
   {
     path: 'courses',
     loadChildren: () =>
-      import('./courses/courses.routes').then(m => m.coursesRoutes),
+      import('./courses/courses.routes').then(m => m.adminCoursesRoutes),
   },
   {
     path: 'settings',
