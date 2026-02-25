@@ -172,6 +172,7 @@ export class ProblemsController {
     return this.testcasesService.find({
       where: { problemId: problemId },
       order: { testcaseOrder: 'ASC' },
+      select: ['id', 'isSample', 'testcaseOrder', 'input', 'expectedOutput', 'compareType'],
     });
   }
 
@@ -181,6 +182,7 @@ export class ProblemsController {
     return this.testcasesService.find({
       where: { problemId: problemId, isSample: true },
       order: { testcaseOrder: 'ASC' },
+      select: ['id', 'isSample', 'testcaseOrder', 'input', 'expectedOutput'],
     });
   } 
 
