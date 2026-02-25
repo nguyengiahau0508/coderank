@@ -72,3 +72,38 @@ export enum ContestStatusEnum {
   Running = 'running',
   Ended = 'ended',
 }
+
+// ===== COURSE ENUMS =====
+
+export enum CourseLevelEnum {
+  Beginner = 'beginner',
+  Intermediate = 'intermediate',
+  Advanced = 'advanced',
+}
+
+export enum CourseStatusEnum {
+  Draft = 'draft',
+  Published = 'published',
+  Archived = 'archived',
+}
+
+export enum LessonTypeEnum {
+  Video = 'video',
+  Text = 'text',
+  Quiz = 'quiz',
+  Practice = 'practice',
+}
+
+export enum EnrollmentStatusEnum {
+  Active = 'active',
+  Completed = 'completed',
+  Dropped = 'dropped',
+  Suspended = 'suspended',
+}
+
+export enum QuizQuestionTypeEnum {
+  MultipleChoice = 'multiple_choice',
+  TrueFalse = 'true_false',
+  ShortAnswer = 'short_answer',
+  Code = 'code',
+}
