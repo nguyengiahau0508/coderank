@@ -1,0 +1,515 @@
+<p-toast position="top-right" />
+<p-confirmDialog />
+
+@if (loading()) {
+  <div class="space-y-4 animate-pulse">
+    <div class="h-8 bg-surface-200 dark:bg-surface-700 rounded w-1/3"></div>
+    <div class="h-4 bg-surface-200 dark:bg-surface-700 rounded w-2/3"></div>
+    <div class="h-48 bg-surface-200 dark:bg-surface-700 rounded"></div>
+  </div>
+} @else if (course(); as c) {
+  <div class="space-y-4">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <p-button icon="pi pi-arrow-left" [text]="true" severity="secondary" (onClick)="goBack()" pTooltip="Quay lại" />
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">{{ c.title }}</h1>
+            <p-tag [value]="getStatusLabel(c.status)" [severity]="getStatusSeverity(c.status)" />
+            <p-tag [value]="getLevelLabel(c.level)" [severity]="getLevelSeverity(c.level)" [rounded]="true" />
+          </div>
+          @if (c.summary) {
+            <div class="mt-1 text-surface-500 dark:text-surface-400 ql-editor p-0 line-clamp-2" [innerHTML]="c.summary"></div>
+          }
+        </div>
+      </div>
+      <!-- Course Info Row -->
+      <div class="flex items-center gap-4 text-sm text-surface-500 dark:text-surface-400 flex-shrink-0">
+        <span><i class="pi pi-users mr-1"></i>{{ c.enrollmentCount }} SV</span>
+        <span><i class="pi pi-star-fill mr-1 text-yellow-400"></i>{{ c.averageRating | number:'1.1-1' }} ({{ c.reviewCount }})</span>
+        <span><i class="pi pi-list mr-1"></i>{{ c.sections?.length || 0 }} chương</span>
+        @if (c.estimatedDurationMinutes) {
+          <span><i class="pi pi-clock mr-1"></i>{{ c.estimatedDurationMinutes }} phút</span>
+        }
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
+      <p-tablist>
+        <p-tab value="intro"><i class="pi pi-info-circle mr-2"></i>Giới thiệu</p-tab>
+        <p-tab value="curriculum"><i class="pi pi-book mr-2"></i>Giáo trình</p-tab>
+        <p-tab value="reviews"><i class="pi pi-star mr-2"></i>Đánh giá ({{ c.reviewCount }})</p-tab>
+        <p-tab value="certificate"><i class="pi pi-verified mr-2"></i>Chứng chỉ</p-tab>
+        <p-tab value="comments"><i class="pi pi-comments mr-2"></i>Bình luận ({{ c.reviewCount }})</p-tab>
+      </p-tablist>
+
+      <p-tabpanels>
+        <!-- ==================== TAB: GIỚI THIỆU ==================== -->
+        <p-tabpanel value="intro">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-4">
+            <!-- Main -->
+            <div class="lg:col-span-2 space-y-4">
+              <!-- Thumbnail -->
+              @if (c.thumbnailUrl) {
+                <div class="rounded-xl overflow-hidden border border-surface-200 dark:border-surface-700">
+                  <img [src]="c.thumbnailUrl" [alt]="c.title" class="w-full h-auto max-h-80 object-cover" />
+                </div>
+              }
+
+              <!-- Description -->
+              @if (c.description) {
+                <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
+                  <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0 mb-3">
+                    <i class="pi pi-file-edit mr-2"></i>Mô tả chi tiết
+                  </h3>
+                  <div class="text-sm text-surface-700 dark:text-surface-300 ql-editor p-0" [innerHTML]="c.description"></div>
+                </div>
+              }
+
+              <!-- Learning Objectives -->
+              @if (parsedLearningObjectives().length > 0) {
+                <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
+                  <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0 mb-3">
+                    <i class="pi pi-check-circle mr-2 text-green-500"></i>Mục tiêu học tập
+                  </h3>
+                  <ul class="space-y-2">
+                    @for (obj of parsedLearningObjectives(); track $index) {
+                      <li class="flex items-start gap-2 text-sm text-surface-700 dark:text-surface-300">
+                        <i class="pi pi-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                        <span>{{ obj }}</span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+
+              <!-- Prerequisites -->
+              @if (parsedPrerequisites().length > 0) {
+                <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
+                  <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0 mb-3">
+                    <i class="pi pi-exclamation-circle mr-2 text-amber-500"></i>Yêu cầu tiên quyết
+                  </h3>
+                  <ul class="space-y-2">
+                    @for (pre of parsedPrerequisites(); track $index) {
+                      <li class="flex items-start gap-2 text-sm text-surface-700 dark:text-surface-300">
+                        <i class="pi pi-arrow-right text-amber-500 mt-0.5 flex-shrink-0"></i>
+                        <span>{{ pre }}</span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-4">
+              <!-- Course Metadata -->
+              <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 space-y-3">
+                <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Thông tin khóa học</h3>
+
+                @if (c.author) {
+                  <div>
+                    <p class="text-xs text-surface-400">Giảng viên</p>
+                    <div class="flex items-center gap-2 mt-1">
+                      @if (c.author.avatarUrl) {
+                        <img [src]="c.author.avatarUrl" class="w-8 h-8 rounded-full" />
+                      } @else {
+                        <div class="w-8 h-8 rounded-full bg-surface-200 dark:bg-surface-700 flex items-center justify-center">
+                          <i class="pi pi-user text-surface-500"></i>
+                        </div>
+                      }
+                      <span class="text-sm font-medium text-surface-700 dark:text-surface-300">{{ c.author.fullName || c.author.username }}</span>
+                    </div>
+                  </div>
+                }
+
+                @if (c.category) {
+                  <div>
+                    <p class="text-xs text-surface-400">Danh mục</p>
+                    <p class="text-sm text-surface-700 dark:text-surface-300">{{ c.category }}</p>
+                  </div>
+                }
+
+                <div>
+                  <p class="text-xs text-surface-400">Cấp độ</p>
+                  <p class="text-sm text-surface-700 dark:text-surface-300">{{ getLevelLabel(c.level) }}</p>
+                </div>
+
+                <div>
+                  <p class="text-xs text-surface-400">Công khai</p>
+                  <p class="text-sm text-surface-700 dark:text-surface-300">{{ c.isPublic ? 'Có' : 'Không' }}</p>
+                </div>
+
+                @if (c.maxStudents > 0) {
+                  <div>
+                    <p class="text-xs text-surface-400">Số SV tối đa</p>
+                    <p class="text-sm text-surface-700 dark:text-surface-300">{{ c.maxStudents }}</p>
+                  </div>
+                }
+
+                @if (c.tags) {
+                  <div>
+                    <p class="text-xs text-surface-400 mb-1">Tags</p>
+                    <div class="flex flex-wrap gap-1">
+                      @for (tag of c.tags.split(','); track tag) {
+                        <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{{ tag.trim() }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <div>
+                  <p class="text-xs text-surface-400">Ngày tạo</p>
+                  <p class="text-sm text-surface-700 dark:text-surface-300">{{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+                </div>
+              </div>
+
+              <!-- Quick Stats -->
+              <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 space-y-3">
+                <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Thống kê</h3>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="text-center">
+                    <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{ c.enrollmentCount }}</p>
+                    <p class="text-xs text-surface-400">Sinh viên</p>
+                  </div>
+                  <div class="text-center">
+                    <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{ c.averageRating | number:'1.1-1' }}</p>
+                    <p class="text-xs text-surface-400">Đánh giá TB</p>
+                  </div>
+                  <div class="text-center">
+                    <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{ getTotalLessons() }}</p>
+                    <p class="text-xs text-surface-400">Bài học</p>
+                  </div>
+                  <div class="text-center">
+                    <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{ c.sections?.length || 0 }}</p>
+                    <p class="text-xs text-surface-400">Chương</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </p-tabpanel>
+
+        <!-- ==================== TAB: GIÁO TRÌNH ==================== -->
+        <p-tabpanel value="curriculum">
+          <div class="pt-4 space-y-4">
+            <!-- Sections header -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0">Nội dung khóa học</h2>
+                <span class="text-sm text-surface-400">{{ c.sections?.length || 0 }} chương · {{ getTotalLessons() }} bài học</span>
+              </div>
+              <p-button label="Thêm chương" icon="pi pi-plus" size="small" (onClick)="openCreateSection()" />
+            </div>
+
+            @if (!c.sections || c.sections.length === 0) {
+              <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-12 text-center text-surface-400">
+                <i class="pi pi-folder-open text-4xl mb-3"></i>
+                <p class="text-lg mb-1">Chưa có chương nào</p>
+                <p class="text-sm mb-4">Bắt đầu bằng cách thêm chương đầu tiên.</p>
+                <p-button label="Thêm chương đầu tiên" icon="pi pi-plus" (onClick)="openCreateSection()" />
+              </div>
+            } @else {
+              <p-accordion [multiple]="true">
+                @for (section of c.sections; track section.id) {
+                  <p-accordion-panel>
+                    <p-accordion-header>
+                      <div class="flex items-center justify-between w-full pr-2">
+                        <div class="flex items-center gap-2">
+                          <span class="font-medium">{{ section.sectionOrder }}. {{ section.title }}</span>
+                          @if (!section.isPublished) {
+                            <p-tag value="Nháp" severity="secondary" [rounded]="true" />
+                          }
+                          <span class="text-xs text-surface-400">({{ section.lessons?.length || 0 }} bài)</span>
+                        </div>
+                        <div class="flex items-center gap-1" (click)="$event.stopPropagation()">
+                          <p-button icon="pi pi-plus" [text]="true" severity="primary" size="small" pTooltip="Thêm bài học" (onClick)="openCreateLesson(section.id.toString())" />
+                          <p-button icon="pi pi-pencil" [text]="true" severity="primary" size="small" pTooltip="Sửa chương" (onClick)="openEditSection(section)" />
+                          <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Xóa chương" (onClick)="deleteSection($event, section)" />
+                        </div>
+                      </div>
+                    </p-accordion-header>
+                    <p-accordion-content>
+                      @if (section.description) {
+                        <div class="text-sm text-surface-500 dark:text-surface-400 mb-3 ql-editor p-0" [innerHTML]="section.description"></div>
+                      }
+                      @if (!section.lessons || section.lessons.length === 0) {
+                        <div class="text-center text-surface-400 py-4">
+                          <p class="text-sm">Chưa có bài học nào trong chương này</p>
+                          <p-button label="Thêm bài học" icon="pi pi-plus" size="small" [text]="true" class="mt-2" (onClick)="openCreateLesson(section.id.toString())" />
+                        </div>
+                      } @else {
+                        <div class="space-y-2">
+                          @for (lesson of section.lessons; track lesson.id) {
+                            <div class="flex items-center justify-between rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 px-4 py-3 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors cursor-pointer" (click)="navigateToLesson(section.id.toString(), lesson.id.toString())">
+                              <div class="flex items-center gap-3">
+                                <i [class]="'pi ' + getLessonTypeIcon(lesson.type) + ' text-surface-500'"></i>
+                                <div>
+                                  <div class="flex items-center gap-2">
+                                    <span class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ lesson.lessonOrder }}. {{ lesson.title }}</span>
+                                    @if (lesson.isFreePreview) {
+                                      <span class="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">Xem trước</span>
+                                    }
+                                    @if (!lesson.isPublished) {
+                                      <span class="text-[10px] bg-surface-200 dark:bg-surface-700 text-surface-500 px-1.5 py-0.5 rounded">Nháp</span>
+                                    }
+                                  </div>
+                                  <div class="flex items-center gap-2 text-xs text-surface-400 mt-0.5">
+                                    <span>{{ getLessonTypeLabel(lesson.type) }}</span>
+                                    @if (lesson.estimatedMinutes) {
+                                      <span>· {{ lesson.estimatedMinutes }} phút</span>
+                                    }
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="flex items-center gap-1" (click)="$event.stopPropagation()">
+                                <p-button icon="pi pi-eye" [text]="true" severity="info" size="small" pTooltip="Xem chi tiết" (onClick)="navigateToLesson(section.id.toString(), lesson.id.toString())" />
+                                <p-button icon="pi pi-pencil" [text]="true" severity="primary" size="small" pTooltip="Sửa bài học" (onClick)="openEditLesson(section.id.toString(), lesson)" />
+                                <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Xóa bài học" (onClick)="deleteLesson($event, section.id.toString(), lesson)" />
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </p-accordion-content>
+                  </p-accordion-panel>
+                }
+              </p-accordion>
+            }
+          </div>
+        </p-tabpanel>
+
+        <!-- ==================== TAB: ĐÁNH GIÁ ==================== -->
+        <p-tabpanel value="reviews">
+          <div class="pt-4 space-y-4">
+            <!-- Rating Summary -->
+            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-6">
+              <div class="flex items-center gap-8">
+                <div class="text-center">
+                  <p class="text-5xl font-bold text-surface-900 dark:text-surface-0">{{ c.averageRating | number:'1.1-1' }}</p>
+                  <div class="flex items-center justify-center gap-0.5 mt-1">
+                    @for (star of [1,2,3,4,5]; track star) {
+                      <i class="pi text-lg" [class]="star <= roundRating(c.averageRating) ? 'pi-star-fill text-yellow-400' : 'pi-star text-surface-300'"></i>
+                    }
+                  </div>
+                  <p class="text-sm text-surface-400 mt-1">{{ c.reviewCount }} đánh giá</p>
+                </div>
+                <div class="flex-1 space-y-1.5">
+                  @for (star of [5,4,3,2,1]; track star) {
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm text-surface-500 w-6 text-right">{{ star }}</span>
+                      <i class="pi pi-star-fill text-xs text-yellow-400"></i>
+                      <div class="flex-1 h-2 bg-surface-200 dark:bg-surface-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-yellow-400 rounded-full" [style.width.%]="getStarPercent(star)"></div>
+                      </div>
+                      <span class="text-xs text-surface-400 w-8">{{ getStarCount(star) }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Reviews List -->
+            @if (reviews().length === 0) {
+              <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-8 text-center text-surface-400">
+                <i class="pi pi-star text-3xl mb-2"></i>
+                <p>Chưa có đánh giá nào cho khóa học này.</p>
+              </div>
+            } @else {
+              <div class="space-y-3">
+                @for (review of reviews(); track review.id) {
+                  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+                    <div class="flex items-start justify-between">
+                      <div class="flex items-center gap-3">
+                        @if (review.user?.avatarUrl) {
+                          <img [src]="review.user?.avatarUrl" class="w-10 h-10 rounded-full" />
+                        } @else {
+                          <div class="w-10 h-10 rounded-full bg-surface-200 dark:bg-surface-700 flex items-center justify-center">
+                            <i class="pi pi-user text-surface-500"></i>
+                          </div>
+                        }
+                        <div>
+                          <p class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ review.user?.fullName || review.user?.username || 'Ẩn danh' }}</p>
+                          <div class="flex items-center gap-1">
+                            @for (star of [1,2,3,4,5]; track star) {
+                              <i class="pi text-xs" [class]="star <= review.rating ? 'pi-star-fill text-yellow-400' : 'pi-star text-surface-300'"></i>
+                            }
+                            <span class="text-xs text-surface-400 ml-2">{{ review.createdAt | date:'dd/MM/yyyy' }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      @if (!review.isVisible) {
+                        <p-tag value="Ẩn" severity="secondary" />
+                      }
+                    </div>
+                    @if (review.comment) {
+                      <p class="text-sm text-surface-700 dark:text-surface-300 mt-3">{{ review.comment }}</p>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </p-tabpanel>
+
+        <!-- ==================== TAB: CHỨNG CHỈ ==================== -->
+        <p-tabpanel value="certificate">
+          <div class="pt-4">
+            <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-12 text-center text-surface-400">
+              <i class="pi pi-verified text-5xl mb-4 text-primary/40"></i>
+              <p class="text-lg font-medium text-surface-600 dark:text-surface-300 mb-2">Chứng chỉ hoàn thành khóa học</p>
+              <p class="text-sm max-w-md mx-auto">Sinh viên sẽ nhận được chứng chỉ sau khi hoàn thành tất cả các bài học và bài kiểm tra trong khóa học này.</p>
+              <div class="mt-6 inline-block rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-6 text-left">
+                <div class="flex items-center gap-3 mb-3">
+                  <i class="pi pi-check-circle text-green-500"></i>
+                  <span class="text-sm text-surface-700 dark:text-surface-300">Hoàn thành tất cả bài học</span>
+                </div>
+                <div class="flex items-center gap-3 mb-3">
+                  <i class="pi pi-check-circle text-green-500"></i>
+                  <span class="text-sm text-surface-700 dark:text-surface-300">Đạt điểm tối thiểu các bài kiểm tra</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <i class="pi pi-check-circle text-green-500"></i>
+                  <span class="text-sm text-surface-700 dark:text-surface-300">Hoàn thành bài tập bắt buộc</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </p-tabpanel>
+
+        <!-- ==================== TAB: BÌNH LUẬN ==================== -->
+        <p-tabpanel value="comments">
+          <div class="pt-4 space-y-4">
+            @if (reviews().length === 0) {
+              <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-8 text-center text-surface-400">
+                <i class="pi pi-comments text-3xl mb-2"></i>
+                <p>Chưa có bình luận nào cho khóa học này.</p>
+              </div>
+            } @else {
+              <div class="space-y-4">
+                @for (review of reviews(); track review.id) {
+                  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+                    <div class="flex items-start gap-3">
+                      @if (review.user?.avatarUrl) {
+                        <img [src]="review.user?.avatarUrl" class="w-10 h-10 rounded-full flex-shrink-0" />
+                      } @else {
+                        <div class="w-10 h-10 rounded-full bg-surface-200 dark:bg-surface-700 flex items-center justify-center flex-shrink-0">
+                          <i class="pi pi-user text-surface-500"></i>
+                        </div>
+                      }
+                      <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                          <p class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ review.user?.fullName || review.user?.username || 'Ẩn danh' }}</p>
+                          <span class="text-xs text-surface-400">{{ review.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                        </div>
+                        @if (review.comment) {
+                          <p class="text-sm text-surface-700 dark:text-surface-300 mt-1">{{ review.comment }}</p>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </div>
+}
+
+<!-- Section Dialog -->
+<p-dialog
+  [header]="editingSection() ? 'Chỉnh sửa chương' : 'Thêm chương mới'"
+  [visible]="showSectionDialog()"
+  (visibleChange)="showSectionDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '640px' }"
+>
+  <div class="space-y-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Tiêu đề <span class="text-red-500">*</span></label>
+      <input pInputText [(ngModel)]="sectionForm.title" class="w-full" placeholder="vd: Chương 1: Mảng và Chuỗi" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Mô tả</label>
+      <app-text-editor [(ngModel)]="sectionForm.description" />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Thứ tự</label>
+        <p-inputNumber [(ngModel)]="sectionForm.sectionOrder" [min]="0" styleClass="w-full" />
+      </div>
+      <div class="flex items-end gap-2 pb-1">
+        <p-toggleSwitch [(ngModel)]="sectionForm.isPublished" />
+        <label class="text-sm text-surface-700 dark:text-surface-300">Xuất bản</label>
+      </div>
+    </div>
+  </div>
+  <ng-template #footer>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button label="Hủy" severity="secondary" [text]="true" (onClick)="showSectionDialog.set(false)" />
+      <p-button [label]="editingSection() ? 'Cập nhật' : 'Thêm'" icon="pi pi-check" (onClick)="saveSection()" [disabled]="!sectionForm.title?.trim()" />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Lesson Dialog -->
+<p-dialog
+  [header]="editingLesson() ? 'Chỉnh sửa bài học' : 'Thêm bài học mới'"
+  [visible]="showLessonDialog()"
+  (visibleChange)="showLessonDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '720px' }"
+>
+  <div class="space-y-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Tiêu đề <span class="text-red-500">*</span></label>
+      <input pInputText [(ngModel)]="lessonForm.title" class="w-full" placeholder="vd: Bài 1: Mảng một chiều" />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Loại bài học</label>
+        <p-select [(ngModel)]="lessonForm.type" [options]="lessonTypeOptions" optionLabel="label" optionValue="value" styleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Thứ tự</label>
+        <p-inputNumber [(ngModel)]="lessonForm.lessonOrder" [min]="0" styleClass="w-full" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Nội dung</label>
+      <app-text-editor [(ngModel)]="lessonForm.content" />
+    </div>
+    @if (lessonForm.type === 'video') {
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">URL Video</label>
+        <input pInputText [(ngModel)]="lessonForm.videoUrl" class="w-full" placeholder="https://..." />
+      </div>
+    }
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Thời lượng (phút)</label>
+        <p-inputNumber [(ngModel)]="lessonForm.estimatedMinutes" [min]="0" styleClass="w-full" />
+      </div>
+      <div class="space-y-2 pt-6">
+        <div class="flex items-center gap-2">
+          <p-toggleSwitch [(ngModel)]="lessonForm.isPublished" />
+          <label class="text-sm text-surface-700 dark:text-surface-300">Xuất bản</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-toggleSwitch [(ngModel)]="lessonForm.isFreePreview" />
+          <label class="text-sm text-surface-700 dark:text-surface-300">Xem trước miễn phí</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ng-template #footer>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button label="Hủy" severity="secondary" [text]="true" (onClick)="showLessonDialog.set(false)" />
+      <p-button [label]="editingLesson() ? 'Cập nhật' : 'Thêm'" icon="pi pi-check" (onClick)="saveLesson()" [disabled]="!lessonForm.title?.trim()" />
+    </div>
+  </ng-template>
+</p-dialog>

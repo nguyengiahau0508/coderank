@@ -80,6 +80,27 @@ export class ApiService {
     return this.http.post<T>(`${this.baseUrl}${endpoint}`, formData, { headers });
   }
 
+  /**
+   * Upload file with PATCH method (for updates)
+   */
+  uploadPatch<T>(endpoint: string, file: File, additionalData?: any, skipLoading = false): Observable<T> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    if (additionalData) {
+      Object.keys(additionalData).forEach(key => {
+        formData.append(key, additionalData[key]);
+      });
+    }
+    
+    let headers = new HttpHeaders();
+    if (skipLoading) {
+      headers = headers.set('X-Skip-Loading', 'true');
+    }
+    
+    return this.http.patch<T>(`${this.baseUrl}${endpoint}`, formData, { headers });
+  }
+
   private getHeaders(skipLoading: boolean): HttpHeaders {
     let headers = new HttpHeaders({
       'Content-Type': 'application/json'

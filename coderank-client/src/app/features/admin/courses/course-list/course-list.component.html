@@ -1,0 +1,192 @@
+<p-toast position="top-right" />
+<p-confirmDialog />
+
+<div class="space-y-4">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Quản lý khóa học</h1>
+      <p class="mt-1 text-surface-500 dark:text-surface-400">Tạo, chỉnh sửa và quản lý các khóa học</p>
+    </div>
+    <p-button label="Tạo khóa học" icon="pi pi-plus" severity="primary" (onClick)="createCourse()" />
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+      <p class="text-xs text-surface-400 mb-1">Tổng khóa học</p>
+      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">{{ totalRecords() }}</p>
+    </div>
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+      <p class="text-xs text-green-500 mb-1">Cơ bản</p>
+      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">—</p>
+    </div>
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+      <p class="text-xs text-blue-500 mb-1">Trung cấp</p>
+      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">—</p>
+    </div>
+    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+      <p class="text-xs text-orange-500 mb-1">Nâng cao</p>
+      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">—</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+    <div class="flex flex-col lg:flex-row gap-3">
+      <!-- Search -->
+      <div class="flex-1">
+        <p-iconfield iconPosition="left">
+          <p-inputicon styleClass="pi pi-search" />
+          <input
+            type="text"
+            pInputText
+            placeholder="Tìm khóa học..."
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="onSearch()"
+            class="w-full"
+          />
+        </p-iconfield>
+      </div>
+
+      <!-- Level -->
+      <p-select
+        [(ngModel)]="selectedLevel"
+        [options]="levelOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Cấp độ"
+        [showClear]="true"
+        (onChange)="onLevelChange()"
+        styleClass="w-full lg:w-40"
+      />
+
+      <!-- Status -->
+      <p-select
+        [(ngModel)]="selectedStatus"
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Trạng thái"
+        [showClear]="true"
+        (onChange)="onStatusChange()"
+        styleClass="w-full lg:w-40"
+      />
+
+      <!-- My Courses Toggle -->
+      <button
+        type="button"
+        [class]="'inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg border transition-colors ' +
+          (myCoursesOnly()
+            ? 'bg-primary text-primary-contrast border-primary'
+            : 'bg-surface-0 dark:bg-surface-800 text-surface-600 dark:text-surface-300 border-surface-300 dark:border-surface-600 hover:bg-surface-50 dark:hover:bg-surface-700')"
+        (click)="onMyCoursesToggle(!myCoursesOnly())"
+      >
+        <i class="pi pi-user"></i>
+        Của tôi
+      </button>
+
+      @if (hasFilters()) {
+        <p-button icon="pi pi-filter-slash" severity="secondary" [text]="true" pTooltip="Xóa bộ lọc" (onClick)="clearFilters()" />
+      }
+    </div>
+  </div>
+
+  <!-- Course Cards Grid -->
+  @if (loading()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 animate-pulse">
+          <div class="h-4 bg-surface-200 dark:bg-surface-700 rounded w-3/4 mb-3"></div>
+          <div class="h-3 bg-surface-200 dark:bg-surface-700 rounded w-full mb-2"></div>
+          <div class="h-3 bg-surface-200 dark:bg-surface-700 rounded w-1/2"></div>
+        </div>
+      }
+    </div>
+  } @else if (courses().length === 0) {
+    <div class="flex flex-col items-center justify-center py-12 text-surface-400">
+      <i class="pi pi-book text-4xl mb-3"></i>
+      <p class="text-lg font-medium">Chưa có khóa học nào</p>
+      <p class="text-sm mt-1">Bắt đầu bằng cách tạo khóa học đầu tiên</p>
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (course of courses(); track course.id) {
+        <div
+          class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden transition-shadow hover:shadow-md cursor-pointer"
+          (click)="viewCourse(course)"
+        >
+          <!-- Color bar -->
+          <div [class]="'h-1.5 ' + (course.level === 'beginner' ? 'bg-green-500' : course.level === 'intermediate' ? 'bg-blue-500' : 'bg-orange-500')"></div>
+
+          <div class="p-4">
+            <!-- Title + Status -->
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0 line-clamp-1">{{ course.title }}</h3>
+              <p-tag [value]="getStatusLabel(course.status)" [severity]="getStatusSeverity(course.status)" class="ml-2 shrink-0" />
+            </div>
+
+            <!-- Summary -->
+            @if (course.summary) {
+              <div class="text-xs text-surface-500 dark:text-surface-400 line-clamp-2 mb-3 ql-editor p-0" [innerHTML]="course.summary"></div>
+            }
+
+            <!-- Level + Category -->
+            <div class="flex items-center gap-2 mb-3">
+              <p-tag [value]="getLevelLabel(course.level)" [severity]="getLevelSeverity(course.level)" [rounded]="true" />
+              @if (course.category) {
+                <span class="text-xs text-surface-400 bg-surface-100 dark:bg-surface-700 px-2 py-0.5 rounded">{{ course.category }}</span>
+              }
+            </div>
+
+            <!-- Stats row -->
+            <div class="flex items-center justify-between text-xs text-surface-500 dark:text-surface-400 mb-3">
+              <span><i class="pi pi-users mr-1"></i>{{ course.enrollmentCount }} SV</span>
+              <span><i class="pi pi-star-fill mr-1 text-yellow-400"></i>{{ course.averageRating | number:'1.1-1' }}</span>
+              @if (course.estimatedDurationMinutes) {
+                <span><i class="pi pi-clock mr-1"></i>{{ course.estimatedDurationMinutes }} phút</span>
+              }
+            </div>
+
+            <!-- Author -->
+            @if (course.author) {
+              <div class="flex items-center gap-2 text-xs text-surface-400 border-t border-surface-200 dark:border-surface-700 pt-3">
+                @if (course.author.avatarUrl) {
+                  <img [src]="course.author.avatarUrl" class="w-5 h-5 rounded-full" />
+                } @else {
+                  <i class="pi pi-user text-xs"></i>
+                }
+                <span>{{ course.author.fullName || course.author.username }}</span>
+              </div>
+            }
+
+            <!-- Actions -->
+            <div class="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-surface-200 dark:border-surface-700">
+              <p-button icon="pi pi-pencil" [text]="true" severity="primary" size="small" pTooltip="Chỉnh sửa" (onClick)="editCourse($event, course)" />
+              <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Xóa" (onClick)="deleteCourse($event, course)" />
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Paginator -->
+    @if (totalRecords() > limit()) {
+      <p-paginator
+        [rows]="limit()"
+        [totalRecords]="totalRecords()"
+        [rowsPerPageOptions]="[12, 24, 48]"
+        (onPageChange)="onPageChange($event)"
+      />
+    }
+  }
+</div>
+
+<!-- Course Form Dialog -->
+<app-course-form-dialog
+  [visible]="showCourseDialog()"
+  [course]="editingCourse()"
+  [submitting]="isSubmittingDialog()"
+  (visibleChange)="closeCourseDialog()"
+  (save)="onCourseSave($event)"
+/>

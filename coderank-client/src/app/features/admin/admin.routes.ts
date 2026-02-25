@@ -28,8 +28,8 @@ export const adminRoutes: Routes = [
   },
   {
     path: 'courses',
-    loadComponent: () =>
-      import('./courses/courses.component').then(m => m.AdminCoursesComponent),
+    loadChildren: () =>
+      import('./courses/courses.routes').then(m => m.coursesRoutes),
   },
   {
     path: 'settings',

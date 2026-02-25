@@ -1,0 +1,990 @@
+<p-toast position="top-right" />
+<p-confirmDialog />
+
+@if (loading()) {
+  <div class="space-y-4 animate-pulse">
+    <div class="h-8 bg-surface-200 dark:bg-surface-700 rounded w-1/3"></div>
+    <div class="h-4 bg-surface-200 dark:bg-surface-700 rounded w-2/3"></div>
+    <div class="h-64 bg-surface-200 dark:bg-surface-700 rounded"></div>
+  </div>
+} @else if (lesson(); as l) {
+  <div class="space-y-4">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <p-button icon="pi pi-arrow-left" [text]="true" severity="secondary" (onClick)="goBack()" pTooltip="Quay lại khóa học" />
+        <div>
+          <div class="flex items-center gap-2">
+            <i [class]="'pi ' + getLessonTypeIcon(l.type) + ' text-lg text-primary'"></i>
+            <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">{{ l.title }}</h1>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <p-tag [value]="getLessonTypeLabel(l.type)" [severity]="getLessonTypeSeverity(l.type)" />
+            @if (!l.isPublished) {
+              <p-tag value="Nháp" severity="secondary" />
+            }
+            @if (l.isFreePreview) {
+              <p-tag value="Xem trước miễn phí" severity="success" [rounded]="true" />
+            }
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <p-button label="Chỉnh sửa" icon="pi pi-pencil" severity="primary" size="small" (onClick)="openEditDialog()" />
+        <p-button icon="pi pi-trash" severity="danger" size="small" [text]="true" pTooltip="Xóa bài học" (onClick)="confirmDelete($event)" />
+      </div>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+        <p class="text-xs text-surface-400 mb-1"><i class="pi pi-list mr-1"></i>Thứ tự</p>
+        <p class="text-xl font-bold text-surface-900 dark:text-surface-0">{{ l.lessonOrder }}</p>
+      </div>
+      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+        <p class="text-xs text-surface-400 mb-1"><i class="pi pi-clock mr-1"></i>Thời lượng</p>
+        <p class="text-xl font-bold text-surface-900 dark:text-surface-0">{{ l.estimatedMinutes || '—' }} <span class="text-sm font-normal text-surface-400">phút</span></p>
+      </div>
+      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+        <p class="text-xs text-surface-400 mb-1"><i class="pi pi-question-circle mr-1"></i>Quizzes</p>
+        <p class="text-xl font-bold text-surface-900 dark:text-surface-0">{{ quizzes().length }}</p>
+      </div>
+      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+        <p class="text-xs text-surface-400 mb-1"><i class="pi pi-code mr-1"></i>Bài tập</p>
+        <p class="text-xl font-bold text-surface-900 dark:text-surface-0">{{ lessonProblems().length }}</p>
+      </div>
+    </div>
+
+    <!-- Main content area -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Content -->
+      <div class="lg:col-span-2">
+        <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
+          <p-tablist>
+            <p-tab value="content"><i class="pi pi-file-edit mr-2"></i>Nội dung</p-tab>
+            <p-tab value="problems"><i class="pi pi-code mr-2"></i>Bài tập ({{ lessonProblems().length }})</p-tab>
+            <p-tab value="quizzes"><i class="pi pi-question-circle mr-2"></i>Bài kiểm tra ({{ quizzes().length }})</p-tab>
+            <p-tab value="assignments"><i class="pi pi-upload mr-2"></i>Bài tập nộp file ({{ assignments().length }})</p-tab>
+          </p-tablist>
+          <p-tabpanels>
+            <!-- ==================== TAB: NỘI DUNG ==================== -->
+            <p-tabpanel value="content">
+              <div class="space-y-4 pt-2">
+                <!-- Video Player -->
+                @if (l.type === 'video' && l.videoUrl) {
+                  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+                    <div class="aspect-video">
+                      @if (isYouTubeUrl(l.videoUrl)) {
+                        <iframe [src]="getSafeYouTubeUrl(l.videoUrl)" class="w-full h-full" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                      } @else {
+                        <video [src]="l.videoUrl" controls class="w-full h-full object-contain bg-black"></video>
+                      }
+                    </div>
+                    @if (l.videoDurationSeconds) {
+                      <div class="px-4 py-2 text-xs text-surface-400 border-t border-surface-200 dark:border-surface-700">
+                        <i class="pi pi-clock mr-1"></i>Thời lượng video: {{ formatDuration(l.videoDurationSeconds) }}
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Lesson Content -->
+                @if (l.content) {
+                  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
+                    <div class="text-sm text-surface-700 dark:text-surface-300 ql-editor p-0" [innerHTML]="l.content"></div>
+                  </div>
+                }
+
+                <!-- Empty state -->
+                @if (!l.content && !(l.type === 'video' && l.videoUrl)) {
+                  <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-12 text-center text-surface-400">
+                    <i class="pi pi-inbox text-4xl mb-3"></i>
+                    <p class="text-lg mb-1">Bài học chưa có nội dung</p>
+                    <p class="text-sm">Nhấn nút "Chỉnh sửa" để thêm nội dung cho bài học này.</p>
+                  </div>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- ==================== TAB: BÀI TẬP ==================== -->
+            <p-tabpanel value="problems">
+              <div class="space-y-4 pt-2">
+                <!-- Header -->
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+                    <i class="pi pi-code mr-2"></i>Danh sách bài tập lập trình
+                  </h3>
+                  <p-button label="Thêm bài tập" icon="pi pi-plus" size="small" (onClick)="openAddProblemDialog()" />
+                </div>
+
+                @if (loadingProblems()) {
+                  <div class="space-y-2 animate-pulse">
+                    @for (_ of [1,2,3]; track _) {
+                      <div class="h-16 bg-surface-200 dark:bg-surface-700 rounded-lg"></div>
+                    }
+                  </div>
+                } @else if (lessonProblems().length === 0) {
+                  <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-10 text-center text-surface-400">
+                    <i class="pi pi-code text-3xl mb-2"></i>
+                    <p class="text-sm">Chưa có bài tập nào. Nhấn "Thêm bài tập" để bắt đầu.</p>
+                  </div>
+                } @else {
+                  <div class="space-y-2">
+                    @for (lp of lessonProblems(); track lp.id; let i = $index) {
+                      <div class="flex items-center justify-between rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 px-4 py-3 hover:border-primary/40 transition-colors">
+                        <div class="flex items-center gap-3 min-w-0">
+                          <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">{{ lp.problemOrder }}</span>
+                          <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                              <span class="text-sm font-medium text-surface-900 dark:text-surface-0 truncate">
+                                {{ lp.problem?.title || lp.label || 'Bài tập #' + (i + 1) }}
+                              </span>
+                              @if (lp.isRequired) {
+                                <span class="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded shrink-0">Bắt buộc</span>
+                              }
+                            </div>
+                            @if (lp.problem) {
+                              <div class="flex items-center gap-2 text-xs text-surface-400 mt-0.5">
+                                <span>{{ lp.problem.difficulty }}</span>
+                                <span>•</span>
+                                <span>{{ lp.problem.points }} điểm</span>
+                              </div>
+                            }
+                            @if (lp.label) {
+                              <p class="text-xs text-surface-400 mt-0.5 truncate">{{ lp.label }}</p>
+                            }
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                          @if (lp.problem) {
+                            <p-button icon="pi pi-external-link" [text]="true" severity="primary" size="small" pTooltip="Xem bài tập" (onClick)="navigateToProblem(lp.problem.id)" />
+                          }
+                          <p-button icon="pi pi-pencil" [text]="true" severity="secondary" size="small" pTooltip="Chỉnh sửa" (onClick)="openEditProblemDialog(lp)" />
+                          <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Xóa" (onClick)="confirmRemoveProblem(lp)" />
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- ==================== TAB: BÀI KIỂM TRA ==================== -->
+            <p-tabpanel value="quizzes">
+              <div class="space-y-4 pt-2">
+                @if (!selectedQuiz()) {
+                  <!-- Quiz List -->
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+                      <i class="pi pi-question-circle mr-2"></i>Danh sách bài kiểm tra
+                    </h3>
+                    <p-button label="Thêm quiz" icon="pi pi-plus" size="small" (onClick)="openAddQuizDialog()" />
+                  </div>
+
+                  @if (loadingQuizzes()) {
+                    <div class="space-y-2 animate-pulse">
+                      @for (_ of [1,2]; track _) {
+                        <div class="h-20 bg-surface-200 dark:bg-surface-700 rounded-lg"></div>
+                      }
+                    </div>
+                  } @else if (quizzes().length === 0) {
+                    <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-10 text-center text-surface-400">
+                      <i class="pi pi-question-circle text-3xl mb-2"></i>
+                      <p class="text-sm">Chưa có bài kiểm tra nào. Nhấn "Thêm quiz" để bắt đầu.</p>
+                    </div>
+                  } @else {
+                    <div class="space-y-2">
+                      @for (quiz of quizzes(); track quiz.id) {
+                        <div class="rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 px-4 py-3 hover:border-primary/40 transition-colors cursor-pointer" (click)="selectQuiz(quiz)">
+                          <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3 min-w-0">
+                              <span class="flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 text-xs font-bold shrink-0">{{ quiz.quizOrder }}</span>
+                              <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                  <span class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ quiz.title }}</span>
+                                  @if (!quiz.isPublished) {
+                                    <p-tag value="Nháp" severity="secondary" [style]="{ fontSize: '10px', padding: '1px 6px' }" />
+                                  }
+                                </div>
+                                <div class="flex items-center gap-3 text-xs text-surface-400 mt-0.5">
+                                  @if (quiz.timeLimitMinutes) {
+                                    <span><i class="pi pi-clock mr-0.5"></i>{{ quiz.timeLimitMinutes }} phút</span>
+                                  }
+                                  <span><i class="pi pi-check-circle mr-0.5"></i>Đạt: {{ quiz.passingScore }}%</span>
+                                  <span><i class="pi pi-replay mr-0.5"></i>Tối đa: {{ quiz.maxAttempts }} lần</span>
+                                  @if (quiz.questions && quiz.questions.length > 0) {
+                                    <span><i class="pi pi-list mr-0.5"></i>{{ quiz.questions.length }} câu hỏi</span>
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                            <div class="flex items-center gap-1 shrink-0" (click)="$event.stopPropagation()">
+                              <p-button icon="pi pi-pencil" [text]="true" severity="secondary" size="small" pTooltip="Chỉnh sửa" (onClick)="openEditQuizDialog(quiz)" />
+                              <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Xóa" (onClick)="confirmDeleteQuiz(quiz)" />
+                              <p-button icon="pi pi-angle-right" [text]="true" severity="primary" size="small" pTooltip="Xem câu hỏi" (onClick)="selectQuiz(quiz)" />
+                            </div>
+                          </div>
+                          @if (quiz.description) {
+                            <p class="text-xs text-surface-400 mt-2 pl-10">{{ quiz.description }}</p>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                } @else {
+                  <!-- Quiz Questions View -->
+                  <div class="space-y-4">
+                    <!-- Back to quiz list + quiz info -->
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <p-button icon="pi pi-arrow-left" [text]="true" severity="secondary" size="small" (onClick)="deselectQuiz()" pTooltip="Quay lại danh sách" />
+                        <div>
+                          <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">{{ selectedQuiz()!.title }}</h3>
+                          <div class="flex items-center gap-3 text-xs text-surface-400">
+                            @if (selectedQuiz()!.timeLimitMinutes) {
+                              <span>{{ selectedQuiz()!.timeLimitMinutes }} phút</span>
+                            }
+                            <span>Đạt: {{ selectedQuiz()!.passingScore }}%</span>
+                            <span>{{ quizQuestions().length }} câu hỏi</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <p-button label="Thêm câu hỏi" icon="pi pi-plus" size="small" (onClick)="openAddQuestionDialog()" />
+                        <p-button icon="pi pi-pencil" [text]="true" severity="secondary" size="small" pTooltip="Sửa quiz" (onClick)="openEditQuizDialog(selectedQuiz()!)" />
+                      </div>
+                    </div>
+
+                    @if (loadingQuestions()) {
+                      <div class="space-y-3 animate-pulse">
+                        @for (_ of [1,2,3]; track _) {
+                          <div class="h-24 bg-surface-200 dark:bg-surface-700 rounded-lg"></div>
+                        }
+                      </div>
+                    } @else if (quizQuestions().length === 0) {
+                      <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-10 text-center text-surface-400">
+                        <i class="pi pi-list text-3xl mb-2"></i>
+                        <p class="text-sm">Chưa có câu hỏi nào. Nhấn "Thêm câu hỏi" để bắt đầu.</p>
+                      </div>
+                    } @else {
+                      <div class="space-y-3">
+                        @for (q of quizQuestions(); track q.id; let i = $index) {
+                          <div class="rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 hover:border-primary/40 transition-colors">
+                            <div class="flex items-start justify-between gap-3">
+                              <div class="flex gap-3 min-w-0">
+                                <span class="flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold shrink-0 mt-0.5">{{ q.questionOrder }}</span>
+                                <div class="min-w-0 flex-1">
+                                  <div class="flex items-center gap-2 mb-1">
+                                    <p-tag [value]="getQuestionTypeLabel(q.questionType)" [severity]="getQuestionTypeSeverity(q.questionType)" [style]="{ fontSize: '10px', padding: '1px 6px' }" />
+                                    <span class="text-xs text-surface-400">{{ q.points }} điểm</span>
+                                  </div>
+                                  <p class="text-sm text-surface-900 dark:text-surface-0 font-medium">{{ q.questionText }}</p>
+
+                                  <!-- Show options for multiple choice / true-false -->
+                                  @if (q.options && q.options.length > 0) {
+                                    <div class="mt-2 space-y-1">
+                                      @for (opt of q.options; track opt; let j = $index) {
+                                        <div class="flex items-center gap-2 text-xs" [class]="opt['isCorrect'] ? 'text-green-600 dark:text-green-400 font-medium' : 'text-surface-500 dark:text-surface-400'">
+                                          <i [class]="opt['isCorrect'] ? 'pi pi-check-circle' : 'pi pi-circle'" class="text-[10px]"></i>
+                                          <span>{{ opt['text'] }}</span>
+                                        </div>
+                                      }
+                                    </div>
+                                  }
+
+                                  <!-- Correct answer for non-MC types -->
+                                  @if (q.correctAnswer && q.questionType !== 'multiple_choice') {
+                                    <p class="text-xs text-green-600 dark:text-green-400 mt-2">
+                                      <i class="pi pi-check mr-1"></i>Đáp án: {{ q.correctAnswer }}
+                                    </p>
+                                  }
+
+                                  <!-- Explanation -->
+                                  @if (q.explanation) {
+                                    <p class="text-xs text-surface-400 mt-1 italic">
+                                      <i class="pi pi-info-circle mr-1"></i>{{ q.explanation }}
+                                    </p>
+                                  }
+                                </div>
+                              </div>
+                              <div class="flex items-center gap-1 shrink-0">
+                                <p-button icon="pi pi-pencil" [text]="true" severity="secondary" size="small" pTooltip="Sửa" (onClick)="openEditQuestionDialog(q)" />
+                                <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Xóa" (onClick)="confirmDeleteQuestion(q)" />
+                              </div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- ==================== TAB: BÀI TẬP NỘP FILE ==================== -->
+            <p-tabpanel value="assignments">
+              <div class="space-y-4 pt-2">
+                <!-- Header -->
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+                    <i class="pi pi-upload mr-2"></i>Danh sách bài tập nộp file
+                  </h3>
+                  <p-button label="Thêm bài tập" icon="pi pi-plus" size="small" (onClick)="openAddAssignmentDialog()" />
+                </div>
+
+                @if (loadingAssignments()) {
+                  <div class="space-y-2 animate-pulse">
+                    @for (_ of [1, 2]; track _) {
+                      <div class="h-20 bg-surface-200 dark:bg-surface-700 rounded-xl"></div>
+                    }
+                  </div>
+                } @else if (assignments().length === 0) {
+                  <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-8 text-center text-surface-400">
+                    <i class="pi pi-upload text-3xl mb-2"></i>
+                    <p class="text-sm">Chưa có bài tập nộp file nào</p>
+                  </div>
+                } @else {
+                  <!-- Assignment list or detail view -->
+                  @if (selectedAssignment(); as sa) {
+                    <!-- Submissions view -->
+                    <div class="space-y-3">
+                      <div class="flex items-center gap-2">
+                        <p-button icon="pi pi-arrow-left" [text]="true" size="small" severity="secondary" (onClick)="deselectAssignment()" pTooltip="Quay lại danh sách" />
+                        <h4 class="text-base font-semibold text-surface-900 dark:text-surface-0">{{ sa.title }} — Bài nộp</h4>
+                      </div>
+
+                      @if (loadingSubmissions()) {
+                        <div class="space-y-2 animate-pulse">
+                          @for (_ of [1, 2]; track _) {
+                            <div class="h-16 bg-surface-200 dark:bg-surface-700 rounded-xl"></div>
+                          }
+                        </div>
+                      } @else if (submissions().length === 0) {
+                        <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-6 text-center text-surface-400">
+                          <i class="pi pi-inbox text-2xl mb-2"></i>
+                          <p class="text-sm">Chưa có bài nộp nào</p>
+                        </div>
+                      } @else {
+                        @for (sub of submissions(); track sub.id) {
+                          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+                            <div class="flex items-start justify-between gap-3">
+                              <div class="flex-1 min-w-0 space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                  <span class="text-xs text-surface-400">Lần nộp #{{ sub.attemptNumber }}</span>
+                                  <p-tag [value]="getSubmissionStatusLabel(sub.status)" [severity]="getSubmissionStatusSeverity(sub.status)" />
+                                  @if (sub.score !== null && sub.score !== undefined) {
+                                    <span class="text-sm font-bold text-primary">{{ sub.score }}/{{ sa.maxScore }} điểm</span>
+                                  }
+                                </div>
+                                @if (sub.submissionFileName) {
+                                  <p class="text-sm text-surface-600 dark:text-surface-300">
+                                    <i class="pi pi-file mr-1"></i>{{ sub.submissionFileName }}
+                                    @if (sub.submissionFileSize) {
+                                      <span class="text-surface-400 ml-1">({{ formatFileSize(sub.submissionFileSize) }})</span>
+                                    }
+                                  </p>
+                                }
+                                @if (sub.content) {
+                                  <p class="text-sm text-surface-500 truncate">{{ sub.content }}</p>
+                                }
+                                @if (sub.feedback) {
+                                  <div class="mt-2 p-2 rounded bg-blue-50 dark:bg-blue-900/20 text-sm text-blue-700 dark:text-blue-300">
+                                    <i class="pi pi-comment mr-1"></i>{{ sub.feedback }}
+                                  </div>
+                                }
+                                <p class="text-xs text-surface-400">
+                                  Nộp lúc: {{ sub.submittedAt | date:'dd/MM/yyyy HH:mm' }}
+                                  @if (sub.authorId) {
+                                    · ID: {{ sub.authorId }}
+                                  }
+                                </p>
+                              </div>
+                              <div class="flex items-center gap-1">
+                                <p-button icon="pi pi-star" severity="info" [text]="true" size="small" pTooltip="Chấm điểm" (onClick)="openGradeDialog(sub)" />
+                                <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" pTooltip="Xóa bài nộp" (onClick)="confirmDeleteSubmission(sub)" />
+                              </div>
+                            </div>
+                          </div>
+                        }
+                      }
+                    </div>
+                  } @else {
+                    <!-- Assignment list -->
+                    @for (a of assignments(); track a.id) {
+                      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 hover:border-primary/50 transition-colors">
+                        <div class="flex items-start justify-between gap-3">
+                          <div class="flex-1 min-w-0 space-y-1 cursor-pointer" (click)="selectAssignment(a)">
+                            <div class="flex items-center gap-2 flex-wrap">
+                              <span class="font-medium text-surface-900 dark:text-surface-0">
+                                {{ a.assignmentOrder }}. {{ a.title }}
+                              </span>
+                              <p-tag [value]="getAssignmentTypeLabel(a.type)" [severity]="getAssignmentTypeSeverity(a.type)" />
+                              @if (!a.isPublished) {
+                                <p-tag value="Nháp" severity="secondary" />
+                              }
+                            </div>
+                            @if (a.attachmentFileName) {
+                              <p class="text-xs text-surface-500">
+                                <i class="pi pi-paperclip mr-1"></i>{{ a.attachmentFileName }}
+                                @if (a.attachmentFileSize) {
+                                  <span class="text-surface-400 ml-1">({{ formatFileSize(a.attachmentFileSize) }})</span>
+                                }
+                              </p>
+                            }
+                            <div class="flex items-center gap-3 text-xs text-surface-400">
+                              <span><i class="pi pi-star mr-1"></i>{{ a.maxScore }} điểm</span>
+                              @if (a.dueDate) {
+                                <span><i class="pi pi-calendar mr-1"></i>Hạn: {{ a.dueDate | date:'dd/MM/yyyy HH:mm' }}</span>
+                              }
+                              @if (a.maxFileSizeMb) {
+                                <span><i class="pi pi-cloud-upload mr-1"></i>Tối đa {{ a.maxFileSizeMb }} MB</span>
+                              }
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-1">
+                            <p-button icon="pi pi-eye" severity="info" [text]="true" size="small" pTooltip="Xem bài nộp" (onClick)="selectAssignment(a)" />
+                            <p-button icon="pi pi-pencil" severity="primary" [text]="true" size="small" pTooltip="Sửa" (onClick)="openEditAssignmentDialog(a)" />
+                            <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" pTooltip="Xóa" (onClick)="confirmDeleteAssignment(a)" />
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  }
+                }
+              </div>
+            </p-tabpanel>
+          </p-tabpanels>
+        </p-tabs>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="space-y-4">
+        <!-- Lesson Info -->
+        <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 space-y-3">
+          <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Thông tin bài học</h3>
+
+          <div>
+            <p class="text-xs text-surface-400">Loại bài học</p>
+            <p class="text-sm text-surface-700 dark:text-surface-300">{{ getLessonTypeLabel(l.type) }}</p>
+          </div>
+
+          <div>
+            <p class="text-xs text-surface-400">Trạng thái</p>
+            <p class="text-sm text-surface-700 dark:text-surface-300">{{ l.isPublished ? 'Đã xuất bản' : 'Nháp' }}</p>
+          </div>
+
+          <div>
+            <p class="text-xs text-surface-400">Xem trước miễn phí</p>
+            <p class="text-sm text-surface-700 dark:text-surface-300">{{ l.isFreePreview ? 'Có' : 'Không' }}</p>
+          </div>
+
+          @if (l.estimatedMinutes) {
+            <div>
+              <p class="text-xs text-surface-400">Thời lượng ước tính</p>
+              <p class="text-sm text-surface-700 dark:text-surface-300">{{ l.estimatedMinutes }} phút</p>
+            </div>
+          }
+
+          @if (l.videoUrl) {
+            <div>
+              <p class="text-xs text-surface-400">URL Video</p>
+              <a [href]="l.videoUrl" target="_blank" class="text-sm text-primary hover:underline break-all">{{ l.videoUrl }}</a>
+            </div>
+          }
+        </div>
+
+        <!-- Timestamps -->
+        <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 space-y-3">
+          <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Thời gian</h3>
+          <div>
+            <p class="text-xs text-surface-400">Ngày tạo</p>
+            <p class="text-sm text-surface-700 dark:text-surface-300">{{ l.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-surface-400">Cập nhật lần cuối</p>
+            <p class="text-sm text-surface-700 dark:text-surface-300">{{ l.updatedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+        </div>
+
+        <!-- Navigation -->
+        @if (sectionLessons().length > 1) {
+          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 space-y-3">
+            <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Bài học trong chương</h3>
+            <div class="space-y-1">
+              @for (sl of sectionLessons(); track sl.id) {
+                <div
+                  class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors"
+                  [class]="sl.id === l.id
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700'"
+                  (click)="navigateToLesson(sl.id)"
+                >
+                  <i [class]="'pi ' + getLessonTypeIcon(sl.type) + ' text-xs'"></i>
+                  <span class="truncate">{{ sl.lessonOrder }}. {{ sl.title }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Prev / Next Navigation -->
+    @if (sectionLessons().length > 1) {
+      <div class="flex items-center justify-between pt-2">
+        @if (prevLesson(); as prev) {
+          <p-button [label]="prev.title" icon="pi pi-arrow-left" [text]="true" severity="secondary" (onClick)="navigateToLesson(prev.id)" />
+        } @else {
+          <div></div>
+        }
+        @if (nextLesson(); as next) {
+          <p-button [label]="next.title" icon="pi pi-arrow-right" iconPos="right" [text]="true" severity="secondary" (onClick)="navigateToLesson(next.id)" />
+        } @else {
+          <div></div>
+        }
+      </div>
+    }
+  </div>
+}
+
+<!-- ==================== EDIT LESSON DIALOG ==================== -->
+<p-dialog
+  header="Chỉnh sửa bài học"
+  [visible]="showEditDialog()"
+  (visibleChange)="showEditDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '720px' }"
+  [contentStyle]="{ overflow: 'auto' }"
+>
+  <div class="space-y-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Tiêu đề <span class="text-red-500">*</span></label>
+      <input pInputText [(ngModel)]="editForm.title" class="w-full" />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Loại bài học</label>
+        <p-select [(ngModel)]="editForm.type" [options]="lessonTypeOptions" optionLabel="label" optionValue="value" styleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Thứ tự</label>
+        <p-inputNumber [(ngModel)]="editForm.lessonOrder" [min]="0" styleClass="w-full" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Nội dung</label>
+      <app-text-editor [(ngModel)]="editForm.content" />
+    </div>
+    @if (editForm.type === 'video') {
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">URL Video</label>
+        <input pInputText [(ngModel)]="editForm.videoUrl" class="w-full" placeholder="https://..." />
+      </div>
+    }
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Thời lượng (phút)</label>
+        <p-inputNumber [(ngModel)]="editForm.estimatedMinutes" [min]="0" styleClass="w-full" />
+      </div>
+      <div class="space-y-2 pt-6">
+        <div class="flex items-center gap-2">
+          <p-toggleSwitch [(ngModel)]="editForm.isPublished" />
+          <label class="text-sm text-surface-700 dark:text-surface-300">Xuất bản</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-toggleSwitch [(ngModel)]="editForm.isFreePreview" />
+          <label class="text-sm text-surface-700 dark:text-surface-300">Xem trước miễn phí</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ng-template #footer>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button label="Hủy" [text]="true" severity="secondary" (onClick)="showEditDialog.set(false)" />
+      <p-button label="Cập nhật" icon="pi pi-check" (onClick)="saveEdit()" [loading]="saving()" [disabled]="!editForm.title?.trim()" />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- ==================== ADD/EDIT PROBLEM DIALOG ==================== -->
+<p-dialog
+  [header]="editingProblem() ? 'Chỉnh sửa bài tập' : 'Thêm bài tập'"
+  [visible]="showProblemDialog()"
+  (visibleChange)="showProblemDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '560px' }"
+>
+  <div class="space-y-4 pt-2">
+    <!-- Problem Search (only on add) -->
+    @if (!editingProblem()) {
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Tìm bài tập <span class="text-red-500">*</span></label>
+        <div class="relative">
+          <input
+            pInputText
+            [ngModel]="problemSearchQuery()"
+            (ngModelChange)="problemSearchQuery.set($event); searchProblems()"
+            class="w-full"
+            placeholder="Nhập tên bài tập để tìm kiếm..."
+          />
+          @if (problemSearchLoading()) {
+            <i class="pi pi-spinner pi-spin absolute right-3 top-1/2 -translate-y-1/2 text-surface-400"></i>
+          }
+        </div>
+        <!-- Search results -->
+        @if (problemSearchResults().length > 0) {
+          <div class="mt-1 border border-surface-200 dark:border-surface-700 rounded-lg max-h-48 overflow-y-auto bg-surface-0 dark:bg-surface-800 shadow-lg">
+            @for (p of problemSearchResults(); track p.id) {
+              <div
+                class="flex items-center justify-between px-3 py-2 hover:bg-surface-100 dark:hover:bg-surface-700 cursor-pointer text-sm transition-colors"
+                (click)="selectProblem(p)"
+              >
+                <div>
+                  <span class="font-medium text-surface-900 dark:text-surface-0">{{ p.title }}</span>
+                  <span class="text-xs text-surface-400 ml-2">{{ p.difficulty }} • {{ p.points }} đ</span>
+                </div>
+                <i class="pi pi-plus text-xs text-primary"></i>
+              </div>
+            }
+          </div>
+        }
+        <!-- Selected problem -->
+        @if (problemForm.selectedProblem) {
+          <div class="mt-2 flex items-center gap-2 bg-primary/10 text-primary text-sm px-3 py-2 rounded-lg">
+            <i class="pi pi-check-circle"></i>
+            <span class="font-medium">{{ problemForm.selectedProblem.title }}</span>
+            <span class="text-xs opacity-70">{{ problemForm.selectedProblem.difficulty }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Thứ tự</label>
+        <p-inputNumber [(ngModel)]="problemForm.problemOrder" [min]="1" styleClass="w-full" />
+      </div>
+      <div class="flex items-end pb-1">
+        <div class="flex items-center gap-2">
+          <p-toggleSwitch [(ngModel)]="problemForm.isRequired" />
+          <label class="text-sm text-surface-700 dark:text-surface-300">Bắt buộc</label>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Nhãn (tùy chọn)</label>
+      <input pInputText [(ngModel)]="problemForm.label" class="w-full" placeholder="Mô tả ngắn cho bài tập..." />
+    </div>
+  </div>
+  <ng-template #footer>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button label="Hủy" [text]="true" severity="secondary" (onClick)="showProblemDialog.set(false)" />
+      <p-button
+        [label]="editingProblem() ? 'Cập nhật' : 'Thêm'"
+        icon="pi pi-check"
+        (onClick)="saveProblem()"
+        [loading]="savingProblem()"
+        [disabled]="!editingProblem() && !problemForm.problemId"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- ==================== ADD/EDIT QUIZ DIALOG ==================== -->
+<p-dialog
+  [header]="editingQuiz() ? 'Chỉnh sửa bài kiểm tra' : 'Thêm bài kiểm tra'"
+  [visible]="showQuizDialog()"
+  (visibleChange)="showQuizDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '600px' }"
+>
+  <div class="space-y-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Tiêu đề <span class="text-red-500">*</span></label>
+      <input pInputText [(ngModel)]="quizForm.title" class="w-full" placeholder="Tên bài kiểm tra..." />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Mô tả</label>
+      <textarea pTextarea [(ngModel)]="quizForm.description" class="w-full" rows="2" placeholder="Mô tả ngắn..."></textarea>
+    </div>
+
+    <div class="grid grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Thời gian (phút)</label>
+        <p-inputNumber [(ngModel)]="quizForm.timeLimitMinutes" [min]="0" styleClass="w-full" placeholder="Không giới hạn" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Điểm đạt (%)</label>
+        <p-inputNumber [(ngModel)]="quizForm.passingScore" [min]="0" [max]="100" styleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Số lần tối đa</label>
+        <p-inputNumber [(ngModel)]="quizForm.maxAttempts" [min]="1" styleClass="w-full" />
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Thứ tự</label>
+      <p-inputNumber [(ngModel)]="quizForm.quizOrder" [min]="1" styleClass="w-full" />
+    </div>
+
+    <div class="flex flex-wrap gap-x-6 gap-y-2">
+      <div class="flex items-center gap-2">
+        <p-toggleSwitch [(ngModel)]="quizForm.shuffleQuestions" />
+        <label class="text-sm text-surface-700 dark:text-surface-300">Trộn câu hỏi</label>
+      </div>
+      <div class="flex items-center gap-2">
+        <p-toggleSwitch [(ngModel)]="quizForm.showCorrectAnswers" />
+        <label class="text-sm text-surface-700 dark:text-surface-300">Hiện đáp án đúng</label>
+      </div>
+      <div class="flex items-center gap-2">
+        <p-toggleSwitch [(ngModel)]="quizForm.isPublished" />
+        <label class="text-sm text-surface-700 dark:text-surface-300">Xuất bản</label>
+      </div>
+    </div>
+  </div>
+  <ng-template #footer>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button label="Hủy" [text]="true" severity="secondary" (onClick)="showQuizDialog.set(false)" />
+      <p-button
+        [label]="editingQuiz() ? 'Cập nhật' : 'Tạo'"
+        icon="pi pi-check"
+        (onClick)="saveQuiz()"
+        [loading]="savingQuiz()"
+        [disabled]="!quizForm.title?.trim()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- ==================== ADD/EDIT QUESTION DIALOG ==================== -->
+<p-dialog
+  [header]="editingQuestion() ? 'Chỉnh sửa câu hỏi' : 'Thêm câu hỏi'"
+  [visible]="showQuestionDialog()"
+  (visibleChange)="showQuestionDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '680px' }"
+  [contentStyle]="{ overflow: 'auto' }"
+>
+  <div class="space-y-4 pt-2">
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Câu hỏi <span class="text-red-500">*</span></label>
+      <textarea pTextarea [(ngModel)]="questionForm.questionText" class="w-full" rows="3" placeholder="Nhập nội dung câu hỏi..."></textarea>
+    </div>
+
+    <div class="grid grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Loại câu hỏi</label>
+        <p-select [(ngModel)]="questionForm.questionType" [options]="questionTypeOptions" optionLabel="label" optionValue="value" styleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Điểm</label>
+        <p-inputNumber [(ngModel)]="questionForm.points" [min]="1" styleClass="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Thứ tự</label>
+        <p-inputNumber [(ngModel)]="questionForm.questionOrder" [min]="1" styleClass="w-full" />
+      </div>
+    </div>
+
+    <!-- Multiple Choice Options -->
+    @if (questionForm.questionType === 'multiple_choice') {
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-sm font-medium text-surface-700 dark:text-surface-300">Các đáp án</label>
+          <p-button label="Thêm" icon="pi pi-plus" [text]="true" size="small" (onClick)="addOption()" />
+        </div>
+        <div class="space-y-2">
+          @for (opt of questionForm.options; track opt; let i = $index) {
+            <div class="flex items-center gap-2">
+              <p-checkbox [(ngModel)]="opt.isCorrect" [binary]="true" pTooltip="Đáp án đúng" />
+              <input pInputText [(ngModel)]="opt.text" class="flex-1" [placeholder]="'Đáp án ' + (i + 1)" />
+              @if (questionForm.options.length > 2) {
+                <p-button icon="pi pi-times" [text]="true" severity="danger" size="small" (onClick)="removeOption(i)" />
+              }
+            </div>
+          }
+        </div>
+        <p class="text-xs text-surface-400 mt-1">Đánh dấu checkbox cho đáp án đúng</p>
+      </div>
+    }
+
+    <!-- True/False -->
+    @if (questionForm.questionType === 'true_false') {
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Đáp án đúng</label>
+        <p-select [(ngModel)]="questionForm.correctAnswer" [options]="[{label: 'Đúng', value: 'Đúng'}, {label: 'Sai', value: 'Sai'}]" optionLabel="label" optionValue="value" styleClass="w-full" />
+      </div>
+    }
+
+    <!-- Short Answer / Code -->
+    @if (questionForm.questionType === 'short_answer' || questionForm.questionType === 'code') {
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Đáp án đúng</label>
+        <input pInputText [(ngModel)]="questionForm.correctAnswer" class="w-full" placeholder="Nhập đáp án..." />
+      </div>
+    }
+
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Giải thích (tùy chọn)</label>
+      <textarea pTextarea [(ngModel)]="questionForm.explanation" class="w-full" rows="2" placeholder="Giải thích đáp án đúng..."></textarea>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">URL hình ảnh (tùy chọn)</label>
+      <input pInputText [(ngModel)]="questionForm.imageUrl" class="w-full" placeholder="https://..." />
+    </div>
+  </div>
+  <ng-template #footer>
+    <div class="flex justify-end gap-2 pt-2">
+      <p-button label="Hủy" [text]="true" severity="secondary" (onClick)="showQuestionDialog.set(false)" />
+      <p-button
+        [label]="editingQuestion() ? 'Cập nhật' : 'Thêm'"
+        icon="pi pi-check"
+        (onClick)="saveQuestion()"
+        [loading]="savingQuestion()"
+        [disabled]="!questionForm.questionText?.trim()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- ==================== DIALOG: ASSIGNMENT ==================== -->
+<p-dialog
+  [header]="editingAssignment() ? 'Chỉnh sửa bài tập' : 'Thêm bài tập nộp file'"
+  [(visible)]="showAssignmentDialog"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '600px' }"
+  [maximizable]="true"
+>
+  <div class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium mb-1">Tiêu đề <span class="text-red-500">*</span></label>
+      <input pInputText [(ngModel)]="assignmentForm.title" class="w-full" placeholder="Nhập tiêu đề bài tập" />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Mô tả / Yêu cầu</label>
+      <app-text-editor [(ngModel)]="assignmentForm.description" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">Loại bài tập</label>
+        <p-select [(ngModel)]="assignmentForm.type" [options]="assignmentTypeOptions" optionLabel="label" optionValue="value" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Điểm tối đa</label>
+        <p-inputnumber [(ngModel)]="assignmentForm.maxScore" [min]="0" [max]="1000" class="w-full" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">Thứ tự</label>
+        <p-inputnumber [(ngModel)]="assignmentForm.assignmentOrder" [min]="0" class="w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Hạn nộp</label>
+        <input pInputText type="datetime-local" [(ngModel)]="assignmentForm.dueDate" class="w-full" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">Loại file cho phép</label>
+        <input pInputText [(ngModel)]="assignmentForm.allowedFileTypes" class="w-full" placeholder=".pdf,.docx,.zip" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Kích thước tối đa (MB)</label>
+        <p-inputnumber [(ngModel)]="assignmentForm.maxFileSizeMb" [min]="1" [max]="100" class="w-full" />
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">File đính kèm (đề bài / yêu cầu)</label>
+      @if (editingAssignment()?.attachmentFileName && !assignmentFile) {
+        <div class="flex items-center gap-2 text-sm text-surface-600 dark:text-surface-300 mb-2">
+          <i class="pi pi-paperclip"></i>
+          <span>{{ editingAssignment()?.attachmentFileName }}</span>
+          <span class="text-surface-400">(file hiện tại)</span>
+        </div>
+      }
+      <p-fileupload
+        mode="basic"
+        [auto]="false"
+        chooseLabel="Chọn file"
+        chooseIcon="pi pi-upload"
+        [maxFileSize]="52428800"
+        (onSelect)="onAssignmentFileSelect($event)"
+        (onClear)="onAssignmentFileClear()"
+      />
+    </div>
+
+    <div class="flex items-center gap-2">
+      <p-toggleswitch [(ngModel)]="assignmentForm.isPublished" />
+      <span class="text-sm">Công khai</span>
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button label="Hủy" severity="secondary" [text]="true" (onClick)="showAssignmentDialog.set(false)" />
+      <p-button
+        [label]="editingAssignment() ? 'Cập nhật' : 'Tạo mới'"
+        icon="pi pi-check"
+        [loading]="savingAssignment()"
+        (onClick)="saveAssignment()"
+        [disabled]="!assignmentForm.title?.trim()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- ==================== DIALOG: GRADE SUBMISSION ==================== -->
+<p-dialog
+  header="Chấm điểm bài nộp"
+  [(visible)]="showGradeDialog"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '500px' }"
+>
+  <div class="space-y-4">
+    @if (gradingSubmission(); as gs) {
+      <div class="p-3 rounded-lg bg-surface-100 dark:bg-surface-700 space-y-1">
+        @if (gs.submissionFileName) {
+          <p class="text-sm"><i class="pi pi-file mr-1"></i>{{ gs.submissionFileName }}</p>
+        }
+        @if (gs.content) {
+          <p class="text-sm text-surface-500">{{ gs.content }}</p>
+        }
+        <p class="text-xs text-surface-400">Nộp lúc: {{ gs.submittedAt | date:'dd/MM/yyyy HH:mm' }} · Lần nộp #{{ gs.attemptNumber }}</p>
+      </div>
+    }
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Điểm</label>
+      <p-inputnumber [(ngModel)]="gradeForm.score" [min]="0" [max]="selectedAssignment()?.maxScore || 100" class="w-full" />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Nhận xét</label>
+      <textarea pTextarea [(ngModel)]="gradeForm.feedback" rows="4" class="w-full" placeholder="Nhập nhận xét cho học viên..."></textarea>
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button label="Hủy" severity="secondary" [text]="true" (onClick)="showGradeDialog.set(false)" />
+      <p-button
+        label="Lưu điểm"
+        icon="pi pi-check"
+        [loading]="savingGrade()"
+        (onClick)="saveGrade()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>

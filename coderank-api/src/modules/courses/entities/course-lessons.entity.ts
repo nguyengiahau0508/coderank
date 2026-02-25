@@ -6,6 +6,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CourseLessonProgressEntity } from './course-lesson-progress.entity';
 import { CourseQuizzesEntity } from './course-quizzes.entity';
 import { CourseLessonProblemsEntity } from './course-lesson-problems.entity';
+import { CourseAssignmentsEntity } from './course-assignments.entity';
 
 @Entity('course_lessons')
 @Index('IDX_lesson_section_order', ['sectionId', 'lessonOrder'])
@@ -70,4 +71,7 @@ export class CourseLessonsEntity extends BaseEntity {
 
   @OneToMany(() => CourseLessonProblemsEntity, (p) => p.lesson, { cascade: true })
   problems: CourseLessonProblemsEntity[];
+
+  @OneToMany(() => CourseAssignmentsEntity, (a) => a.lesson, { cascade: true })
+  assignments: CourseAssignmentsEntity[];
 }

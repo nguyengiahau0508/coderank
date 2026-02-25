@@ -8,3 +8,5 @@ export * from './course-quiz-questions.entity';
 export * from './course-quiz-attempts.entity';
 export * from './course-lesson-problems.entity';
 export * from './course-reviews.entity';
+export * from './course-assignments.entity';
+export * from './course-assignment-submissions.entity';

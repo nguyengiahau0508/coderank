@@ -7,6 +7,10 @@ import { GoogleDriveModule } from "./google/drive/google-drive.module";
     imports: [
         GoogleOauth2Module,
         GoogleDriveModule
+    ],
+    exports: [
+        GoogleOauth2Module,
+        GoogleDriveModule
     ]
 })
 export class RootIntegrationModule {}

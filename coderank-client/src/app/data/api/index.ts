@@ -8,4 +8,5 @@ export * from './auth.api';
 export * from './users.api';
 export * from './problems.api';
 export * from './contests.api';
+export * from './courses.api';
 export * from './runner.api';
