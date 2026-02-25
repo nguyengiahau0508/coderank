@@ -32,7 +32,7 @@ import { ProblemsService } from '../services/problems.service';
 import { TagsService } from '../services/tags.service';
 
 @Component({
-  selector: 'app-problem-list',
+  selector: 'app-admin-problem-list',
   imports: [
     CommonModule,
     FormsModule,
@@ -59,7 +59,7 @@ import { TagsService } from '../services/tags.service';
   templateUrl: './problem-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProblemListComponent implements OnInit {
+export class AdminProblemListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly problemsService = inject(ProblemsService);

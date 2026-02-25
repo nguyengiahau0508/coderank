@@ -24,12 +24,12 @@ interface LanguageOption {
 }
 
 @Component({
-  selector: 'app-solution-form-dialog',
+  selector: 'app-admin-solution-form-dialog',
   imports: [FormsModule, Dialog, Button, Select, InputText, Editor],
   templateUrl: './solution-form-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SolutionFormDialogComponent {
+export class AdminSolutionFormDialogComponent {
   private readonly solutionsService = inject(SolutionsService);
   private readonly messageService = inject(MessageService);
 

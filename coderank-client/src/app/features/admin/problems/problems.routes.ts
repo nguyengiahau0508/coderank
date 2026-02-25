@@ -4,7 +4,7 @@ export const problemsRoutes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./problem-list/problem-list.component').then(m => m.ProblemListComponent),
+      import('./problem-list/problem-list.component').then(m => m.AdminProblemListComponent),
   },
   {
     path: ':id',

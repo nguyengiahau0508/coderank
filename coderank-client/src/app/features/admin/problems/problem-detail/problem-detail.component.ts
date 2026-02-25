@@ -17,7 +17,7 @@ import { CodeEditorComponent } from '../../../../shared/components/code-editor/c
 import { AdminSubmissionResultComponent } from '../components/submission-result/submission-result.component';
 import { MarkdownViewComponent } from '../../../../shared/components/markdown-view/markdown-view.component';
 import { SolutionListComponent } from '../components/solution-list/solution-list.component';
-import { SolutionFormDialogComponent } from '../components/solution-form-dialog/solution-form-dialog.component';
+import { AdminSolutionFormDialogComponent } from '../components/solution-form-dialog/solution-form-dialog.component';
 
 // Services & Models
 import { ProblemsService } from '../services/problems.service';
@@ -41,7 +41,7 @@ import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '.
     AdminSubmissionResultComponent,
     MarkdownViewComponent,
     SolutionListComponent,
-    SolutionFormDialogComponent,
+    AdminSolutionFormDialogComponent,
   ],
   providers: [MessageService],
   templateUrl: './problem-detail.component.html',
