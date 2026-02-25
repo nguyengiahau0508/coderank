@@ -9,13 +9,13 @@ import { CommonModule } from '@angular/common';
 import { SolutionsModel } from '../../../../../data/models/solutions.model';
 
 @Component({
-  selector: 'app-solution-list',
+  selector: 'app-admin-solution-list',
   imports: [CommonModule],
   templateUrl: './solution-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
 })
-export class SolutionListComponent {
+export class AdminSolutionListComponent {
   readonly solutions = input<SolutionsModel[]>([]);
   readonly mySolutions = input<SolutionsModel[]>([]);
   readonly hasAccepted = input<boolean>(false);

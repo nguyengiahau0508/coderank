@@ -16,7 +16,7 @@ import { MessageService } from 'primeng/api';
 import { CodeEditorComponent } from '../../../../shared/components/code-editor/code-editor.component';
 import { AdminSubmissionResultComponent } from '../components/submission-result/submission-result.component';
 import { MarkdownViewComponent } from '../../../../shared/components/markdown-view/markdown-view.component';
-import { SolutionListComponent } from '../components/solution-list/solution-list.component';
+import { AdminSolutionListComponent } from '../components/solution-list/solution-list.component';
 import { AdminSolutionFormDialogComponent } from '../components/solution-form-dialog/solution-form-dialog.component';
 
 // Services & Models
@@ -40,7 +40,7 @@ import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '.
     CodeEditorComponent,
     AdminSubmissionResultComponent,
     MarkdownViewComponent,
-    SolutionListComponent,
+    AdminSolutionListComponent,
     AdminSolutionFormDialogComponent,
   ],
   providers: [MessageService],
