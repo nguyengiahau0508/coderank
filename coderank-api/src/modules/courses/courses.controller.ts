@@ -41,9 +41,15 @@ import { LocalStorageService } from 'src/integrations/local-storage/local-storag
 
 // Entities
 import { CoursesEntity } from './entities/courses.entity';
+import { CourseSectionsEntity } from './entities/course-sections.entity';
+import { CourseLessonsEntity } from './entities/course-lessons.entity';
+import { CourseQuizzesEntity } from './entities/course-quizzes.entity';
+import { CourseQuizQuestionsEntity } from './entities/course-quiz-questions.entity';
+import { CourseLessonProblemsEntity } from './entities/course-lesson-problems.entity';
+import { CourseAssignmentsEntity } from './entities/course-assignments.entity';
 
 // DTOs
-import { CreateCourseDto, UpdateCourseDto, PaginationQueryCoursesDto } from './dto/course';
+import { CreateCourseDto, UpdateCourseDto, PaginationQueryCoursesDto, DuplicateCourseDto } from './dto/course';
 import { CreateSectionDto, UpdateSectionDto } from './dto/section';
 import { CreateLessonDto, UpdateLessonDto } from './dto/lesson';
 import { CreateQuizDto, UpdateQuizDto } from './dto/quiz';
@@ -260,6 +266,172 @@ export class CoursesController {
   @ApiBearerAuth('JWT-auth')
   async deleteCourse(@Param('courseId') courseId: string) {
     return this.coursesService.delete(courseId);
+  }
+
+  @Post(':courseId/duplicate')
+  @Roles(RolesEnum.Admin, RolesEnum.Instructor)
+  @Owner(CoursesEntity, 'authorId', 'courseId')
+  @ApiBearerAuth('JWT-auth')
+  async duplicateCourse(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('courseId') courseId: string,
+    @Body() dto: DuplicateCourseDto,
+  ) {
+    // 1. Load the source course with all nested content
+    const source = await this.coursesService
+      .getRepository()
+      .createQueryBuilder('course')
+      .leftJoinAndSelect('course.sections', 'section')
+      .leftJoinAndSelect('section.lessons', 'lesson')
+      .leftJoinAndSelect('lesson.quizzes', 'quiz')
+      .leftJoinAndSelect('quiz.questions', 'question')
+      .leftJoinAndSelect('lesson.problems', 'lessonProblem')
+      .leftJoinAndSelect('lesson.assignments', 'assignment')
+      .addSelect(['course.description', 'course.learningObjectives', 'course.prerequisites', 'course.password'])
+      .addSelect(['lesson.content'])
+      .addSelect(['question.correctAnswer', 'question.explanation'])
+      .where('course.id = :courseId', { courseId })
+      .andWhere('course.authorId = :authorId', { authorId: currentUser.userId })
+      .orderBy('section.sectionOrder', 'ASC')
+      .addOrderBy('lesson.lessonOrder', 'ASC')
+      .addOrderBy('quiz.quizOrder', 'ASC')
+      .addOrderBy('question.questionOrder', 'ASC')
+      .addOrderBy('assignment.assignmentOrder', 'ASC')
+      .getOne();
+
+    if (!source) {
+      throw new NotFoundException('Không tìm thấy khóa học hoặc bạn không phải là chủ sở hữu');
+    }
+
+    // 2. Duplicate inside a transaction
+    return this.coursesService.transaction(async (manager) => {
+      // Create new course
+      const newCourse = manager.create(CoursesEntity, {
+        title: dto.title,
+        slug: dto.slug,
+        summary: source.summary,
+        description: source.description,
+        thumbnailUrl: source.thumbnailUrl,
+        level: source.level,
+        status: 'draft' as any,
+        isPublic: source.isPublic,
+        password: source.password,
+        maxStudents: source.maxStudents,
+        estimatedDurationMinutes: source.estimatedDurationMinutes,
+        tags: source.tags,
+        category: source.category,
+        learningObjectives: source.learningObjectives,
+        prerequisites: source.prerequisites,
+        enrollmentCount: 0,
+        averageRating: 0,
+        reviewCount: 0,
+        authorId: currentUser.userId,
+      });
+      const savedCourse = await manager.save(CoursesEntity, newCourse);
+
+      // Duplicate sections
+      for (const section of source.sections || []) {
+        const newSection = manager.create(CourseSectionsEntity, {
+          courseId: savedCourse.id,
+          title: section.title,
+          description: section.description,
+          sectionOrder: section.sectionOrder,
+          isPublished: false,
+          authorId: currentUser.userId,
+        });
+        const savedSection = await manager.save(CourseSectionsEntity, newSection);
+
+        // Duplicate lessons
+        for (const lesson of section.lessons || []) {
+          const newLesson = manager.create(CourseLessonsEntity, {
+            sectionId: savedSection.id,
+            title: lesson.title,
+            content: lesson.content,
+            type: lesson.type,
+            videoUrl: lesson.videoUrl,
+            videoDurationSeconds: lesson.videoDurationSeconds,
+            lessonOrder: lesson.lessonOrder,
+            estimatedMinutes: lesson.estimatedMinutes,
+            isPublished: false,
+            isFreePreview: lesson.isFreePreview,
+            authorId: currentUser.userId,
+          });
+          const savedLesson = await manager.save(CourseLessonsEntity, newLesson);
+
+          // Duplicate quizzes + questions
+          for (const quiz of lesson.quizzes || []) {
+            const newQuiz = manager.create(CourseQuizzesEntity, {
+              lessonId: savedLesson.id,
+              title: quiz.title,
+              description: quiz.description,
+              timeLimitMinutes: quiz.timeLimitMinutes,
+              passingScore: quiz.passingScore,
+              maxAttempts: quiz.maxAttempts,
+              quizOrder: quiz.quizOrder,
+              shuffleQuestions: quiz.shuffleQuestions,
+              showCorrectAnswers: quiz.showCorrectAnswers,
+              isPublished: false,
+              authorId: currentUser.userId,
+            });
+            const savedQuiz = await manager.save(CourseQuizzesEntity, newQuiz);
+
+            // Duplicate quiz questions
+            for (const question of quiz.questions || []) {
+              const newQuestion = manager.create(CourseQuizQuestionsEntity, {
+                quizId: savedQuiz.id,
+                questionText: question.questionText,
+                questionType: question.questionType,
+                options: question.options,
+                correctAnswer: question.correctAnswer,
+                explanation: question.explanation,
+                points: question.points,
+                questionOrder: question.questionOrder,
+                imageUrl: question.imageUrl,
+                authorId: currentUser.userId,
+              });
+              await manager.save(CourseQuizQuestionsEntity, newQuestion);
+            }
+          }
+
+          // Duplicate lesson problems
+          for (const prob of lesson.problems || []) {
+            const newProblem = manager.create(CourseLessonProblemsEntity, {
+              lessonId: savedLesson.id,
+              problemId: prob.problemId,
+              problemOrder: prob.problemOrder,
+              isRequired: prob.isRequired,
+              label: prob.label,
+              authorId: currentUser.userId,
+            });
+            await manager.save(CourseLessonProblemsEntity, newProblem);
+          }
+
+          // Duplicate assignments (without submissions)
+          for (const assignment of lesson.assignments || []) {
+            const newAssignment = manager.create(CourseAssignmentsEntity, {
+              lessonId: savedLesson.id,
+              title: assignment.title,
+              description: assignment.description,
+              type: assignment.type,
+              attachmentFileId: assignment.attachmentFileId,
+              attachmentFileName: assignment.attachmentFileName,
+              attachmentMimeType: assignment.attachmentMimeType,
+              attachmentFileSize: assignment.attachmentFileSize,
+              maxScore: assignment.maxScore,
+              dueDate: null,
+              assignmentOrder: assignment.assignmentOrder,
+              isPublished: false,
+              allowedFileTypes: assignment.allowedFileTypes,
+              maxFileSizeMb: assignment.maxFileSizeMb,
+              authorId: currentUser.userId,
+            });
+            await manager.save(CourseAssignmentsEntity, newAssignment);
+          }
+        }
+      }
+
+      return savedCourse;
+    });
   }
 
   // ==================== SECTIONS ====================

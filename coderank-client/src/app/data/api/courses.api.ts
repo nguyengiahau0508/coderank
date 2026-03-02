@@ -20,6 +20,7 @@ import {
 import {
   CreateCourseDto,
   UpdateCourseDto,
+  DuplicateCourseDto,
   PaginationQueryCoursesDto,
   CreateSectionDto,
   UpdateSectionDto,
@@ -69,6 +70,10 @@ export class CoursesApi extends BaseApi {
 
   deleteCourse(courseId: string): Observable<ApiResponse<void>> {
     return this.apiService.delete<ApiResponse<void>>(this.getUrl(`/${courseId}`));
+  }
+
+  duplicateCourse(courseId: string, dto: DuplicateCourseDto): Observable<ApiResponse<CoursesModel>> {
+    return this.apiService.post<ApiResponse<CoursesModel>>(this.getUrl(`/${courseId}/duplicate`), dto);
   }
 
   // ==================== SECTIONS ====================

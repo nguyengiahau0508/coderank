@@ -21,6 +21,11 @@ export interface CreateCourseDto {
 
 export interface UpdateCourseDto extends Partial<CreateCourseDto> {}
 
+export interface DuplicateCourseDto {
+  title: string;
+  slug: string;
+}
+
 export interface PaginationQueryCoursesDto {
   page?: number;
   limit?: number;

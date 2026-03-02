@@ -26,6 +26,7 @@ import { CoursesService } from '../services/courses.service';
 
 // Components
 import { AdminCourseFormDialogComponent } from '../components/course-form-dialog/course-form-dialog.component';
+import { AdminCourseDuplicateDialogComponent, DuplicateCourseEvent } from '../components/course-duplicate-dialog/course-duplicate-dialog.component';
 
 @Component({
   selector: 'app-admin-course-list',
@@ -44,6 +45,7 @@ import { AdminCourseFormDialogComponent } from '../components/course-form-dialog
     Tooltip,
     ConfirmDialog,
     AdminCourseFormDialogComponent,
+    AdminCourseDuplicateDialogComponent,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './course-list.component.html',
@@ -65,6 +67,10 @@ export class AdminCourseListComponent implements OnInit {
   readonly showCourseDialog = signal<boolean>(false);
   readonly editingCourse = signal<CoursesModel | null>(null);
   readonly isSubmittingDialog = signal<boolean>(false);
+
+  // Duplicate Dialog
+  readonly showDuplicateDialog = signal<boolean>(false);
+  readonly isDuplicating = signal<boolean>(false);
 
   // Filters
   readonly searchTerm = signal<string>('');
@@ -237,6 +243,41 @@ export class AdminCourseListComponent implements OnInit {
   closeCourseDialog(): void {
     this.showCourseDialog.set(false);
     this.editingCourse.set(null);
+  }
+
+  // ===== DUPLICATE =====
+
+  openDuplicateDialog(): void {
+    this.showDuplicateDialog.set(true);
+  }
+
+  closeDuplicateDialog(): void {
+    this.showDuplicateDialog.set(false);
+  }
+
+  onDuplicateCourse(event: DuplicateCourseEvent): void {
+    this.isDuplicating.set(true);
+    this.coursesService.duplicateCourse(event.sourceCourseId, {
+      title: event.title,
+      slug: event.slug,
+    }).subscribe({
+      next: () => {
+        this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã nhân bản khóa học' });
+        this.showDuplicateDialog.set(false);
+        this.isDuplicating.set(false);
+        this.page.set(1);
+        this.loadCourses();
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể nhân bản khóa học' });
+        this.isDuplicating.set(false);
+      },
+    });
+  }
+
+  duplicateCourseFromCard(event: Event, course: CoursesModel): void {
+    event.stopPropagation();
+    this.showDuplicateDialog.set(true);
   }
 
   getLevelSeverity(level: CourseLevelEnum): 'success' | 'info' | 'warn' {

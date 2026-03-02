@@ -8,7 +8,10 @@
       <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Quản lý khóa học</h1>
       <p class="mt-1 text-surface-500 dark:text-surface-400">Tạo, chỉnh sửa và quản lý các khóa học</p>
     </div>
-    <p-button label="Tạo khóa học" icon="pi pi-plus" severity="primary" (onClick)="createCourse()" />
+    <div class="flex gap-2">
+      <p-button label="Nhân bản khóa học" icon="pi pi-copy" severity="secondary" (onClick)="openDuplicateDialog()" />
+      <p-button label="Tạo khóa học" icon="pi pi-plus" severity="primary" (onClick)="createCourse()" />
+    </div>
   </div>
 
   <!-- Stats -->
@@ -162,6 +165,7 @@
 
             <!-- Actions -->
             <div class="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-surface-200 dark:border-surface-700">
+              <p-button icon="pi pi-copy" [text]="true" severity="secondary" size="small" pTooltip="Nhân bản" (onClick)="duplicateCourseFromCard($event, course)" />
               <p-button icon="pi pi-pencil" [text]="true" severity="primary" size="small" pTooltip="Chỉnh sửa" (onClick)="editCourse($event, course)" />
               <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" pTooltip="Xóa" (onClick)="deleteCourse($event, course)" />
             </div>
@@ -189,4 +193,12 @@
   [submitting]="isSubmittingDialog()"
   (visibleChange)="closeCourseDialog()"
   (save)="onCourseSave($event)"
+/>
+
+<!-- Course Duplicate Dialog -->
+<app-admin-course-duplicate-dialog
+  [visible]="showDuplicateDialog()"
+  [submitting]="isDuplicating()"
+  (visibleChange)="closeDuplicateDialog()"
+  (duplicate)="onDuplicateCourse($event)"
 />

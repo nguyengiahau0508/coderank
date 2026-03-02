@@ -19,6 +19,7 @@ import { ProblemsModel } from '../../../../data/models/problems.model';
 import {
   CreateCourseDto,
   UpdateCourseDto,
+  DuplicateCourseDto,
   PaginationQueryCoursesDto,
   CreateSectionDto,
   UpdateSectionDto,
@@ -48,6 +49,7 @@ export class CoursesService {
   createCourse(dto: CreateCourseDto): Observable<ApiResponse<CoursesModel>> { return this.coursesApi.createCourse(dto); }
   updateCourse(courseId: string, dto: UpdateCourseDto): Observable<ApiResponse<CoursesModel>> { return this.coursesApi.updateCourse(courseId, dto); }
   deleteCourse(courseId: string): Observable<ApiResponse<void>> { return this.coursesApi.deleteCourse(courseId); }
+  duplicateCourse(courseId: string, dto: DuplicateCourseDto): Observable<ApiResponse<CoursesModel>> { return this.coursesApi.duplicateCourse(courseId, dto); }
 
   // Sections
   getSections(courseId: string): Observable<ApiResponse<CourseSectionsModel[]>> { return this.coursesApi.getSections(courseId); }
