@@ -10,7 +10,7 @@ export class GoogleOauth2Service {
     this.oAuth2Client = new google.auth.JWT({
       email: this.googleConfigService.oauth2ClientEmail,
       key: this.googleConfigService.oauth2PrivateKey.replace(/\\n/g, '\n'),
-      scopes: ['https://www.googleapis.com/auth/drive.file'],
+      scopes: ['https://www.googleapis.com/auth/drive'],
     });
   }
 

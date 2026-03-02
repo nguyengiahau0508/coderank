@@ -32,6 +32,7 @@ import { LessonTypeEnum, QuizQuestionTypeEnum, AssignmentTypeEnum, AssignmentSub
 
 // Services
 import { StudentCoursesService } from '../services/courses.service';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-student-lesson-detail',
@@ -120,7 +121,15 @@ export class StudentLessonDetailComponent implements OnInit {
   readonly showSubmitDialog = signal<boolean>(false);
   readonly submittingAssignment = signal<boolean>(false);
   assignmentContent = '';
-  assignmentFile: File | null = null;
+  assignmentFiles: File[] = [];
+
+  // Assignment edit
+  readonly showEditDialog = signal<boolean>(false);
+  readonly editingSubmission = signal<CourseAssignmentSubmissionsModel | null>(null);
+  readonly updatingSubmission = signal<boolean>(false);
+  readonly deletingSubmissionId = signal<string | null>(null);
+  editContent = '';
+  editFiles: File[] = [];
 
   ngOnInit(): void {
     const courseId = this.route.snapshot.paramMap.get('id');
@@ -353,12 +362,16 @@ export class StudentLessonDetailComponent implements OnInit {
 
   openSubmitDialog(): void {
     this.assignmentContent = '';
-    this.assignmentFile = null;
+    this.assignmentFiles = [];
     this.showSubmitDialog.set(true);
   }
 
   onFileSelect(event: any): void {
-    this.assignmentFile = event.files?.[0] ?? null;
+    this.assignmentFiles = event.files ? Array.from(event.files) : [];
+  }
+
+  removeFile(index: number): void {
+    this.assignmentFiles = this.assignmentFiles.filter((_, i) => i !== index);
   }
 
   submitAssignment(): void {
@@ -373,7 +386,7 @@ export class StudentLessonDetailComponent implements OnInit {
       this.lessonId(),
       assignment.id.toString(),
       dto,
-      this.assignmentFile ?? undefined,
+      this.assignmentFiles.length > 0 ? this.assignmentFiles : undefined,
     ).subscribe({
       next: () => {
         this.submittingAssignment.set(false);
@@ -386,6 +399,125 @@ export class StudentLessonDetailComponent implements OnInit {
         this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể nộp bài tập' });
       },
     });
+  }
+
+  // ==================== EDIT SUBMISSION ====================
+
+  openEditDialog(submission: CourseAssignmentSubmissionsModel): void {
+    this.editingSubmission.set(submission);
+    this.editContent = submission.content || '';
+    this.editFiles = [];
+    this.showEditDialog.set(true);
+  }
+
+  onEditFileSelect(event: any): void {
+    this.editFiles = event.files ? Array.from(event.files) : [];
+  }
+
+  removeEditFile(index: number): void {
+    this.editFiles = this.editFiles.filter((_, i) => i !== index);
+  }
+
+  updateSubmission(): void {
+    const assignment = this.selectedAssignment();
+    const submission = this.editingSubmission();
+    if (!assignment || !submission) return;
+
+    this.updatingSubmission.set(true);
+    const dto = { content: this.editContent || undefined };
+
+    this.coursesService.updateSubmission(
+      this.courseId(),
+      this.lessonId(),
+      assignment.id.toString(),
+      submission.id.toString(),
+      dto,
+      this.editFiles.length > 0 ? this.editFiles : undefined,
+    ).subscribe({
+      next: () => {
+        this.updatingSubmission.set(false);
+        this.showEditDialog.set(false);
+        this.editingSubmission.set(null);
+        this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã cập nhật bài nộp' });
+        this.loadMyAssignmentSubmissions(assignment.id.toString());
+      },
+      error: () => {
+        this.updatingSubmission.set(false);
+        this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể cập nhật bài nộp' });
+      },
+    });
+  }
+
+  // ==================== DELETE SUBMISSION ====================
+
+  deleteSubmission(submission: CourseAssignmentSubmissionsModel): void {
+    const assignment = this.selectedAssignment();
+    if (!assignment) return;
+
+    this.deletingSubmissionId.set(submission.id.toString());
+    this.coursesService.deleteSubmission(
+      this.courseId(),
+      this.lessonId(),
+      assignment.id.toString(),
+      submission.id.toString(),
+    ).subscribe({
+      next: () => {
+        this.deletingSubmissionId.set(null);
+        this.messageService.add({ severity: 'success', summary: 'Thành công', detail: 'Đã xóa bài nộp' });
+        this.loadMyAssignmentSubmissions(assignment.id.toString());
+      },
+      error: () => {
+        this.deletingSubmissionId.set(null);
+        this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể xóa bài nộp' });
+      },
+    });
+  }
+
+  // ==================== DOWNLOAD SUBMISSION FILE ====================
+
+  downloadSubmissionFile(submission: CourseAssignmentSubmissionsModel, fileIndex: number = 0): void {
+    if (!submission.submissionFiles || submission.submissionFiles.length === 0) return;
+    const assignment = this.selectedAssignment();
+    if (!assignment) return;
+
+    const fileInfo = submission.submissionFiles[fileIndex];
+    if (!fileInfo) return;
+
+    const url = `${environment.apiUrl}/courses/${this.courseId()}/lessons/${this.lessonId()}/assignments/${assignment.id}/submissions/${submission.id}/download?fileIndex=${fileIndex}`;
+    const token = localStorage.getItem('access_token');
+
+    fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Download failed');
+        return res.blob();
+      })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = fileInfo.fileName || 'download';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      })
+      .catch(() => {
+        this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải file' });
+      });
+  }
+
+  formatFileSize(bytes: number): string {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  canEditSubmission(submission: CourseAssignmentSubmissionsModel): boolean {
+    return submission.status !== AssignmentSubmissionStatusEnum.Graded;
   }
 
   // ==================== HELPERS ====================

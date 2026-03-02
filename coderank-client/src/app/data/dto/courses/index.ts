@@ -130,6 +130,10 @@ export interface CreateAssignmentSubmissionDto {
   content?: string;
 }
 
+export interface UpdateAssignmentSubmissionDto {
+  content?: string;
+}
+
 export interface GradeSubmissionDto {
   score?: number;
   feedback?: string;

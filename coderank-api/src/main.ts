@@ -1,7 +1,9 @@
 import { NestFactory, Reflector } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import * as path from 'path';
 import { AppConfigService } from './config/app/app-config.service';
 import { MariadbConfigService } from './config/db/mariadb/mariadb-config.service';
 import { COLORS } from './common/constants/colors';
@@ -12,11 +14,16 @@ import { GlobalExceptionFilter } from './common/filters';
 import { TransformInterceptor } from './common/interceptors';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger: ['debug', 'fatal', 'error', 'warn', 'verbose'],
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: ['debug', 'fatal', 'error', 'warn', 'verbose', 'log'],
   });
 
   const reflector = app.get(Reflector);
+
+  // Serve uploaded files statically at /api/files
+  app.useStaticAssets(path.resolve(process.cwd(), 'uploads'), {
+    prefix: '/api/files/',
+  });
 
   app.use(cookieParser());
   app.use(helmet());

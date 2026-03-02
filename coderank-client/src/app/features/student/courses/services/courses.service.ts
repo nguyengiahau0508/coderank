@@ -23,6 +23,7 @@ import {
   CreateReviewDto,
   UpdateReviewDto,
   CreateAssignmentSubmissionDto,
+  UpdateAssignmentSubmissionDto,
 } from '../../../../data/dto/courses';
 
 @Injectable({ providedIn: 'root' })
@@ -79,8 +80,8 @@ export class StudentCoursesService {
   }
 
   // ==================== ENROLLMENTS ====================
-  enrollCourse(courseId: string): Observable<ApiResponse<CourseEnrollmentsModel>> {
-    return this.coursesApi.enrollCourse(courseId);
+  enrollCourse(courseId: string, password?: string): Observable<ApiResponse<CourseEnrollmentsModel>> {
+    return this.coursesApi.enrollCourse(courseId, password ? { password } : undefined);
   }
 
   unenrollCourse(courseId: string): Observable<ApiResponse<void>> {
@@ -126,8 +127,16 @@ export class StudentCoursesService {
     return this.coursesApi.getAssignment(courseId, lessonId, assignmentId);
   }
 
-  submitAssignment(courseId: string, lessonId: string, assignmentId: string, dto: CreateAssignmentSubmissionDto, file?: File): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> {
-    return this.coursesApi.submitAssignment(courseId, lessonId, assignmentId, dto, file);
+  submitAssignment(courseId: string, lessonId: string, assignmentId: string, dto: CreateAssignmentSubmissionDto, files?: File[]): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> {
+    return this.coursesApi.submitAssignment(courseId, lessonId, assignmentId, dto, files);
+  }
+
+  updateSubmission(courseId: string, lessonId: string, assignmentId: string, submissionId: string, dto: UpdateAssignmentSubmissionDto, files?: File[]): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> {
+    return this.coursesApi.updateSubmission(courseId, lessonId, assignmentId, submissionId, dto, files);
+  }
+
+  deleteSubmission(courseId: string, lessonId: string, assignmentId: string, submissionId: string): Observable<ApiResponse<void>> {
+    return this.coursesApi.deleteSubmission(courseId, lessonId, assignmentId, submissionId);
   }
 
   getMySubmissions(courseId: string, lessonId: string, assignmentId: string): Observable<ApiResponse<CourseAssignmentSubmissionsModel[]>> {

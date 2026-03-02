@@ -81,6 +81,29 @@ export class ApiService {
   }
 
   /**
+   * Upload multiple files
+   */
+  uploadMultiple<T>(endpoint: string, files: File[], additionalData?: any, skipLoading = false): Observable<T> {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    
+    if (additionalData) {
+      Object.keys(additionalData).forEach(key => {
+        if (additionalData[key] !== undefined) {
+          formData.append(key, additionalData[key]);
+        }
+      });
+    }
+    
+    let headers = new HttpHeaders();
+    if (skipLoading) {
+      headers = headers.set('X-Skip-Loading', 'true');
+    }
+    
+    return this.http.post<T>(`${this.baseUrl}${endpoint}`, formData, { headers });
+  }
+
+  /**
    * Upload file with PATCH method (for updates)
    */
   uploadPatch<T>(endpoint: string, file: File, additionalData?: any, skipLoading = false): Observable<T> {
@@ -90,6 +113,29 @@ export class ApiService {
     if (additionalData) {
       Object.keys(additionalData).forEach(key => {
         formData.append(key, additionalData[key]);
+      });
+    }
+    
+    let headers = new HttpHeaders();
+    if (skipLoading) {
+      headers = headers.set('X-Skip-Loading', 'true');
+    }
+    
+    return this.http.patch<T>(`${this.baseUrl}${endpoint}`, formData, { headers });
+  }
+
+  /**
+   * Upload multiple files with PATCH method (for updates)
+   */
+  uploadPatchMultiple<T>(endpoint: string, files: File[], additionalData?: any, skipLoading = false): Observable<T> {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    
+    if (additionalData) {
+      Object.keys(additionalData).forEach(key => {
+        if (additionalData[key] !== undefined) {
+          formData.append(key, additionalData[key]);
+        }
       });
     }
     

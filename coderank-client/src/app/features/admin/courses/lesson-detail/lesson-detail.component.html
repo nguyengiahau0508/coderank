@@ -376,13 +376,15 @@
                                     <span class="text-sm font-bold text-primary">{{ sub.score }}/{{ sa.maxScore }} điểm</span>
                                   }
                                 </div>
-                                @if (sub.submissionFileName) {
-                                  <p class="text-sm text-surface-600 dark:text-surface-300">
-                                    <i class="pi pi-file mr-1"></i>{{ sub.submissionFileName }}
-                                    @if (sub.submissionFileSize) {
-                                      <span class="text-surface-400 ml-1">({{ formatFileSize(sub.submissionFileSize) }})</span>
+                                @if (sub.submissionFiles && sub.submissionFiles.length > 0) {
+                                  <div class="space-y-0.5">
+                                    @for (file of sub.submissionFiles; track file.fileId) {
+                                      <p class="text-sm text-surface-600 dark:text-surface-300">
+                                        <i class="pi pi-file mr-1"></i>{{ file.fileName }}
+                                        <span class="text-surface-400 ml-1">({{ formatFileSize(file.fileSize) }})</span>
+                                      </p>
                                     }
-                                  </p>
+                                  </div>
                                 }
                                 @if (sub.content) {
                                   <p class="text-sm text-surface-500 truncate">{{ sub.content }}</p>
@@ -955,8 +957,10 @@
   <div class="space-y-4">
     @if (gradingSubmission(); as gs) {
       <div class="p-3 rounded-lg bg-surface-100 dark:bg-surface-700 space-y-1">
-        @if (gs.submissionFileName) {
-          <p class="text-sm"><i class="pi pi-file mr-1"></i>{{ gs.submissionFileName }}</p>
+        @if (gs.submissionFiles && gs.submissionFiles.length > 0) {
+          @for (file of gs.submissionFiles; track file.fileId) {
+            <p class="text-sm"><i class="pi pi-file mr-1"></i>{{ file.fileName }}</p>
+          }
         }
         @if (gs.content) {
           <p class="text-sm text-surface-500">{{ gs.content }}</p>

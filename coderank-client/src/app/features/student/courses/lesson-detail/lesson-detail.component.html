@@ -450,10 +450,51 @@
                                   <pre class="text-xs text-surface-600 dark:text-surface-400 bg-surface-100 dark:bg-surface-800 p-2 rounded overflow-x-auto">{{ sub.content }}</pre>
                                 </div>
                               }
-                              @if (sub.submissionFileName) {
-                                <div class="mt-2 flex items-center gap-2 text-xs text-surface-400">
-                                  <i class="pi pi-file text-xs"></i>
-                                  <span>{{ sub.submissionFileName }}</span>
+                              @if (sub.submissionFiles && sub.submissionFiles.length > 0) {
+                                <div class="mt-2 space-y-1">
+                                  <p class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider">Tệp đính kèm ({{ sub.submissionFiles.length }})</p>
+                                  @for (file of sub.submissionFiles; track file.fileId; let i = $index) {
+                                    <div class="flex items-center gap-2 text-xs text-surface-400">
+                                      <i class="pi pi-file text-xs"></i>
+                                      <span class="truncate max-w-xs">{{ file.fileName }}</span>
+                                      <span class="text-surface-300">({{ formatFileSize(file.fileSize) }})</span>
+                                      <button
+                                        type="button"
+                                        (click)="downloadSubmissionFile(sub, i)"
+                                        class="inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors ml-1"
+                                        pTooltip="Tải file"
+                                        tooltipPosition="top"
+                                      >
+                                        <i class="pi pi-download text-xs"></i>
+                                      </button>
+                                    </div>
+                                  }
+                                </div>
+                              }
+                              <!-- Action buttons: Edit / Delete (only when not graded) -->
+                              @if (canEditSubmission(sub)) {
+                                <div class="mt-3 flex items-center gap-2 border-t border-surface-200 dark:border-surface-700 pt-3">
+                                  <button
+                                    type="button"
+                                    (click)="openEditDialog(sub)"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+                                  >
+                                    <i class="pi pi-pencil text-[10px]"></i>
+                                    Chỉnh sửa
+                                  </button>
+                                  <button
+                                    type="button"
+                                    (click)="deleteSubmission(sub)"
+                                    [disabled]="deletingSubmissionId() === sub.id.toString()"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-500 bg-red-500/10 rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                                  >
+                                    @if (deletingSubmissionId() === sub.id.toString()) {
+                                      <i class="pi pi-spinner pi-spin text-[10px]"></i>
+                                    } @else {
+                                      <i class="pi pi-trash text-[10px]"></i>
+                                    }
+                                    Xóa
+                                  </button>
                                 </div>
                               }
                             </div>
@@ -543,18 +584,28 @@
       <!-- File Upload -->
       @if (selectedAssignment()?.type !== 'code_submit') {
         <div>
-          <label class="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-2">Tệp đính kèm</label>
+          <label class="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-2">Tệp đính kèm (có thể chọn nhiều file)</label>
           <p-fileUpload
             mode="basic"
             [auto]="false"
+            [multiple]="true"
             chooseLabel="Chọn file"
             (onSelect)="onFileSelect($event)"
             [maxFileSize]="(selectedAssignment()?.maxFileSizeMb || 10) * 1024 * 1024"
           />
-          @if (assignmentFile) {
-            <p class="text-xs text-surface-400 mt-1">
-              <i class="pi pi-file mr-1"></i>{{ assignmentFile.name }}
-            </p>
+          @if (assignmentFiles.length > 0) {
+            <div class="mt-2 space-y-1">
+              @for (f of assignmentFiles; track f.name; let i = $index) {
+                <div class="flex items-center gap-2 text-xs text-surface-400">
+                  <i class="pi pi-file text-xs"></i>
+                  <span class="truncate max-w-xs">{{ f.name }}</span>
+                  <span class="text-surface-300">({{ formatFileSize(f.size) }})</span>
+                  <button type="button" (click)="removeFile(i)" class="text-red-400 hover:text-red-600 transition-colors">
+                    <i class="pi pi-times text-[10px]"></i>
+                  </button>
+                </div>
+              }
+            </div>
           }
         </div>
       }
@@ -568,6 +619,84 @@
           icon="pi pi-upload"
           [loading]="submittingAssignment()"
           (onClick)="submitAssignment()"
+        />
+      </div>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Assignment Edit Dialog -->
+  <p-dialog
+    header="Chỉnh sửa bài nộp"
+    [(visible)]="showEditDialog"
+    [modal]="true"
+    [style]="{ width: '32rem' }"
+    [closable]="true"
+  >
+    <div class="space-y-4">
+      <!-- Content -->
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-2">Nội dung</label>
+        <textarea
+          pTextarea
+          [(ngModel)]="editContent"
+          [rows]="6"
+          placeholder="Nhập nội dung bài làm..."
+          class="w-full font-mono text-xs"
+        ></textarea>
+      </div>
+
+      <!-- Current Files -->
+      @if (editingSubmission()?.submissionFiles && editingSubmission()!.submissionFiles!.length > 0) {
+        <div class="space-y-1 p-2 bg-surface-100 dark:bg-surface-800 rounded-lg">
+          <p class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider">File hiện tại</p>
+          @for (file of editingSubmission()!.submissionFiles!; track file.fileId) {
+            <div class="flex items-center gap-2 text-xs text-surface-400">
+              <i class="pi pi-file text-xs"></i>
+              <span class="truncate max-w-xs">{{ file.fileName }}</span>
+              <span class="text-surface-300">({{ formatFileSize(file.fileSize) }})</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- File Upload -->
+      @if (selectedAssignment()?.type !== 'code_submit') {
+        <div>
+          <label class="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-2">Thay đổi tệp đính kèm (có thể chọn nhiều file)</label>
+          <p-fileUpload
+            mode="basic"
+            [auto]="false"
+            [multiple]="true"
+            chooseLabel="Chọn file mới"
+            (onSelect)="onEditFileSelect($event)"
+            [maxFileSize]="(selectedAssignment()?.maxFileSizeMb || 10) * 1024 * 1024"
+          />
+          @if (editFiles.length > 0) {
+            <div class="mt-2 space-y-1">
+              @for (f of editFiles; track f.name; let i = $index) {
+                <div class="flex items-center gap-2 text-xs text-surface-400">
+                  <i class="pi pi-file text-xs"></i>
+                  <span class="truncate max-w-xs">{{ f.name }}</span>
+                  <span class="text-surface-300">({{ formatFileSize(f.size) }})</span>
+                  <button type="button" (click)="removeEditFile(i)" class="text-red-400 hover:text-red-600 transition-colors">
+                    <i class="pi pi-times text-[10px]"></i>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <ng-template #footer>
+      <div class="flex items-center justify-end gap-2">
+        <p-button label="Hủy" severity="secondary" [text]="true" (onClick)="showEditDialog.set(false)" />
+        <p-button
+          label="Cập nhật"
+          icon="pi pi-check"
+          [loading]="updatingSubmission()"
+          (onClick)="updateSubmission()"
         />
       </div>
     </ng-template>

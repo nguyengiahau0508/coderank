@@ -163,6 +163,15 @@ import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/enums/enu
             </div>
           </div>
 
+          <!-- Password (only for private courses) -->
+          @if (!form.isPublic) {
+            <div>
+              <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Mật khẩu khóa học <span class="text-red-500">*</span></label>
+              <input pInputText type="password" [(ngModel)]="form.password" class="w-full" placeholder="Nhập mật khẩu cho khóa học riêng tư" />
+              <small class="text-xs text-surface-400 mt-1 block">Sinh viên sẽ cần nhập mật khẩu này để đăng ký khóa học.</small>
+            </div>
+          }
+
           <!-- Thumbnail -->
           <div>
             <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">URL ảnh bìa</label>
@@ -219,6 +228,7 @@ export class AdminCourseFormDialogComponent {
           level: c.level,
           status: c.status,
           isPublic: c.isPublic,
+          password: c.password || '',
           maxStudents: c.maxStudents,
           estimatedDurationMinutes: c.estimatedDurationMinutes,
           category: c.category || '',
@@ -279,7 +289,10 @@ export class AdminCourseFormDialogComponent {
   // ===== VALIDATION & SAVE =====
 
   isValid(): boolean {
-    return !!this.form.title?.trim() && !!this.form.slug?.trim();
+    if (!this.form.title?.trim() || !this.form.slug?.trim()) return false;
+    // Private courses require a password
+    if (!this.form.isPublic && !this.form.password?.trim()) return false;
+    return true;
   }
 
   onSave(): void {
@@ -292,6 +305,7 @@ export class AdminCourseFormDialogComponent {
       description: this.form.description || undefined,
       level: this.form.level,
       isPublic: this.form.isPublic,
+      password: !this.form.isPublic ? this.form.password : undefined,
       maxStudents: this.form.maxStudents,
       estimatedDurationMinutes: this.form.estimatedDurationMinutes,
       category: this.form.category || undefined,
@@ -333,6 +347,7 @@ export class AdminCourseFormDialogComponent {
       level: CourseLevelEnum.Beginner,
       status: CourseStatusEnum.Draft,
       isPublic: true,
+      password: '',
       maxStudents: 0,
       estimatedDurationMinutes: null,
       category: '',

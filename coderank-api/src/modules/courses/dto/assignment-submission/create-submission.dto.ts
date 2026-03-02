@@ -9,6 +9,13 @@ export class CreateSubmissionDto {
   content?: string;
 }
 
+export class UpdateSubmissionDto {
+  @ApiPropertyOptional({ description: 'Text content or notes' })
+  @IsOptional()
+  @IsString()
+  content?: string;
+}
+
 export class GradeSubmissionDto {
   @ApiPropertyOptional({ description: 'Score' })
   @IsOptional()

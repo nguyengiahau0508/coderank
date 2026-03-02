@@ -31,12 +31,13 @@ export class GoogleDriveService {
    * Upload file lên Google Drive
    */
   async uploadFile(file: Express.Multer.File): Promise<string> {
+    console.log(this.googleConfigService.driveFolderId);
     const fileStream = this.bufferToStream(file.buffer);
     try {
       const response = await this.driveClient.files.create({
         requestBody: {
           name: file.originalname,
-          parents: ['1WnqLm5pw07qGYBhhroMz5qzbQiwfCjjr'],
+          parents: [this.googleConfigService.driveFolderId],
         },
         media: {
           mimeType: file.mimetype,

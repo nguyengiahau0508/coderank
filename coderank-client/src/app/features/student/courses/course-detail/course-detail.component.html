@@ -22,6 +22,9 @@
           <div class="flex items-center gap-2 flex-wrap">
             <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">{{ c.title }}</h1>
             <p-tag [value]="getLevelLabel(c.level)" [severity]="getLevelSeverity(c.level)" [rounded]="true" />
+            @if (!c.isPublic) {
+              <p-tag value="Riêng tư" severity="warn" [rounded]="true" icon="pi pi-lock" />
+            }
           </div>
           @if (c.summary) {
             <div class="mt-1 text-sm text-surface-500 dark:text-surface-400 ql-editor p-0 line-clamp-2" [innerHTML]="c.summary"></div>
@@ -450,6 +453,40 @@
       <div class="flex items-center justify-end gap-2">
         <p-button label="Hủy" severity="secondary" [text]="true" (onClick)="showReviewDialog.set(false)" />
         <p-button label="Gửi đánh giá" icon="pi pi-check" (onClick)="submitReview()" />
+      </div>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Password Enrollment Dialog -->
+  <p-dialog
+    header="Nhập mật khẩu khóa học"
+    [(visible)]="showPasswordDialog"
+    [modal]="true"
+    [style]="{ width: '24rem' }"
+    [closable]="true"
+  >
+    <div class="space-y-4">
+      <div class="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+        <i class="pi pi-lock text-amber-500"></i>
+        <p class="text-sm text-amber-700 dark:text-amber-300">Khóa học này là riêng tư. Vui lòng nhập mật khẩu được cung cấp bởi giảng viên để đăng ký.</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-2">Mật khẩu</label>
+        <input
+          pInputText
+          type="password"
+          [(ngModel)]="enrollPassword"
+          class="w-full"
+          placeholder="Nhập mật khẩu khóa học"
+          (keyup.enter)="enrollPassword.trim() && enrollWithPassword()"
+        />
+      </div>
+    </div>
+
+    <ng-template #footer>
+      <div class="flex items-center justify-end gap-2">
+        <p-button label="Hủy" severity="secondary" [text]="true" (onClick)="showPasswordDialog.set(false)" />
+        <p-button label="Đăng ký" icon="pi pi-check" (onClick)="enrollWithPassword()" [disabled]="!enrollPassword.trim()" [loading]="enrolling()" />
       </div>
     </ng-template>
   </p-dialog>

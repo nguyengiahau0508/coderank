@@ -99,7 +99,7 @@ export class CoursesService {
   deleteAssignment(courseId: string, lessonId: string, assignmentId: string): Observable<ApiResponse<void>> { return this.coursesApi.deleteAssignment(courseId, lessonId, assignmentId); }
 
   // Assignment Submissions
-  submitAssignment(courseId: string, lessonId: string, assignmentId: string, dto: CreateAssignmentSubmissionDto, file?: File): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> { return this.coursesApi.submitAssignment(courseId, lessonId, assignmentId, dto, file); }
+  submitAssignment(courseId: string, lessonId: string, assignmentId: string, dto: CreateAssignmentSubmissionDto, files?: File[]): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> { return this.coursesApi.submitAssignment(courseId, lessonId, assignmentId, dto, files); }
   getSubmissions(courseId: string, lessonId: string, assignmentId: string, authorId?: string): Observable<ApiResponse<CourseAssignmentSubmissionsModel[]>> { return this.coursesApi.getSubmissions(courseId, lessonId, assignmentId, authorId); }
   getMySubmissions(courseId: string, lessonId: string, assignmentId: string): Observable<ApiResponse<CourseAssignmentSubmissionsModel[]>> { return this.coursesApi.getMySubmissions(courseId, lessonId, assignmentId); }
   gradeSubmission(courseId: string, lessonId: string, assignmentId: string, submissionId: string, dto: GradeSubmissionDto): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> { return this.coursesApi.gradeSubmission(courseId, lessonId, assignmentId, submissionId, dto); }

@@ -37,6 +37,7 @@ import {
   CreateAssignmentDto,
   UpdateAssignmentDto,
   CreateAssignmentSubmissionDto,
+  UpdateAssignmentSubmissionDto,
   GradeSubmissionDto,
 } from '../dto/courses';
 
@@ -192,8 +193,8 @@ export class CoursesApi extends BaseApi {
 
   // ==================== ENROLLMENTS ====================
 
-  enrollCourse(courseId: string): Observable<ApiResponse<CourseEnrollmentsModel>> {
-    return this.apiService.post<ApiResponse<CourseEnrollmentsModel>>(this.getUrl(`/${courseId}/enroll`), {});
+  enrollCourse(courseId: string, body?: { password?: string }): Observable<ApiResponse<CourseEnrollmentsModel>> {
+    return this.apiService.post<ApiResponse<CourseEnrollmentsModel>>(this.getUrl(`/${courseId}/enroll`), body || {});
   }
 
   unenrollCourse(courseId: string): Observable<ApiResponse<void>> {
@@ -266,9 +267,9 @@ export class CoursesApi extends BaseApi {
 
   // ==================== ASSIGNMENT SUBMISSIONS ====================
 
-  submitAssignment(courseId: string, lessonId: string, assignmentId: string, dto: CreateAssignmentSubmissionDto, file?: File): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> {
-    if (file) {
-      return this.apiService.upload<ApiResponse<CourseAssignmentSubmissionsModel>>(this.getUrl(`/${courseId}/lessons/${lessonId}/assignments/${assignmentId}/submissions`), file, dto);
+  submitAssignment(courseId: string, lessonId: string, assignmentId: string, dto: CreateAssignmentSubmissionDto, files?: File[]): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> {
+    if (files && files.length > 0) {
+      return this.apiService.uploadMultiple<ApiResponse<CourseAssignmentSubmissionsModel>>(this.getUrl(`/${courseId}/lessons/${lessonId}/assignments/${assignmentId}/submissions`), files, dto);
     }
     return this.apiService.post<ApiResponse<CourseAssignmentSubmissionsModel>>(this.getUrl(`/${courseId}/lessons/${lessonId}/assignments/${assignmentId}/submissions`), dto);
   }
@@ -284,6 +285,13 @@ export class CoursesApi extends BaseApi {
 
   gradeSubmission(courseId: string, lessonId: string, assignmentId: string, submissionId: string, dto: GradeSubmissionDto): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> {
     return this.apiService.patch<ApiResponse<CourseAssignmentSubmissionsModel>>(this.getUrl(`/${courseId}/lessons/${lessonId}/assignments/${assignmentId}/submissions/${submissionId}/grade`), dto);
+  }
+
+  updateSubmission(courseId: string, lessonId: string, assignmentId: string, submissionId: string, dto: UpdateAssignmentSubmissionDto, files?: File[]): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> {
+    if (files && files.length > 0) {
+      return this.apiService.uploadPatchMultiple<ApiResponse<CourseAssignmentSubmissionsModel>>(this.getUrl(`/${courseId}/lessons/${lessonId}/assignments/${assignmentId}/submissions/${submissionId}`), files, dto);
+    }
+    return this.apiService.patch<ApiResponse<CourseAssignmentSubmissionsModel>>(this.getUrl(`/${courseId}/lessons/${lessonId}/assignments/${assignmentId}/submissions/${submissionId}`), dto);
   }
 
   deleteSubmission(courseId: string, lessonId: string, assignmentId: string, submissionId: string): Observable<ApiResponse<void>> {

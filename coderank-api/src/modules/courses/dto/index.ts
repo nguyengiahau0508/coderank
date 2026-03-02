@@ -8,3 +8,4 @@ export * from './lesson-problem';
 export * from './review';
 export * from './assignment';
 export * from './assignment-submission';
+export * from './enrollment';

@@ -8,6 +8,7 @@ import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 import { Toast } from 'primeng/toast';
 import { Dialog } from 'primeng/dialog';
+import { InputText } from 'primeng/inputtext';
 import { Tooltip } from 'primeng/tooltip';
 import { Accordion, AccordionPanel, AccordionHeader, AccordionContent } from 'primeng/accordion';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
@@ -36,6 +37,7 @@ import { StudentCoursesService } from '../services/courses.service';
     Toast,
     Dialog,
     Tooltip,
+    InputText,
     Accordion,
     AccordionPanel,
     AccordionHeader,
@@ -79,6 +81,10 @@ export class StudentCourseDetailComponent implements OnInit {
   readonly showReviewDialog = signal<boolean>(false);
   reviewRating = 5;
   reviewComment = '';
+
+  // Password enrollment dialog
+  readonly showPasswordDialog = signal<boolean>(false);
+  enrollPassword = '';
 
   // Computed
   readonly parsedLearningObjectives = computed(() => {
@@ -155,8 +161,24 @@ export class StudentCourseDetailComponent implements OnInit {
   // ==================== ENROLLMENT ====================
 
   enroll(): void {
+    const c = this.course();
+    // If course is private, show password dialog
+    if (c && !c.isPublic) {
+      this.enrollPassword = '';
+      this.showPasswordDialog.set(true);
+      return;
+    }
+    this.doEnroll();
+  }
+
+  enrollWithPassword(): void {
+    this.showPasswordDialog.set(false);
+    this.doEnroll(this.enrollPassword);
+  }
+
+  private doEnroll(password?: string): void {
     this.enrolling.set(true);
-    this.coursesService.enrollCourse(this.courseId()).subscribe({
+    this.coursesService.enrollCourse(this.courseId(), password).subscribe({
       next: (response) => {
         this.enrollment.set(response.data ?? null);
         this.enrolling.set(false);
@@ -164,9 +186,10 @@ export class StudentCourseDetailComponent implements OnInit {
         this.loadProgress();
         this.reloadCourseData();
       },
-      error: () => {
+      error: (err) => {
         this.enrolling.set(false);
-        this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể đăng ký khóa học' });
+        const msg = err?.error?.message || 'Không thể đăng ký khóa học';
+        this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: msg });
       },
     });
   }

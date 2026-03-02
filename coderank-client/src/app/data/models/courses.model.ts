@@ -181,13 +181,18 @@ export interface CourseAssignmentsModel extends BaseModel {
   submissions?: CourseAssignmentSubmissionsModel[];
 }
 
+export interface SubmissionFileInfo {
+  fileId: string;
+  filePath: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+}
+
 export interface CourseAssignmentSubmissionsModel extends BaseModel {
   assignmentId: string;
   content: string | null;
-  submissionFileId: string | null;
-  submissionFileName: string | null;
-  submissionMimeType: string | null;
-  submissionFileSize: number | null;
+  submissionFiles: SubmissionFileInfo[] | null;
   status: AssignmentSubmissionStatusEnum;
   score: number | null;
   feedback: string | null;

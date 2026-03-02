@@ -7,15 +7,21 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UploadedFile,
+  UploadedFiles,
   UseInterceptors,
+  ForbiddenException,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, Public, Roles } from 'src/auth/decorators';
 import { Owner } from 'src/auth/decorators/owner.decorator';
 import { RolesEnum, EnrollmentStatusEnum } from 'src/common/enums/enums';
 import type { IJwtPayload } from 'src/common/interfaces/jwt-payload.interface';
+import type { Response } from 'express';
 import { PaginatedResponseDto } from 'src/common/dto';
 
 // Services
@@ -31,7 +37,7 @@ import { CourseLessonProblemsService } from './services/course-lesson-problems.s
 import { CourseReviewsService } from './services/course-reviews.service';
 import { CourseAssignmentsService } from './services/course-assignments.service';
 import { CourseAssignmentSubmissionsService } from './services/course-assignment-submissions.service';
-import { GoogleDriveService } from 'src/integrations/google/drive/google-drive.service';
+import { LocalStorageService } from 'src/integrations/local-storage/local-storage.service';
 
 // Entities
 import { CoursesEntity } from './entities/courses.entity';
@@ -46,7 +52,8 @@ import { SubmitQuizAttemptDto } from './dto/quiz-attempt';
 import { CreateLessonProblemDto, UpdateLessonProblemDto } from './dto/lesson-problem';
 import { CreateReviewDto, UpdateReviewDto } from './dto/review';
 import { CreateAssignmentDto, UpdateAssignmentDto } from './dto/assignment';
-import { CreateSubmissionDto, GradeSubmissionDto } from './dto/assignment-submission';
+import { CreateSubmissionDto, UpdateSubmissionDto, GradeSubmissionDto } from './dto/assignment-submission';
+import { EnrollCourseDto } from './dto/enrollment';
 
 @ApiTags('Courses')
 @Controller('courses')
@@ -64,7 +71,7 @@ export class CoursesController {
     private readonly reviewsService: CourseReviewsService,
     private readonly assignmentsService: CourseAssignmentsService,
     private readonly assignmentSubmissionsService: CourseAssignmentSubmissionsService,
-    private readonly googleDriveService: GoogleDriveService,
+    private readonly localStorageService: LocalStorageService,
   ) {}
 
   /**
@@ -603,7 +610,24 @@ export class CoursesController {
   async enrollCourse(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('courseId') courseId: string,
+    @Body() dto: EnrollCourseDto,
   ) {
+    // Check if course is private and requires password
+    const course = await this.coursesService.findOne({
+      where: { id: courseId },
+      select: ['id', 'isPublic', 'password'],
+    });
+    if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+    if (!course.isPublic) {
+      if (!dto.password) {
+        throw new BadRequestException('Khóa học riêng tư yêu cầu mật khẩu để đăng ký');
+      }
+      if (dto.password !== course.password) {
+        throw new BadRequestException('Mật khẩu không chính xác');
+      }
+    }
     const enrollment = await this.enrollmentsService.create({
       courseId,
       userId: currentUser.userId,
@@ -810,7 +834,8 @@ export class CoursesController {
     let attachmentFileSize: number | undefined;
 
     if (file) {
-      attachmentFileId = await this.googleDriveService.uploadFile(file);
+      const uploaded = await this.localStorageService.uploadFile(file, 'assignments');
+      attachmentFileId = uploaded.filePath;
       attachmentFileName = file.originalname;
       attachmentMimeType = file.mimetype;
       attachmentFileSize = file.size;
@@ -862,11 +887,12 @@ export class CoursesController {
     }
 
     if (file) {
-      // Delete old file from Google Drive if exists
+      // Delete old file if exists
       if (assignment.attachmentFileId) {
-        await this.googleDriveService.deleteFile(assignment.attachmentFileId);
+        await this.localStorageService.deleteFile(assignment.attachmentFileId);
       }
-      const attachmentFileId = await this.googleDriveService.uploadFile(file);
+      const uploaded = await this.localStorageService.uploadFile(file, 'assignments');
+      const attachmentFileId = uploaded.filePath;
       return this.assignmentsService.update(assignmentId, {
         ...dto,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
@@ -891,9 +917,9 @@ export class CoursesController {
     if (!assignment) {
       return { message: 'Assignment not found' };
     }
-    // Delete attachment from Google Drive if exists
+    // Delete attachment file if exists
     if (assignment.attachmentFileId) {
-      await this.googleDriveService.deleteFile(assignment.attachmentFileId);
+      await this.localStorageService.deleteFile(assignment.attachmentFileId);
     }
     return this.assignmentsService.delete(assignmentId);
   }
@@ -902,24 +928,28 @@ export class CoursesController {
 
   @Post(':courseId/lessons/:lessonId/assignments/:assignmentId/submissions')
   @ApiBearerAuth('JWT-auth')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FilesInterceptor('files', 20))
   @ApiConsumes('multipart/form-data')
   async submitAssignment(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('assignmentId') assignmentId: string,
     @Body() dto: CreateSubmissionDto,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFiles() files?: Express.Multer.File[],
   ) {
-    let submissionFileId: string | undefined;
-    let submissionFileName: string | undefined;
-    let submissionMimeType: string | undefined;
-    let submissionFileSize: number | undefined;
+    let submissionFiles: any[] | undefined;
 
-    if (file) {
-      submissionFileId = await this.googleDriveService.uploadFile(file);
-      submissionFileName = file.originalname;
-      submissionMimeType = file.mimetype;
-      submissionFileSize = file.size;
+    if (files && files.length > 0) {
+      submissionFiles = [];
+      for (const file of files) {
+        const uploaded = await this.localStorageService.uploadFile(file, 'submissions');
+        submissionFiles.push({
+          fileId: uploaded.fileId,
+          filePath: uploaded.filePath,
+          fileName: file.originalname,
+          mimeType: file.mimetype,
+          fileSize: file.size,
+        });
+      }
     }
 
     // Count existing submissions for attempt number
@@ -931,10 +961,7 @@ export class CoursesController {
       ...dto,
       assignmentId,
       authorId: currentUser.userId,
-      submissionFileId,
-      submissionFileName,
-      submissionMimeType,
-      submissionFileSize,
+      submissionFiles,
       attemptNumber: existingCount + 1,
       submittedAt: new Date(),
     });
@@ -979,6 +1006,88 @@ export class CoursesController {
     });
   }
 
+  @Patch(':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/:submissionId')
+  @ApiBearerAuth('JWT-auth')
+  @UseInterceptors(FilesInterceptor('files', 20))
+  @ApiConsumes('multipart/form-data')
+  async updateSubmission(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('submissionId') submissionId: string,
+    @Body() dto: UpdateSubmissionDto,
+    @UploadedFiles() files?: Express.Multer.File[],
+  ) {
+    const submission = await this.assignmentSubmissionsService.findById(submissionId);
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+    if (submission.authorId !== currentUser.userId) {
+      throw new ForbiddenException('Bạn không có quyền chỉnh sửa bài nộp này');
+    }
+    if (submission.status === 'graded') {
+      throw new ForbiddenException('Không thể chỉnh sửa bài nộp đã được chấm điểm');
+    }
+
+    const updateData: any = {};
+    if (dto.content !== undefined) {
+      updateData.content = dto.content;
+    }
+
+    if (files && files.length > 0) {
+      // Delete old files if exist
+      if (submission.submissionFiles && submission.submissionFiles.length > 0) {
+        for (const oldFile of submission.submissionFiles) {
+          await this.localStorageService.deleteFile(oldFile.filePath);
+        }
+      }
+      // Upload new files
+      const submissionFiles: any[] = [];
+      for (const file of files) {
+        const uploaded = await this.localStorageService.uploadFile(file, 'submissions');
+        submissionFiles.push({
+          fileId: uploaded.fileId,
+          filePath: uploaded.filePath,
+          fileName: file.originalname,
+          mimeType: file.mimetype,
+          fileSize: file.size,
+        });
+      }
+      updateData.submissionFiles = submissionFiles;
+    }
+
+    updateData.submittedAt = new Date();
+    return this.assignmentSubmissionsService.update(submissionId, updateData);
+  }
+
+  @Get(':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/:submissionId/download')
+  @ApiBearerAuth('JWT-auth')
+  async downloadSubmission(
+    @Param('submissionId') submissionId: string,
+    @Query('fileIndex') fileIndex: string,
+    @Res() res: Response,
+  ) {
+    const submission = await this.assignmentSubmissionsService.findById(submissionId);
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+    if (!submission.submissionFiles || submission.submissionFiles.length === 0) {
+      throw new NotFoundException('Submission has no files');
+    }
+
+    const idx = parseInt(fileIndex || '0', 10);
+    if (isNaN(idx) || idx < 0 || idx >= submission.submissionFiles.length) {
+      throw new NotFoundException('File index out of range');
+    }
+
+    const fileInfo = submission.submissionFiles[idx];
+    const absolutePath = this.localStorageService.getAbsolutePath(fileInfo.filePath);
+    const exists = this.localStorageService.fileExists(fileInfo.filePath);
+    if (!exists) {
+      throw new NotFoundException('File not found on server');
+    }
+
+    res.download(absolutePath, fileInfo.fileName || 'download');
+  }
+
   @Delete(':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/:submissionId')
   @ApiBearerAuth('JWT-auth')
   async deleteSubmission(
@@ -988,11 +1097,19 @@ export class CoursesController {
     const submission =
       await this.assignmentSubmissionsService.findById(submissionId);
     if (!submission) {
-      return { message: 'Submission not found' };
+      throw new NotFoundException('Submission not found');
     }
-    // Delete file from Google Drive if exists
-    if (submission.submissionFileId) {
-      await this.googleDriveService.deleteFile(submission.submissionFileId);
+    if (submission.authorId !== currentUser.userId) {
+      throw new ForbiddenException('Bạn không có quyền xóa bài nộp này');
+    }
+    if (submission.status === 'graded') {
+      throw new ForbiddenException('Không thể xóa bài nộp đã được chấm điểm');
+    }
+    // Delete files if exist
+    if (submission.submissionFiles && submission.submissionFiles.length > 0) {
+      for (const file of submission.submissionFiles) {
+        await this.localStorageService.deleteFile(file.filePath);
+      }
     }
     return this.assignmentSubmissionsService.delete(submissionId);
   }
