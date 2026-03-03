@@ -23,11 +23,11 @@ export class CreateContestDto {
 
   @ApiProperty({ description: 'Contest start time', example: '2024-01-01T00:00:00Z' })
   @IsDateString()
-  startTime: Date;
+  startTime: string;
 
   @ApiProperty({ description: 'Contest end time', example: '2024-01-01T03:00:00Z' })
   @IsDateString()
-  endTime: Date;
+  endTime: string;
 
   @ApiPropertyOptional({ description: 'Contest duration in minutes', example: 180, minimum: 1 })
   @IsOptional()

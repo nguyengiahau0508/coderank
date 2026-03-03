@@ -21,11 +21,11 @@ export class ContestsEntity extends BaseEntity {
   slug: string;
 
   @ApiPropertyOptional({ description: 'Contest description' })
-  @Column({ type: 'text', nullable: true, select: false })
+  @Column({ type: 'text', nullable: true })
   description?: string;
 
   @ApiPropertyOptional({ description: 'Contest rules' })
-  @Column({ type: 'text', nullable: true, select: false })
+  @Column({ type: 'text', nullable: true })
   rules?: string;
 
   @ApiProperty({ description: 'Contest start time', example: '2024-01-01T00:00:00Z' })

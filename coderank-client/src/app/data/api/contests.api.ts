@@ -2,113 +2,58 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { BaseApi } from './base.api';
 import { ApiResponse, PaginatedResponse } from '../interfaces';
-
-// TODO: Create proper models and DTOs for contests
-export interface Contest {
-  id: number;
-  title: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-  authorId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateContestDto {
-  title: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-}
-
-export interface UpdateContestDto {
-  title?: string;
-  description?: string;
-  startTime?: string;
-  endTime?: string;
-}
-
-export interface PaginationQueryContestsDto {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-}
-
-export interface AddProblemToContestDto {
-  problemId: string;
-  order?: number;
-  points?: number;
-}
-
-export interface UpdateContestProblemDto {
-  order?: number;
-  points?: number;
-}
-
-export interface JoinContestDto {
-  // Add fields if needed
-}
-
-export interface CreateContestSubmissionDto {
-  problemId: string;
-  code: string;
-  language: string;
-}
+import {
+  ContestsModel,
+  ContestProblemsModel,
+  ContestParticipantsModel,
+  ContestSubmissionsModel,
+} from '../models/contests.model';
+import {
+  CreateContestDto,
+  UpdateContestDto,
+  PaginationQueryContestsDto,
+  AddProblemToContestDto,
+  UpdateContestProblemDto,
+  JoinContestDto,
+  CreateContestSubmissionDto,
+} from '../dto/contests';
 
 /**
  * Contests API Service
  * Handles all contest-related API calls including participants, problems, and submissions
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ContestsApi extends BaseApi {
   protected readonly endpoint = '/contests';
 
   // ==================== Contest Management ====================
 
-  /**
-   * Create a new contest (Admin/Instructor only)
-   */
-  createContest(dto: CreateContestDto): Observable<ApiResponse<Contest>> {
-    return this.apiService.post<ApiResponse<Contest>>(this.endpoint, dto);
+  createContest(dto: CreateContestDto): Observable<ApiResponse<ContestsModel>> {
+    return this.apiService.post<ApiResponse<ContestsModel>>(this.endpoint, dto);
   }
 
-  /**
-   * Get a single contest by ID
-   */
-  getContest(contestId: string): Observable<ApiResponse<Contest>> {
-    return this.apiService.get<ApiResponse<Contest>>(
+  getContest(contestId: string): Observable<ApiResponse<ContestsModel>> {
+    return this.apiService.get<ApiResponse<ContestsModel>>(
       this.getUrl(`/${contestId}`)
     );
   }
 
-  /**
-   * Get paginated list of contests with filters
-   */
-  getContests(params?: PaginationQueryContestsDto): Observable<PaginatedResponse<Contest>> {
-    return this.apiService.get<PaginatedResponse<Contest>>(
+  getContests(params?: PaginationQueryContestsDto): Observable<PaginatedResponse<ContestsModel>> {
+    return this.apiService.get<PaginatedResponse<ContestsModel>>(
       this.endpoint,
       this.buildParams(params)
     );
   }
 
-  /**
-   * Update a contest (Admin/Instructor/Owner only)
-   */
-  updateContest(contestId: string, dto: UpdateContestDto): Observable<ApiResponse<Contest>> {
-    return this.apiService.patch<ApiResponse<Contest>>(
+  updateContest(contestId: string, dto: UpdateContestDto): Observable<ApiResponse<ContestsModel>> {
+    return this.apiService.patch<ApiResponse<ContestsModel>>(
       this.getUrl(`/${contestId}`),
       dto
     );
   }
 
-  /**
-   * Delete a contest (Admin/Instructor/Owner only)
-   */
   deleteContest(contestId: string): Observable<ApiResponse<void>> {
     return this.apiService.delete<ApiResponse<void>>(
       this.getUrl(`/${contestId}`)
@@ -117,42 +62,36 @@ export class ContestsApi extends BaseApi {
 
   // ==================== Contest Problems ====================
 
-  /**
-   * Add a problem to contest
-   */
-  addProblemToContest(contestId: string, dto: AddProblemToContestDto): Observable<ApiResponse<any>> {
-    return this.apiService.post<ApiResponse<any>>(
+  addProblemToContest(contestId: string, dto: AddProblemToContestDto): Observable<ApiResponse<ContestProblemsModel>> {
+    return this.apiService.post<ApiResponse<ContestProblemsModel>>(
       this.getUrl(`/${contestId}/problems`),
       dto
     );
   }
 
-  /**
-   * Get all problems in a contest
-   */
-  getContestProblems(contestId: string): Observable<ApiResponse<any[]>> {
-    return this.apiService.get<ApiResponse<any[]>>(
+  getContestProblems(contestId: string): Observable<ApiResponse<ContestProblemsModel[]>> {
+    return this.apiService.get<ApiResponse<ContestProblemsModel[]>>(
       this.getUrl(`/${contestId}/problems`)
     );
   }
 
-  /**
-   * Update contest problem (order, points)
-   */
+  getContestProblem(contestId: string, problemId: string): Observable<ApiResponse<ContestProblemsModel>> {
+    return this.apiService.get<ApiResponse<ContestProblemsModel>>(
+      this.getUrl(`/${contestId}/problems/${problemId}`)
+    );
+  }
+
   updateContestProblem(
     contestId: string,
     problemId: string,
     dto: UpdateContestProblemDto
-  ): Observable<ApiResponse<any>> {
-    return this.apiService.patch<ApiResponse<any>>(
+  ): Observable<ApiResponse<ContestProblemsModel>> {
+    return this.apiService.patch<ApiResponse<ContestProblemsModel>>(
       this.getUrl(`/${contestId}/problems/${problemId}`),
       dto
     );
   }
 
-  /**
-   * Remove a problem from contest
-   */
   removeProblemFromContest(contestId: string, problemId: string): Observable<ApiResponse<void>> {
     return this.apiService.delete<ApiResponse<void>>(
       this.getUrl(`/${contestId}/problems/${problemId}`)
@@ -161,64 +100,72 @@ export class ContestsApi extends BaseApi {
 
   // ==================== Contest Participants ====================
 
-  /**
-   * Join a contest
-   */
-  joinContest(contestId: string, dto?: JoinContestDto): Observable<ApiResponse<any>> {
-    return this.apiService.post<ApiResponse<any>>(
-      this.getUrl(`/${contestId}/participants`),
+  joinContest(contestId: string, dto?: JoinContestDto): Observable<ApiResponse<ContestParticipantsModel>> {
+    return this.apiService.post<ApiResponse<ContestParticipantsModel>>(
+      this.getUrl(`/${contestId}/join`),
       dto || {}
     );
   }
 
-  /**
-   * Get contest participants
-   */
-  getContestParticipants(contestId: string): Observable<ApiResponse<any[]>> {
-    return this.apiService.get<ApiResponse<any[]>>(
+  getContestParticipants(contestId: string): Observable<ApiResponse<ContestParticipantsModel[]>> {
+    return this.apiService.get<ApiResponse<ContestParticipantsModel[]>>(
       this.getUrl(`/${contestId}/participants`)
     );
   }
 
-  /**
-   * Leave a contest
-   */
-  leaveContest(contestId: string): Observable<ApiResponse<void>> {
+  getContestLeaderboard(contestId: string): Observable<ApiResponse<ContestParticipantsModel[]>> {
+    return this.apiService.get<ApiResponse<ContestParticipantsModel[]>>(
+      this.getUrl(`/${contestId}/leaderboard`)
+    );
+  }
+
+  removeParticipant(contestId: string, userId: string): Observable<ApiResponse<void>> {
     return this.apiService.delete<ApiResponse<void>>(
-      this.getUrl(`/${contestId}/participants/me`)
+      this.getUrl(`/${contestId}/participants/${userId}`)
+    );
+  }
+
+  leaveContest(contestId: string): Observable<ApiResponse<any>> {
+    return this.apiService.post<ApiResponse<any>>(
+      this.getUrl(`/${contestId}/leave`),
+      {}
     );
   }
 
   // ==================== Contest Submissions ====================
 
-  /**
-   * Submit solution for contest problem
-   */
   submitContestSolution(
     contestId: string,
+    problemId: string,
     dto: CreateContestSubmissionDto
-  ): Observable<ApiResponse<any>> {
-    return this.apiService.post<ApiResponse<any>>(
-      this.getUrl(`/${contestId}/submissions`),
+  ): Observable<ApiResponse<ContestSubmissionsModel>> {
+    return this.apiService.post<ApiResponse<ContestSubmissionsModel>>(
+      this.getUrl(`/${contestId}/problems/${problemId}/submit`),
       dto
     );
   }
 
-  /**
-   * Get submissions for contest (current user)
-   */
-  getMyContestSubmissions(contestId: string): Observable<ApiResponse<any[]>> {
-    return this.apiService.get<ApiResponse<any[]>>(
-      this.getUrl(`/${contestId}/submissions/me`)
+  getMyContestSubmissions(contestId: string): Observable<ApiResponse<ContestSubmissionsModel[]>> {
+    return this.apiService.get<ApiResponse<ContestSubmissionsModel[]>>(
+      this.getUrl(`/${contestId}/submissions`)
     );
   }
 
-  /**
-   * Get contest leaderboard
-   */
-  getContestLeaderboard(contestId: string): Observable<ApiResponse<any[]>> {
-    return this.apiService.get<ApiResponse<any[]>>(
-      this.getUrl(`/${contestId}/leaderboard`)
+  getMyProblemSubmissions(contestId: string, problemId: string): Observable<ApiResponse<ContestSubmissionsModel[]>> {
+    return this.apiService.get<ApiResponse<ContestSubmissionsModel[]>>(
+      this.getUrl(`/${contestId}/problems/${problemId}/submissions`)
+    );
+  }
+
+  getContestSubmissionDetail(contestId: string, submissionId: string): Observable<ApiResponse<ContestSubmissionsModel>> {
+    return this.apiService.get<ApiResponse<ContestSubmissionsModel>>(
+      this.getUrl(`/${contestId}/submissions/${submissionId}`)
+    );
+  }
+
+  getAllContestSubmissions(contestId: string): Observable<ApiResponse<ContestSubmissionsModel[]>> {
+    return this.apiService.get<ApiResponse<ContestSubmissionsModel[]>>(
+      this.getUrl(`/${contestId}/all-submissions`)
     );
   }
 }

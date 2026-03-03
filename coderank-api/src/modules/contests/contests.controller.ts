@@ -50,6 +50,8 @@ export class ContestsController {
   ) {
     return this.contestsService.create({
       ...createContestDto,
+      startTime: new Date(createContestDto.startTime),
+      endTime: new Date(createContestDto.endTime),
       authorId: currentUser.userId,
     });
   }
@@ -99,8 +101,11 @@ export class ContestsController {
     @Body() updateContestDto: UpdateContestDto,
     @Param('contestId') contestId: string,
   ) {
+    const { startTime, endTime, ...rest } = updateContestDto;
     return this.contestsService.update(contestId, {
-      ...updateContestDto,
+      ...rest,
+      ...(startTime && { startTime: new Date(startTime) }),
+      ...(endTime && { endTime: new Date(endTime) }),
       authorId: currentUser.userId,
     });
   }
@@ -253,6 +258,19 @@ export class ContestsController {
     }
     
     return this.contestParticipantsService.delete(participant.id);
+  }
+
+  @Post(':contestId/leave')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Leave contest', description: 'Student can leave a contest before it starts' })
+  async leaveContest(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('contestId') contestId: string,
+  ) {
+    return this.contestParticipantsService.leaveContest(
+      currentUser.userId,
+      contestId,
+    );
   }
 
   // ==================== Contest Submissions ====================

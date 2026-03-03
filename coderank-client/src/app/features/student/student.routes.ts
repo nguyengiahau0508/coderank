@@ -16,4 +16,9 @@ export const studentRoutes: Routes = [
     loadChildren: () =>
       import('./courses/courses.routes').then(m => m.studentCoursesRoutes),
   },
+  {
+    path: 'contests',
+    loadChildren: () =>
+      import('./contests/contests.routes').then(m => m.studentContestsRoutes),
+  },
 ];

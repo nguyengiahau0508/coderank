@@ -1,0 +1,403 @@
+<p-toast position="top-right" />
+
+@if (loading()) {
+  <div class="space-y-4">
+    <div class="h-8 w-64 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
+    <div class="h-4 w-96 bg-surface-50 dark:bg-surface-800 rounded animate-pulse"></div>
+    <div class="grid grid-cols-4 gap-4">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="h-20 bg-surface-100 dark:bg-surface-700 rounded-xl animate-pulse"></div>
+      }
+    </div>
+  </div>
+} @else if (contest(); as c) {
+  <div class="space-y-4">
+    <!-- Header -->
+    <div class="flex items-start gap-4">
+      <button
+        class="mt-1 w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-900 dark:hover:text-surface-0 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+        (click)="goBack()"
+      >
+        <i class="pi pi-arrow-left"></i>
+      </button>
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-1">
+          <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">{{ c.title }}</h1>
+          <p-tag [value]="getStatusLabel(c.status)" [severity]="getStatusSeverity(c.status)" styleClass="text-xs" />
+          @if (c.isRated) {
+            <p-tag value="Rated" severity="warn" styleClass="text-xs" />
+          }
+        </div>
+      </div>
+      @if (isJoined()) {
+        <p-tag value="Đã tham gia" severity="success" styleClass="text-sm px-3 py-1" />
+      }
+    </div>
+
+    <!-- Info Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+        <p class="text-xs text-surface-400 mb-1"><i class="pi pi-calendar mr-1"></i>Bắt đầu</p>
+        <p class="text-sm font-semibold text-surface-900 dark:text-surface-0">{{ formatDate(c.startTime) }}</p>
+      </div>
+      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+        <p class="text-xs text-surface-400 mb-1"><i class="pi pi-calendar mr-1"></i>Kết thúc</p>
+        <p class="text-sm font-semibold text-surface-900 dark:text-surface-0">{{ formatDate(c.endTime) }}</p>
+      </div>
+      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+        <p class="text-xs text-surface-400 mb-1"><i class="pi pi-clock mr-1"></i>Thời lượng</p>
+        <p class="text-sm font-semibold text-surface-900 dark:text-surface-0">{{ getDuration() }}</p>
+      </div>
+      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+        <p class="text-xs text-surface-400 mb-1"><i class="pi pi-code mr-1"></i>Bài tập</p>
+        <p class="text-sm font-semibold text-surface-900 dark:text-surface-0">{{ problems().length }} bài</p>
+      </div>
+    </div>
+
+    <!-- Joining Status -->
+    @if (joining()) {
+      <div class="rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 p-4 flex items-center gap-3">
+        <i class="pi pi-spin pi-spinner text-primary"></i>
+        <span class="text-sm text-surface-600 dark:text-surface-300">Đang đăng ký tham gia cuộc thi...</span>
+      </div>
+    } @else if (isJoined()) {
+      <div class="rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 flex items-center gap-3">
+        <i class="pi pi-check-circle text-green-500"></i>
+        <span class="text-sm font-medium text-green-700 dark:text-green-400 flex-1">Bạn đã đăng ký tham gia cuộc thi này</span>
+        @if (canLeave()) {
+          <p-button
+            label="Hủy đăng ký"
+            icon="pi pi-times"
+            severity="danger"
+            [outlined]="true"
+            size="small"
+            (onClick)="leaveContest()"
+            [loading]="leaving()"
+          />
+        }
+      </div>
+    } @else if (!isJoined() && !joining() && contest()?.isPublic === false && contest()?.status !== 'ended' && contest()?.status !== 'draft') {
+      <div class="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20 p-4 flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+          <i class="pi pi-lock text-orange-500"></i>
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-orange-700 dark:text-orange-400">Cuộc thi yêu cầu mật khẩu</p>
+          <p class="text-xs text-orange-500">Nhập mật khẩu để đăng ký tham gia</p>
+        </div>
+        <p-button
+          label="Nhập mật khẩu"
+          icon="pi pi-key"
+          severity="warn"
+          (onClick)="showJoinDialog.set(true)"
+          styleClass="whitespace-nowrap"
+        />
+      </div>
+    }
+
+    <!-- Problem Detail View -->
+    @if (selectedProblem(); as sp) {
+      <div class="space-y-4">
+        <div class="flex items-center gap-3">
+          <button
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-900 dark:hover:text-surface-0 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+            (click)="backToProblems()"
+          >
+            <i class="pi pi-arrow-left"></i>
+          </button>
+          <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0">
+            <span class="text-primary mr-2">{{ sp.label || 'P' }}</span>
+            {{ sp.problem?.title || sp.problemId }}
+          </h2>
+          @if (sp.problem?.difficulty) {
+            <p-tag [value]="getDifficultyLabel(sp.problem?.difficulty)" [severity]="getDifficultySeverity(sp.problem?.difficulty)" styleClass="text-xs" />
+          }
+          <p-tag [value]="sp.points + ' điểm'" severity="info" styleClass="text-xs" />
+        </div>
+
+        @if (sp.problem?.description) {
+          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
+            <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-2">Đề bài</h3>
+            <p class="text-sm text-surface-600 dark:text-surface-400 whitespace-pre-wrap">{{ sp.problem?.description }}</p>
+          </div>
+        }
+
+        @if (canSubmit()) {
+          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5 space-y-3">
+            <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-2">Nộp bài</h3>
+
+            <app-code-editor
+              [initialLanguage]="currentLanguage()"
+              (codeChange)="onCodeChange($event)"
+              (languageChange)="onLanguageChange($event)"
+            />
+
+            <div class="flex justify-end">
+              <p-button
+                label="Nộp bài"
+                icon="pi pi-send"
+                (onClick)="submitSolution()"
+                [loading]="isSubmitting()"
+                [disabled]="!currentCode().trim()"
+              />
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Tabs -->
+      <div class="border-b border-surface-200 dark:border-surface-700">
+        <div class="flex gap-1 -mb-px">
+          @for (tab of tabs; track tab.key) {
+            <button
+              [class]="'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ' +
+                (activeTab() === tab.key
+                  ? 'text-primary border-primary'
+                  : 'text-surface-500 border-transparent hover:text-surface-700 dark:hover:text-surface-300 hover:border-surface-300')"
+              (click)="setActiveTab(tab.key)"
+            >
+              <i [class]="'pi ' + tab.icon + ' mr-1.5 text-xs'"></i>
+              {{ tab.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Info Tab -->
+      @if (activeTab() === 'info') {
+        <div class="space-y-4">
+          @if (c.description) {
+            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
+              <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-3">
+                <i class="pi pi-file-edit mr-1.5 text-primary"></i>Mô tả
+              </h3>
+              <div class="text-sm text-surface-600 dark:text-surface-400 prose dark:prose-invert max-w-none" [innerHTML]="c.description"></div>
+            </div>
+          }
+          @if (c.rules) {
+            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
+              <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-3">
+                <i class="pi pi-list-check mr-1.5 text-primary"></i>Quy tắc
+              </h3>
+              <div class="text-sm text-surface-600 dark:text-surface-400 prose dark:prose-invert max-w-none" [innerHTML]="c.rules"></div>
+            </div>
+          }
+          @if (!c.description && !c.rules) {
+            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-8 text-center">
+              <i class="pi pi-info-circle text-2xl text-surface-300 mb-2"></i>
+              <p class="text-sm text-surface-400">Chưa có thông tin mô tả hoặc quy tắc</p>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Problems Tab -->
+      @if (activeTab() === 'problems') {
+        <div>
+          @if (problems().length > 0) {
+            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+              <!-- Header -->
+              <div class="grid grid-cols-12 gap-2 px-5 py-3 bg-surface-50 dark:bg-surface-900 text-xs font-medium text-surface-500 uppercase">
+                <div class="col-span-1 text-center">TT</div>
+                <div class="col-span-1">Label</div>
+                <div class="col-span-4">Bài tập</div>
+                <div class="col-span-2 text-center">Độ khó</div>
+                <div class="col-span-2 text-center">Điểm</div>
+                <div class="col-span-2 text-center">Trạng thái</div>
+              </div>
+              @for (p of problems(); track p.id; let i = $index) {
+                <div
+                  class="group grid grid-cols-12 gap-2 px-5 py-3.5 border-t border-surface-100 dark:border-surface-800 items-center hover:bg-surface-50 dark:hover:bg-surface-900 transition-colors cursor-pointer"
+                  (click)="selectProblem(p)"
+                >
+                  <!-- Status icon -->
+                  <div class="col-span-1 text-center">
+                    @if (isProblemSolved(p.problemId)) {
+                      <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/30">
+                        <i class="pi pi-check text-green-500 text-xs"></i>
+                      </span>
+                    } @else if (isProblemAttempted(p.problemId)) {
+                      <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                        <i class="pi pi-minus text-yellow-500 text-xs"></i>
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-surface-100 dark:bg-surface-700">
+                        <span class="text-xs text-surface-400">{{ i + 1 }}</span>
+                      </span>
+                    }
+                  </div>
+                  <!-- Label -->
+                  <div class="col-span-1">
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary font-bold text-sm">
+                      {{ p.label || 'P' + (i + 1) }}
+                    </span>
+                  </div>
+                  <!-- Title -->
+                  <div class="col-span-4 min-w-0">
+                    <h4 class="text-sm font-semibold text-surface-900 dark:text-surface-0 group-hover:text-primary transition-colors truncate">
+                      {{ p.problem?.title || p.problemId }}
+                    </h4>
+                    @if (p.problem?.slug) {
+                      <p class="text-xs text-surface-400 mt-0.5 truncate">{{ p.problem?.slug }}</p>
+                    }
+                  </div>
+                  <!-- Difficulty -->
+                  <div class="col-span-2 text-center">
+                    @if (p.problem?.difficulty) {
+                      <p-tag [value]="getDifficultyLabel(p.problem?.difficulty)" [severity]="getDifficultySeverity(p.problem?.difficulty)" styleClass="text-xs" />
+                    }
+                  </div>
+                  <!-- Points -->
+                  <div class="col-span-2 text-center">
+                    <span class="text-sm font-bold text-primary">{{ p.points }} đ</span>
+                  </div>
+                  <!-- Solve status -->
+                  <div class="col-span-2 text-center">
+                    @if (isProblemSolved(p.problemId)) {
+                      <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400">
+                        <i class="pi pi-check-circle text-[10px]"></i> Đã giải
+                      </span>
+                    } @else if (isProblemAttempted(p.problemId)) {
+                      <span class="inline-flex items-center gap-1 text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                        <i class="pi pi-clock text-[10px]"></i> Đã thử
+                      </span>
+                    } @else {
+                      <span class="text-xs text-surface-400">Chưa làm</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-8 text-center">
+              <i class="pi pi-code text-2xl text-surface-300 mb-2"></i>
+              <p class="text-sm text-surface-400">Chưa có bài tập</p>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Leaderboard Tab -->
+      @if (activeTab() === 'leaderboard') {
+        <div>
+          @if (leaderboard().length > 0) {
+            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+              <div class="grid grid-cols-12 gap-2 px-5 py-3 bg-surface-50 dark:bg-surface-900 text-xs font-medium text-surface-500 uppercase">
+                <div class="col-span-1">Hạng</div>
+                <div class="col-span-5">Thí sinh</div>
+                <div class="col-span-2 text-center">Điểm</div>
+                <div class="col-span-2 text-center">Bài giải</div>
+                <div class="col-span-2 text-center">Phạt</div>
+              </div>
+              @for (p of leaderboard(); track p.id; let i = $index) {
+                <div [class]="'grid grid-cols-12 gap-2 px-5 py-3.5 border-t border-surface-100 dark:border-surface-800 items-center ' +
+                  (i < 3 ? 'bg-yellow-50/50 dark:bg-yellow-900/10' : '')">
+                  <div class="col-span-1">
+                    @if (i === 0) { <span class="text-lg">🥇</span> }
+                    @else if (i === 1) { <span class="text-lg">🥈</span> }
+                    @else if (i === 2) { <span class="text-lg">🥉</span> }
+                    @else { <span class="text-sm text-surface-400">{{ p.rank || (i + 1) }}</span> }
+                  </div>
+                  <div class="col-span-5">
+                    <p class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ p.user?.username || p.userId }}</p>
+                  </div>
+                  <div class="col-span-2 text-center">
+                    <span class="text-sm font-bold text-primary">{{ p.totalScore }}</span>
+                  </div>
+                  <div class="col-span-2 text-center text-sm text-surface-500">{{ p.solvedProblems }}</div>
+                  <div class="col-span-2 text-center text-sm text-surface-400">{{ p.penaltyMinutes || 0 }}m</div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-8 text-center">
+              <i class="pi pi-chart-bar text-2xl text-surface-300 mb-2"></i>
+              <p class="text-sm text-surface-400">Chưa có dữ liệu xếp hạng</p>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- My Submissions Tab -->
+      @if (activeTab() === 'submissions') {
+        <div>
+          @if (mySubmissions().length > 0) {
+            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+              <div class="grid grid-cols-12 gap-2 px-5 py-3 bg-surface-50 dark:bg-surface-900 text-xs font-medium text-surface-500 uppercase">
+                <div class="col-span-3">Bài tập</div>
+                <div class="col-span-2">Ngôn ngữ</div>
+                <div class="col-span-2 text-center">Trạng thái</div>
+                <div class="col-span-1 text-center">Điểm</div>
+                <div class="col-span-2 text-center">Test</div>
+                <div class="col-span-2 text-center">Thời gian</div>
+              </div>
+              @for (s of mySubmissions(); track s.id) {
+                <div class="grid grid-cols-12 gap-2 px-5 py-3.5 border-t border-surface-100 dark:border-surface-800 items-center hover:bg-surface-50 dark:hover:bg-surface-900 transition-colors">
+                  <div class="col-span-3 text-sm text-surface-900 dark:text-surface-0 font-medium truncate">
+                    {{ s.problem?.title || s.problemId }}
+                  </div>
+                  <div class="col-span-2">
+                    <span class="text-xs px-2 py-1 rounded-full bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300">
+                      {{ getLanguageLabel(s.language) }}
+                    </span>
+                  </div>
+                  <div class="col-span-2 text-center">
+                    <p-tag
+                      [value]="getSubmissionStatusLabel(s.status)"
+                      [severity]="getSubmissionStatusSeverity(s.status)"
+                      styleClass="text-xs"
+                    />
+                  </div>
+                  <div class="col-span-1 text-center text-sm font-semibold text-surface-900 dark:text-surface-0">{{ s.score }}</div>
+                  <div class="col-span-2 text-center text-xs text-surface-400">
+                    {{ s.passedTestcases }}/{{ s.totalTestcases }}
+                  </div>
+                  <div class="col-span-2 text-center text-xs text-surface-400">
+                    {{ formatDate(s.submittedAt) }}
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-8 text-center">
+              <i class="pi pi-inbox text-2xl text-surface-300 mb-2"></i>
+              <p class="text-sm text-surface-400">Bạn chưa nộp bài nào</p>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+} @else {
+  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-12 text-center">
+    <i class="pi pi-exclamation-triangle text-3xl text-surface-300 mb-3"></i>
+    <p class="text-surface-500">Không tìm thấy cuộc thi</p>
+    <p-button label="Quay lại" icon="pi pi-arrow-left" [text]="true" (onClick)="goBack()" class="mt-3" />
+  </div>
+}
+
+<!-- Join Password Dialog -->
+<p-dialog
+  [visible]="showJoinDialog()"
+  (onHide)="showJoinDialog.set(false)"
+  header="Nhập mật khẩu"
+  [modal]="true"
+  [style]="{ width: '400px' }"
+  [dismissableMask]="true"
+>
+  <div class="space-y-4">
+    <p class="text-sm text-surface-500">Cuộc thi này yêu cầu mật khẩu để tham gia.</p>
+    <input
+      pInputText
+      [(ngModel)]="joinPassword"
+      placeholder="Nhập mật khẩu..."
+      type="password"
+      class="w-full"
+      (keyup.enter)="joinContest()"
+    />
+    <div class="flex justify-end gap-2">
+      <p-button label="Hủy" severity="secondary" [outlined]="true" (onClick)="showJoinDialog.set(false)" />
+      <p-button label="Tham gia" icon="pi pi-sign-in" (onClick)="joinContest()" [loading]="joining()" />
+    </div>
+  </div>
+</p-dialog>

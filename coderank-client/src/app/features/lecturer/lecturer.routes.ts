@@ -20,7 +20,7 @@ export const lecturerRoutes: Routes = [
   },
   {
     path: 'contests',
-    loadComponent: () => import('./pages/contests/contests.component').then(m => m.LecturerContestsComponent)
+    loadChildren: () => import('./contests/contests.routes').then(m => m.lecturerContestsRoutes)
   },
   {
     path: 'students',

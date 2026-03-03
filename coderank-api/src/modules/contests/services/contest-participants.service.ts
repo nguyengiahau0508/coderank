@@ -73,4 +73,36 @@ export class ContestParticipantsService extends BaseService<ContestParticipantsE
       },
     });
   }
+
+  async leaveContest(userId: string, contestId: string) {
+    // Check if contest exists
+    const contest = await this.contestsRepository.findOne({
+      where: { id: contestId },
+    });
+
+    if (!contest) {
+      throw new NotFoundException('Contest not found');
+    }
+
+    // Only allow leaving if contest hasn't started yet (upcoming/draft)
+    if (contest.status === 'running') {
+      throw new BadRequestException('Không thể hủy đăng ký khi cuộc thi đang diễn ra');
+    }
+
+    if (contest.status === 'ended') {
+      throw new BadRequestException('Không thể hủy đăng ký khi cuộc thi đã kết thúc');
+    }
+
+    // Find participation
+    const participant = await this.repository.findOne({
+      where: { userId, contestId },
+    });
+
+    if (!participant) {
+      throw new BadRequestException('Bạn chưa đăng ký cuộc thi này');
+    }
+
+    await this.repository.remove(participant);
+    return { message: 'Đã hủy đăng ký thành công' };
+  }
 }

@@ -20,5 +20,10 @@ export class StudentLayoutComponent {
       icon: 'pi pi-book',
       route: '/student/courses'
     },
+    {
+      label: 'Contests',
+      icon: 'pi pi-trophy',
+      route: '/student/contests'
+    },
   ];
 }

@@ -1,0 +1,140 @@
+<div class="space-y-5">
+  <!-- Title & Slug -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Tiêu đề <span class="text-red-500">*</span></label>
+      <input
+        pInputText
+        [(ngModel)]="title"
+        (ngModelChange)="generateSlug()"
+        placeholder="VD: Weekly Contest #1"
+        class="w-full"
+      />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Slug <span class="text-red-500">*</span></label>
+      <input
+        pInputText
+        [(ngModel)]="slug"
+        placeholder="weekly-contest-1"
+        class="w-full"
+      />
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div>
+    <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Mô tả</label>
+    <app-text-editor [ngModel]="description()" (ngModelChange)="description.set($event)" />
+  </div>
+
+  <!-- Rules -->
+  <div>
+    <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Quy tắc</label>
+    <app-text-editor [ngModel]="rules()" (ngModelChange)="rules.set($event)" />
+  </div>
+
+  <!-- Time Settings -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Bắt đầu</label>
+      <p-datepicker
+        [ngModel]="startTime()"
+        (ngModelChange)="onStartTimeChange($event)"
+        [showTime]="true"
+        [showIcon]="true"
+        dateFormat="dd/mm/yy"
+        placeholder="Chọn ngày bắt đầu"
+        styleClass="w-full"
+      />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Kết thúc</label>
+      <p-datepicker
+        [ngModel]="endTime()"
+        (ngModelChange)="onEndTimeChange($event)"
+        [showTime]="true"
+        [showIcon]="true"
+        dateFormat="dd/mm/yy"
+        placeholder="Chọn ngày kết thúc"
+        styleClass="w-full"
+      />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Thời lượng (phút)</label>
+      <p-inputnumber
+        [ngModel]="durationMinutes()"
+        (ngModelChange)="onDurationChange($event)"
+        [min]="1"
+        placeholder="VD: 180"
+        styleClass="w-full"
+      />
+    </div>
+  </div>
+
+  <!-- Status & Settings -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Trạng thái</label>
+      <p-select
+        [(ngModel)]="status"
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+      />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Số người tham gia tối đa</label>
+      <p-inputnumber
+        [(ngModel)]="maxParticipants"
+        [min]="0"
+        placeholder="0 = không giới hạn"
+        styleClass="w-full"
+      />
+    </div>
+  </div>
+
+  <!-- Toggles -->
+  <div class="flex items-center gap-8">
+    <div class="flex items-center gap-2">
+      <p-toggleswitch [(ngModel)]="isPublic" />
+      <label class="text-sm text-surface-700 dark:text-surface-300">Công khai</label>
+    </div>
+    <div class="flex items-center gap-2">
+      <p-toggleswitch [(ngModel)]="isRated" />
+      <label class="text-sm text-surface-700 dark:text-surface-300">Có xếp hạng</label>
+    </div>
+  </div>
+
+  <!-- Password (for private contests) -->
+  @if (!isPublic()) {
+    <div>
+      <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">Mật khẩu (cuộc thi riêng tư)</label>
+      <input
+        pInputText
+        [(ngModel)]="password"
+        placeholder="Nhập mật khẩu..."
+        type="password"
+        class="w-full"
+      />
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-2 pt-2 border-t border-surface-200 dark:border-surface-700">
+    <p-button
+      label="Hủy"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onCancel()"
+    />
+    <p-button
+      [label]="contest() ? 'Cập nhật' : 'Tạo'"
+      icon="pi pi-check"
+      (onClick)="onSubmit()"
+      [loading]="loading()"
+      [disabled]="!title().trim() || !slug().trim()"
+    />
+  </div>
+</div>

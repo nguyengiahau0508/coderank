@@ -23,8 +23,8 @@ export const adminRoutes: Routes = [
   },
   {
     path: 'contests',
-    loadComponent: () =>
-      import('./contests/contests.component').then(m => m.AdminContestsComponent),
+    loadChildren: () =>
+      import('./contests/contests.routes').then(m => m.adminContestsRoutes),
   },
   {
     path: 'courses',
