@@ -1,120 +1,213 @@
-# CodeRank
+<div align="center">
 
-A full-stack application for code ranking and evaluation.
+# 🏆 CodeRank
 
-## Project Structure
+**Nền tảng lập trình thi đấu và học trực tuyến**
 
-This monorepo contains two main applications:
+[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![Angular](https://img.shields.io/badge/Angular-21-DD0031?logo=angular&logoColor=white)](https://angular.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![PrimeNG](https://img.shields.io/badge/PrimeNG-21-4CAF50)](https://primeng.org/)
+[![License](https://img.shields.io/badge/License-UNLICENSED-red)](#)
+
+</div>
+
+---
+
+## 📖 Giới thiệu
+
+**CodeRank** là nền tảng full-stack hỗ trợ lập trình thi đấu (competitive programming) và quản lý học trực tuyến (LMS). Hệ thống cho phép:
+
+- 🧩 **Quản lý bài tập** — Tạo, chỉnh sửa bài tập kèm testcase, gợi ý, lời giải và chấm bài tự động
+- 🏅 **Thi đấu trực tuyến** — Tổ chức contest có thời gian, bảng xếp hạng và quản lý thí sinh
+- 📚 **Khóa học trực tuyến** — LMS đầy đủ với bài giảng, quiz, bài tập thực hành, chấm điểm
+- ⚡ **Chấm bài tự động** — Code Runner chạy nền với BullMQ job queue
+- 🤖 **AI Agent** — Trợ lý AI hỗ trợ giải bài và gợi ý học tập *(đang phát triển)*
+- 🔍 **RAG Search** — Tìm kiếm ngữ nghĩa trên kho bài tập và tài liệu *(đang phát triển)*
+
+---
+
+## 🏗️ Kiến trúc tổng quan
 
 ```
 coderank/
-├── coderank-api/       # NestJS Backend API
-└── coderank-client/    # Angular Frontend Application
+├── coderank-api/          # 🔙 Backend REST API (NestJS 11)
+├── coderank-client/       # 🖥️ Frontend SPA (Angular 21)
+├── coderank-agent/        # 🤖 AI Agent Service (đang phát triển)
+├── coderank-rag/          # 🔍 RAG Search Engine (đang phát triển)
+├── AGENTS.md              # 📋 Tài liệu handover cho developers
+└── README.md              # 📖 Bạn đang ở đây
 ```
 
-### Backend (coderank-api)
-- **Framework**: NestJS (TypeScript)
-- **Database**: MySQL with TypeORM
-- **Authentication**: JWT & Google OAuth
-- **Queue**: BullMQ for background jobs
-- **API Docs**: Swagger UI at `/api`
+| Service | Mô tả | Tech Stack | Trạng thái |
+|---------|--------|------------|------------|
+| **[coderank-api](./coderank-api/)** | REST API, xác thực, chấm bài | NestJS, TypeORM, MariaDB, BullMQ | ✅ Hoạt động |
+| **[coderank-client](./coderank-client/)** | Giao diện web SPA | Angular 21, PrimeNG, TailwindCSS 4 | ✅ Hoạt động |
+| **[coderank-agent](./coderank-agent/)** | Trợ lý AI cho học tập | *(chưa xác định)* | 🚧 Đang phát triển |
+| **[coderank-rag](./coderank-rag/)** | Tìm kiếm ngữ nghĩa RAG | *(chưa xác định)* | 🚧 Đang phát triển |
 
-[Read API Documentation](./coderank-api/README-AI.md)
+---
 
-### Frontend (coderank-client)
-- **Framework**: Angular 21 (Standalone Components)
-- **UI Library**: PrimeNG
-- **Styling**: TailwindCSS 4
-- **State**: Angular Signals
+## 🛠️ Tech Stack
 
-[Read Client Documentation](./coderank-client/README-AI.md)
+### Backend
+| Thành phần | Công nghệ |
+|------------|-----------|
+| Framework | NestJS 11 (TypeScript 5.7) |
+| Database | MariaDB (mysql2 driver) |
+| ORM | TypeORM 0.3 |
+| Auth | Passport.js (Google OAuth2, JWT) |
+| Queue | BullMQ 5 (Redis) |
+| WebSocket | Socket.IO |
+| Docs | Swagger UI (`/api-docs`) |
+| Testing | Jest 30 + Supertest |
 
-## Getting Started
+### Frontend
+| Thành phần | Công nghệ |
+|------------|-----------|
+| Framework | Angular 21 (Standalone Components) |
+| UI Library | PrimeNG 21 (Aura theme) |
+| Styling | TailwindCSS 4 |
+| Code Editor | Monaco Editor |
+| Rich Text | Quill 2 |
+| Markdown | marked + DOMPurify |
+| State | Angular Signals |
+| Testing | Vitest 4 |
 
-### Prerequisites
-- Node.js (v18 or higher)
-- npm (v11 or higher)
-- MySQL database
+---
 
-### Installation
+## 🚀 Bắt đầu nhanh
 
-#### Backend Setup
+### Yêu cầu hệ thống
+
+- **Node.js** v18+
+- **npm** v11+
+- **MariaDB/MySQL**
+- **Redis** (cho BullMQ job queue)
+
+### 1. Clone repository
+
+```bash
+git clone <repo-url>
+cd coderank
+```
+
+### 2. Cài đặt Backend
+
 ```bash
 cd coderank-api
 npm install
-# Configure .env file
+```
+
+Tạo file `.env` (xem [coderank-api/README.md](./coderank-api/README.md) để biết chi tiết):
+
+```env
+APP_NAME=coderank-api
+APP_ENV=development
+APP_PORT=3000
+CLIENT_URL=http://localhost:4200
+
+DB_MARIADB_HOST=localhost
+DB_MARIADB_PORT=3306
+DB_MARIADB_USERNAME=root
+DB_MARIADB_PASSWORD=your_password
+DB_MARIADB_NAME=coderank
+
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRATION=15m
+
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
+```
+
+Khởi chạy:
+
+```bash
 npm run start:dev
 ```
 
-#### Frontend Setup
+### 3. Cài đặt Frontend
+
 ```bash
 cd coderank-client
 npm install
 npm start
 ```
 
-## Development
+### 4. Truy cập
 
-### API Development
+| Dịch vụ | URL |
+|---------|-----|
+| Frontend | http://localhost:4200 |
+| Backend API | http://localhost:3000/api |
+| Swagger UI | http://localhost:3000/api-docs |
+
+---
+
+## 📦 Các lệnh phổ biến
+
+### Backend (`coderank-api/`)
+
 ```bash
-cd coderank-api
-npm run start:dev    # Start dev server with hot reload
-npm run build        # Build for production
-npm run test         # Run tests
-npm run lint         # Lint code
-npm run seed         # Seed database
+npm run start:dev      # Chạy dev server (hot reload)
+npm run build          # Build production
+npm run start:prod     # Chạy production build
+npm run lint           # Kiểm tra & sửa lỗi lint
+npm run format         # Format code với Prettier
+npm test               # Chạy unit tests
+npm run test:e2e       # Chạy E2E tests
+npm run test:cov       # Báo cáo test coverage
+npm run seed           # Seed dữ liệu mẫu
 ```
 
-### Client Development
+### Frontend (`coderank-client/`)
+
 ```bash
-cd coderank-client
-npm start            # Start dev server
-npm run build        # Build for production
-npm run test         # Run tests
+npm start              # Chạy dev server (port 4200)
+npm run build          # Build production
+npm run watch          # Build ở chế độ watch
+npm test               # Chạy unit tests (Vitest)
 ```
 
-## Architecture
+---
 
-### API Architecture
-- Modular structure with NestJS modules
-- TypeORM for database operations
-- Passport.js for authentication
-- BullMQ for queue management
-- Swagger for API documentation
+## 👥 Vai trò người dùng
 
-### Client Architecture
-- Standalone components (Angular 21)
-- Feature-based organization
-- Signal-based state management
-- PrimeNG component library
-- TailwindCSS for styling
+CodeRank hỗ trợ 3 vai trò với quyền hạn khác nhau:
 
-## Testing
+| Vai trò | Mô tả | Chức năng chính |
+|---------|--------|-----------------|
+| **Admin** | Quản trị viên | Quản lý toàn bộ hệ thống: người dùng, bài tập, contest, khóa học |
+| **Lecturer** (Instructor) | Giảng viên | Tạo/quản lý bài tập, contest, khóa học, chấm điểm |
+| **Student** | Sinh viên | Giải bài, tham gia contest, học khóa học, nộp bài |
 
-### Backend Testing
-- Unit tests: Jest
-- E2E tests: Supertest
-- Run with: `npm test`
+---
 
-### Frontend Testing
-- Unit tests: Vitest
-- Run with: `npm test`
+## 📁 Tài liệu chi tiết
 
-## Contributing
+| Tài liệu | Mô tả |
+|-----------|--------|
+| [coderank-api/README.md](./coderank-api/README.md) | Hướng dẫn Backend API |
+| [coderank-client/README.md](./coderank-client/README.md) | Hướng dẫn Frontend Client |
+| [coderank-agent/README.md](./coderank-agent/README.md) | Hướng dẫn AI Agent |
+| [coderank-rag/README.md](./coderank-rag/README.md) | Hướng dẫn RAG Search |
+| [AGENTS.md](./AGENTS.md) | Tài liệu handover chi tiết cho developers |
+| [VISUAL_REFERENCE.md](./coderank-client/VISUAL_REFERENCE.md) | Hướng dẫn thiết kế giao diện |
 
-1. Follow existing code patterns
-2. Write tests for new features
-3. Update documentation
-4. Follow TypeScript best practices
-5. Use conventional commits
+---
 
-## AI Development Guidelines
+## 🤝 Đóng góp
 
-This project is optimized for AI-assisted development. See:
-- [Copilot Instructions](./.github/copilot-instructions.md)
-- [API AI Context](./coderank-api/README-AI.md)
-- [Client AI Context](./coderank-client/README-AI.md)
+1. Tuân theo các pattern và convention đã có trong codebase
+2. Viết test cho tính năng mới
+3. Cập nhật documentation khi thay đổi
+4. Sử dụng conventional commits
+5. Đảm bảo lint & format trước khi commit
 
-## License
+---
 
-UNLICENSED - Private project
+## 📄 License
+
+**UNLICENSED** — Dự án riêng tư.
