@@ -57,7 +57,7 @@ export class ProblemsController {
     });
   }
 
-    @Get('me')
+  @Get('me')
   @ApiBearerAuth('JWT-auth')
   async getMyProblems(
     @Query() dto: PaginationQueryProblemsDto,
@@ -184,7 +184,7 @@ export class ProblemsController {
       order: { testcaseOrder: 'ASC' },
       select: ['id', 'isSample', 'testcaseOrder', 'input', 'expectedOutput'],
     });
-  } 
+  }
 
   @Get(':problemId/testcases/:testcaseId')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
