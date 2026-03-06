@@ -1,11 +1,5 @@
 import { z } from 'zod';
-
-export const ToolSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  parameters: z.any(),
-  execute: z.function(),
-});
+import { ITool } from '../tool.interface';
 
 const GetMyProblemsParams = z.object({
   page: z.number().optional().describe('Page number for pagination'),
@@ -52,17 +46,16 @@ const GetMyProblemsParams = z.object({
     .describe('Maximum points of the problems'),
 });
 
-export const tools = [
-  {
-    name: 'get_my_problems',
-    description: 'Get a paginated list of problems created by the current authenticated user. Use this when the user asks for "my problems", "problems I created", or "problems I authored".',
-    parameters: GetMyProblemsParams,
-    execute: async (args: unknown, client: any) => {
-      const validatedArgs = GetMyProblemsParams.parse(args);
-      const response = await client.get('/problems/me', {
-        params: validatedArgs,
-      });
-      return response.data;
-    },
+export const GetMyProblemsTool: ITool = {
+  name: 'get_my_problems',
+  description: 'Get a paginated list of problems created by the current authenticated user. Use this when the user asks for "my problems", "problems I created", or "problems I authored".',
+  parameters: GetMyProblemsParams,
+  execute: async (args: unknown, client: any) => {
+    // LLM parsing can sometimes output wrong format, Zod parses it properly
+    const validatedArgs = GetMyProblemsParams.parse(args);
+    const response = await client.get('/problems/me', {
+      params: validatedArgs,
+    });
+    return response.data;
   },
-];
+};

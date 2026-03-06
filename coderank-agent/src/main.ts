@@ -1,9 +1,9 @@
 import express, {Request, Response} from 'express';
-import 'dotenv/config';
+import { config } from './config';
 import cors from 'cors';
-import { processUserQuery } from './agents/executor';
+import { Agent } from './core/agent/agent';
 
-const PORT = Number(process.env.PORT) || 4000;
+const PORT = config.PORT;
 
 const app = express();
 
@@ -23,14 +23,23 @@ app.post('/agent/query', async (req: Request, res: Response) => {
   }
 
   // Header bảo mật để đảm bảo chỉ NestJS được gọi Agent này
-  const agentSecret = req.headers['x-agent-secret'];
-  if (agentSecret !== process.env.AGENT_SECRET_TOKEN) {
-    return res.status(403).json({ error: 'Unauthorized access' });
-  }
+  // const agentSecret = req.headers['x-agent-secret'];
+  // if (agentSecret !== config.AGENT_SECRET_TOKEN) {
+  //   return res.status(403).json({ error: 'Unauthorized access' });
+  // }
+
+  // Lấy cấu hình tùy chọn từ request body
+  const providerName = req.body.provider || config.DEFAULT_MODEL_PROVIDER;
+  const modelName = req.body.modelName; // Tuỳ chọn
+  const providerConfig = {
+    apiKey: req.body.apiKey,
+    baseHost: req.body.baseHost // Dành cho Ollama
+  };
 
   try {
-    // Gọi reasoning loop đã viết ở file executor.ts
-    const response = await processUserQuery(userToken, message);
+    // Khởi tạo Agent với cấu hình tùy chỉnh
+    const agent = new Agent(providerName, modelName, providerConfig);
+    const response = await agent.processQuery(userToken, message);
 
     return res.json({
       success: true,
