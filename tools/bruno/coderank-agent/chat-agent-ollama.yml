@@ -11,10 +11,10 @@ http:
     data: |
       {
         "userToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJiZTRjNDU3NS05YmRiLTQ2NWItOGFjZC0wNWFiZGQ2Yzc5OWIiLCJyb2xlcyI6WyJhZG1pbiJdLCJpYXQiOjE3NzI3OTAyNjIsImV4cCI6MTc4MTc5MDI2Mn0.d0W3pt9EM9hzhlUMJ53Vlqwp2NN4zbMmQWv-th6NEaE",
-        "message": "liệt kê các bài tập do tôi tạo ra",
-        "provider": "gemini",
-        "modelName": "gemini-2.5-flash",
-        "apiKey": "AIzaSyAufTi0Xijpq-8aoO4GLN6uugYr5UJ-jJI"
+        "message": "list of exercises I created",
+        "provider": "ollama",
+        "modelName": "qwen3:4b",
+        "baseHost": "http://localhost:11434"
       }
   auth: inherit
 

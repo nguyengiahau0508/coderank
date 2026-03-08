@@ -18,7 +18,7 @@ export class Agent {
     this.registerDefaultTools();
 
     // Initialize the LLM with prompt and tools
-    this.llm.init(SYSTEM_PROMPT, this.toolRegistry.getAll());
+    this.llm.init(true ? '' : SYSTEM_PROMPT, this.toolRegistry.getAll());
   }
 
   private registerDefaultTools() {
@@ -31,22 +31,37 @@ export class Agent {
     let currentMessage: any = userMessage;
     const MAX_ITERATIONS = 5;
 
+    // Log the initial user query
+    console.log(`\n==================================================`);
+    console.log(`[Agent:Start] User query: "${userMessage}"`);
+
     try {
       for (let i = 0; i < MAX_ITERATIONS; i++) {
+        console.log(`[Agent:Iteration ${i+1}] Processing with LLM...`);
         // Send message to LLM
         const response = await this.llm.sendMessage(currentMessage);
 
+        // Record any intermediate thoughts or partial responses before tools
+        if (response.text && response.toolCalls && response.toolCalls.length > 0) {
+          console.log(`[Agent:Thought] Partial output before tools:`, response.text);
+        }
+
         // If tools are required, execute them
         if (response.toolCalls && response.toolCalls.length > 0) {
+          console.log(`[Agent:Tools] Requested ${response.toolCalls.length} tool(s).`);
           const toolResponses: any[] = [];
 
           for (const call of response.toolCalls) {
+            console.log(`[Agent:ToolCall] -> Tool: ${call.name} | Args:`, JSON.stringify(call.arguments));
+            
             const tool = this.toolRegistry.get(call.name);
 
             if (tool) {
               try {
-                console.log(`[Agent] Calling tool: ${tool.name} with args:`, call.arguments);
                 const apiResult = await tool.execute(call.arguments, apiClient);
+                console.log(`[Agent:ToolResult] <- Tool: ${tool.name} returned successfully.`);
+                // console.log(`[Agent:ToolResult] Raw Data:`, JSON.stringify(apiResult).substring(0, 200) + '...');
+                
                 toolResponses.push({
                   functionResponse: {
                     name: tool.name,
@@ -54,7 +69,7 @@ export class Agent {
                   }
                 });
               } catch (error: any) {
-                console.error(`[Agent] Tool error (${tool.name}):`, error.message);
+                console.error(`[Agent:ToolError] ERROR in ${tool.name}:`, error.message);
                 toolResponses.push({
                   functionResponse: {
                     name: tool.name,
@@ -63,7 +78,7 @@ export class Agent {
                 });
               }
             } else {
-              console.warn(`[Agent] Tool ${call.name} requested by LLM but not registered.`);
+              console.warn(`[Agent:ToolWarning] LLM requested unregistered tool: ${call.name}`);
               toolResponses.push({
                 functionResponse: {
                   name: call.name,
@@ -77,6 +92,8 @@ export class Agent {
           currentMessage = toolResponses;
         } else if (response.text) {
           // If no tools required and we have text, return the final response
+          console.log(`[Agent:Finish] Returning final answer.`);
+          console.log(`==================================================\n`);
           return response.text;
         }
       }
