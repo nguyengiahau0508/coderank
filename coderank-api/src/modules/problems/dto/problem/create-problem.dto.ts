@@ -11,11 +11,10 @@ export class CreateProblemDto {
   @MaxLength(255)
   title: string;
 
-  @ApiPropertyOptional({ description: 'URL-friendly slug', example: 'sum-of-two' })
-  @IsOptional()
+  @ApiPropertyOptional({ description: 'URL-friendly slug (auto-generated from title if omitted)', example: 'sum-of-two' })
   @IsString()
   @MaxLength(255)
-  slug?: string;
+  slug: string;
 
   @ApiPropertyOptional({ description: 'Full problem statement (markdown/html)' })
   @IsOptional()

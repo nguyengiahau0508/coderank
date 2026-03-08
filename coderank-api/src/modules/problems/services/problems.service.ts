@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, FindOptionsWhere, Like, Between, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
+import slugify from "slugify";
 import { BaseService } from "src/common/services/base.service";
 import { ProblemsEntity } from "../entities/problems.entity";
 import { PaginationQueryProblemsDto } from "../dto/problem/pagination-query-problem.dto";
@@ -12,6 +13,23 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
     protected readonly repository: Repository<ProblemsEntity>,
   ) {
     super(repository);
+  }
+
+  async create(entity: Partial<ProblemsEntity>): Promise<ProblemsEntity> {
+    if (!entity.slug && entity.title) {
+      let baseSlug = slugify(entity.title, { lower: true, strict: true });
+      let slug = baseSlug;
+      let suffix = 1;
+
+      while (await this.repository.findOne({ where: { slug } as FindOptionsWhere<ProblemsEntity> })) {
+        slug = `${baseSlug}-${suffix}`;
+        suffix++;
+      }
+
+      entity.slug = slug;
+    }
+
+    return super.create(entity);
   }
 
   async getProblem(dto: PaginationQueryProblemsDto, currentUserId?: string) {

@@ -1,15 +1,15 @@
 import { ILLMProvider, ILLMConfig } from '../llm/llm.interface';
 import { LLMFactory } from '../llm/llm.factory';
-import { ToolRegistry } from '../tools/tool.registry';
-import { GetMyProblemsTool } from '../tools/definitions/get-my-problems.tool';
+import { ToolRegistry, registerAllTools } from '../tools';
 import { createInternalClient } from '../../api/api-client';
-import { SYSTEM_PROMPT } from '../../prompts/system.prompt';
+import { STUDENT_SYSTEM_PROMPT,LECTURER_SYSTEM_PROMPT,ADMIN_SYSTEM_PROMPT, SYSTEM_PROMPT } from '../../prompts/system.prompt';
+import { RolesEnum } from '../../common/enums/enums';
 
 export class Agent {
   private llm: ILLMProvider;
   private toolRegistry: ToolRegistry;
 
-  constructor(providerName?: string, modelName?: string, providerConfig?: ILLMConfig) {
+  constructor(role: RolesEnum,providerName?: string, modelName?: string, providerConfig?: ILLMConfig) {
     // Use factory to get the LLM provider
     this.llm = LLMFactory.createProvider(providerName, modelName, providerConfig);
     
@@ -18,18 +18,29 @@ export class Agent {
     this.registerDefaultTools();
 
     // Initialize the LLM with prompt and tools
-    this.llm.init(true ? '' : SYSTEM_PROMPT, this.toolRegistry.getAll());
+    let systemPrompt = SYSTEM_PROMPT;
+    switch (role) {
+      case RolesEnum.Admin:
+        systemPrompt = ADMIN_SYSTEM_PROMPT;
+        break;
+      case RolesEnum.Instructor:
+        systemPrompt = LECTURER_SYSTEM_PROMPT;
+        break;
+      case RolesEnum.Student:
+        systemPrompt = STUDENT_SYSTEM_PROMPT;
+        break;
+    }
+    this.llm.init(systemPrompt, this.toolRegistry.getAll());
   }
 
   private registerDefaultTools() {
-    this.toolRegistry.register(GetMyProblemsTool);
-    // Add more tools here in the future
+    registerAllTools(this.toolRegistry);
   }
 
   async processQuery(userToken: string, userMessage: string): Promise<string> {
     const apiClient = createInternalClient(userToken);
     let currentMessage: any = userMessage;
-    const MAX_ITERATIONS = 5;
+    const MAX_ITERATIONS = 50;
 
     // Log the initial user query
     console.log(`\n==================================================`);

@@ -15,7 +15,7 @@ app.get('/health', (req, res) => {
 });
 
 app.post('/agent/query', async (req: Request, res: Response) => {
-  const { userToken, message } = req.body;
+  const { userToken, message, role } = req.body;
 
   // Kiểm tra input cơ bản
   if (!userToken || !message) {
@@ -38,7 +38,7 @@ app.post('/agent/query', async (req: Request, res: Response) => {
 
   try {
     // Khởi tạo Agent với cấu hình tùy chỉnh
-    const agent = new Agent(providerName, modelName, providerConfig);
+    const agent = new Agent(role, providerName, modelName, providerConfig);
     const response = await agent.processQuery(userToken, message);
 
     return res.json({

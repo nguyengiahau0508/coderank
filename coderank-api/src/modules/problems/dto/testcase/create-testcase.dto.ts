@@ -1,22 +1,22 @@
-import { IsString, IsOptional, IsBoolean, IsEnum } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsBoolean, IsEnum, IsNotEmpty } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TestcaseCompareTypeEnum } from 'src/common/enums/enums';
 export class CreateTestcaseDto {
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Input content for testcase',
     example: '1 2\n',
   })
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  input?: string;
+  input: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Expected output for testcase',
     example: '3\n',
   })
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  expectedOutput?: string;
+  expectedOutput: string;
 
   @ApiPropertyOptional({
     description: 'Whether this testcase is shown as sample',

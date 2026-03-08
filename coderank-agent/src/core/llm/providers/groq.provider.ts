@@ -71,7 +71,7 @@ export class GroqProvider implements ILLMProvider {
           toolCalls: assistantMessage.tool_calls.map(tc => ({
             id: tc.id,
             name: tc.function.name,
-            arguments: JSON.parse(tc.function.arguments || '{}'),
+            arguments: JSON.parse(tc.function.arguments || '{}') ?? {},
           })),
         };
       }
