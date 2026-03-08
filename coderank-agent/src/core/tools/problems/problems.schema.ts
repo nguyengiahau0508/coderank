@@ -239,10 +239,12 @@ export const CreateTestcaseSchema = z.object({
     .describe('Expected output for testcase'),
   isSample: z
     .boolean()
-    .describe('Whether this testcase is shown as sample'),
+    .default(false)
+    .describe('Whether this testcase is shown as sample (defaults to false)'),
   compareType: z
     .enum(['exact', 'trim_whitespace', 'tokenize'])
-    .describe('Compare type used to validate output'),
+    .default('exact')
+    .describe('Compare type used to validate output (defaults to "exact")'),
 });
 
 export const UpdateTestcaseSchema = CreateTestcaseSchema.partial();

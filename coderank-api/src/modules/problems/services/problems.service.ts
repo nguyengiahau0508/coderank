@@ -29,7 +29,7 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
       entity.slug = slug;
     }
 
-    return super.create(entity);
+    return await super.create(entity);
   }
 
   async getProblem(dto: PaginationQueryProblemsDto, currentUserId?: string) {

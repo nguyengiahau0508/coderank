@@ -20,6 +20,7 @@ import { TestcasesService } from './services/testcases.service';
 import { PaginationQueryProblemsDto } from './dto/problem/pagination-query-problem.dto';
 import { PaginatedResponseDto } from 'src/common/dto';
 import { CreateTestcaseDto } from './dto/testcase/create-testcase.dto';
+import { CreateTestcasesDto } from './dto/testcase/create-testcases.dto';
 import { UpdateTestcaseDto } from './dto/testcase/update-testcase.dto';
 import { HintsService } from './services/hints.service';
 import { CreateHintDto } from './dto/hint/create-hint.dto';
@@ -171,11 +172,11 @@ export class ProblemsController {
   @ApiBearerAuth('JWT-auth')
   async createTestcases(
     @CurrentUser() currentUser: IJwtPayload,
-    @Body() createTestcaseDtos: CreateTestcaseDto[],
+    @Body() createTestcasesDto: CreateTestcasesDto,
     @Param('problemId') problemId: string,
   ) {
     const createdTestcases: TestcasesEntity[] = [];
-    for (const dto of createTestcaseDtos) {
+    for (const dto of createTestcasesDto.testcases) {
       const created = await this.testcasesService.create({
         ...dto,
         problemId: problemId,

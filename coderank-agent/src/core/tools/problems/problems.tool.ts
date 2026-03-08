@@ -13,6 +13,7 @@ import {
   UpdateSolutionSchema,
   PaginationQueryProblemsSchema,
 } from './problems.schema';
+import test from 'node:test';
 
 // ─── Problem Tools ───────────────────────────────────────────────────────────
 
@@ -59,21 +60,31 @@ class GetProblemTool extends BaseTool {
 
 class CreateProblemTool extends BaseTool {
   readonly name = 'create_problem';
+
   readonly description =
-    'Create a new coding problem. You MUST provide ALL of the following fields (camelCase only):\n' +
+    'Create a new coding problem.\n\n' +
+    'You MUST provide ALL fields below (camelCase only):\n' +
     '- title (string): Problem title\n' +
-    '- description (string): Full problem statement in markdown\n' +
+    '- slug (string): URL slug generated from title (lowercase, kebab-case)\n' +
+    '- description (string): Full problem statement in html\n' +
     '- inputDescription (string): Input format description\n' +
     '- outputDescription (string): Output format description\n' +
-    '- timeLimitMs (number): Time limit in milliseconds, e.g. 1000\n' +
-    '- memoryLimitMb (number): Memory limit in MB, e.g. 256\n' +
-    '- difficulty (string): Must be exactly "easy", "medium", or "hard" (lowercase)\n' +
-    '- isPublished (boolean): true or false\n' +
-    '- points (number): Points for solving, e.g. 100\n' +
-    'Do NOT include slug (auto-generated). Do NOT use snake_case field names.';
+    '- timeLimitMs (number): Time limit in milliseconds (e.g. 1000)\n' +
+    '- memoryLimitMb (number): Memory limit in MB (e.g. 256)\n' +
+    '- difficulty (string): Must be exactly "easy", "medium", or "hard"\n' +
+    '- isPublished (boolean)\n' +
+    '- points (number)\n\n' +
+    'Slug rules:\n' +
+    '- Convert title to lowercase\n' +
+    '- Replace spaces with "-"\n' +
+    '- Remove special characters\n';
+
   readonly parameters = CreateProblemSchema;
 
-  protected async run(args: z.infer<typeof CreateProblemSchema>, client: IApiClient) {
+  protected async run(
+    args: z.infer<typeof CreateProblemSchema>,
+    client: IApiClient
+  ) {
     const response = await client.post('/problems', args);
     return response.data;
   }
@@ -161,18 +172,44 @@ class RemoveTagFromProblemTool extends BaseTool {
 
 class CreateTestcaseTool extends BaseTool {
   readonly name = 'create_testcase';
+
   readonly description =
     'Create a new testcase for a problem. ' +
     'Required fields: problemId (UUID of the problem), input (string), expectedOutput (string). ' +
     'IMPORTANT: the expected output field is named "expectedOutput", NOT "output". ' +
-    'Optional fields: isSample (boolean), compareType ("exact"|"trim_whitespace"|"tokenize").';
+    'Optional fields: isSample (boolean, defaults to false), compareType ("exact"|"trim_whitespace"|"tokenize", defaults to "exact").';
+
   readonly parameters = z.object({
     problemId: z.string().describe('The unique ID of the problem'),
-  }).merge(CreateTestcaseSchema);
+    ...CreateTestcaseSchema.shape,
+  });
 
-  protected async run(args: z.infer<typeof CreateTestcaseSchema> & { problemId: string }, client: IApiClient) {
+  protected async run(
+    args: z.infer<typeof CreateTestcaseSchema> & { problemId: string },
+    client: IApiClient
+  ) {
     const { problemId, ...body } = args;
     const response = await client.post(`/problems/${problemId}/testcase`, body);
+    return response.data;
+  }
+}
+
+class CreateTestcasesTool extends BaseTool {
+  readonly name = 'create_testcases';
+  readonly description =
+    'Create multiple testcases for a problem in a single API call. ' +
+    'The input is an array of testcases, each with the same fields as create_testcase. ' +
+    'This is more efficient than calling create_testcase multiple times. ' +
+    'Required fields for each testcase: input (string), expectedOutput (string). ' +
+    'Optional fields for each testcase: isSample (boolean, defaults to false), compareType ("exact"|"trim_whitespace"|"tokenize", defaults to "exact").';
+  readonly parameters = z.object({
+    problemId: z.string().describe('The unique ID of the problem'),
+    testcases: z.array(CreateTestcaseSchema).describe('Array of testcases to create'),
+  });
+
+  protected async run(args: { problemId: string; testcases: z.infer<typeof CreateTestcaseSchema>[] }, client: IApiClient) {
+    const { problemId, testcases } = args;
+    const response = await client.post(`/problems/${problemId}/testcases`, { testcases });
     return response.data;
   }
 }
@@ -538,6 +575,7 @@ export const problemTools: ITool[] = [
   new RemoveTagFromProblemTool(),
   // Testcases
   new CreateTestcaseTool(),
+  new CreateTestcasesTool(),
   new GetTestcasesTool(),
   new GetSampleTestcasesTool(),
   new GetTestcaseTool(),

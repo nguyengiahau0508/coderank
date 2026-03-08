@@ -79,10 +79,101 @@ export class GroqProvider implements ILLMProvider {
       return {
         text: assistantMessage.content || '',
       };
-    } catch (error) {
+    } catch (error: any) {
+      // Handle Groq's tool_use_failed error by recovering the malformed JSON
+      const failedGen = error?.error?.error?.failed_generation;
+      if (failedGen && error?.error?.error?.code === 'tool_use_failed') {
+        console.warn('[Groq Warning] Tool call JSON was malformed. Attempting to recover...');
+        const recovered = this.recoverToolCall(failedGen);
+        if (recovered) {
+          console.log(`[Groq Recovery] Recovered tool call: ${recovered.name}`);
+          // Push a synthetic assistant message with the recovered tool call into history
+          const syntheticId = `recovered_${Date.now()}`;
+          this.history.push({
+            role: 'assistant',
+            content: null,
+            tool_calls: [{
+              id: syntheticId,
+              type: 'function',
+              function: { name: recovered.name, arguments: JSON.stringify(recovered.arguments) },
+            }],
+          } as any);
+          this.lastToolCallIds = new Map();
+          this.lastToolCallIds.set(recovered.name, syntheticId);
+          return {
+            toolCalls: [{
+              id: syntheticId,
+              name: recovered.name,
+              arguments: recovered.arguments,
+            }],
+          };
+        }
+      }
       console.error('[Groq Error]', error);
       throw error;
     }
+  }
+
+  /**
+   * Attempt to recover a tool call from Groq's failed_generation string.
+   * The model sometimes produces slightly malformed JSON (e.g. trailing quotes).
+   */
+  private recoverToolCall(raw: string): { name: string; arguments: any } | null {
+    try {
+      // First try direct parse
+      const parsed = JSON.parse(raw);
+      if (parsed.name && parsed.arguments) {
+        return { name: parsed.name, arguments: parsed.arguments };
+      }
+    } catch { /* direct parse failed, try fixups */ }
+
+    try {
+      // Extract the name
+      const nameMatch = raw.match(/"name"\s*:\s*"([^"]+)"/);
+      if (!nameMatch) return null;
+      const name = nameMatch[1];
+
+      // Extract the arguments substring
+      const argStart = raw.indexOf('"arguments"');
+      if (argStart === -1) return null;
+      const colonPos = raw.indexOf(':', argStart);
+      if (colonPos === -1) return null;
+
+      let argStr = raw.substring(colonPos + 1).trim();
+      // Remove trailing }  that wraps the outer object
+      if (argStr.endsWith('}')) {
+        argStr = argStr.substring(0, argStr.lastIndexOf('}'));
+        argStr = argStr.trim();
+        // Remove another trailing } if the outer wrapper had double
+        if (argStr.endsWith('"}}') || argStr.endsWith('"]"}')) {
+          // Malformed: trailing quote after array/object close - remove it
+        }
+      }
+
+      // Try increasingly aggressive fixups
+      const fixups = [
+        argStr,
+        argStr.replace(/\]"\s*$/, ']'),     // remove stray quote after ]
+        argStr.replace(/\}"\s*$/, '}'),      // remove stray quote after }
+        argStr + '}',                         // maybe missing closing brace
+      ];
+
+      for (const attempt of fixups) {
+        try {
+          // Ensure it ends with }
+          let candidate = attempt.trim();
+          if (!candidate.endsWith('}')) {
+            candidate += '}';
+          }
+          const args = JSON.parse(candidate);
+          if (typeof args === 'object') {
+            return { name, arguments: args };
+          }
+        } catch { continue; }
+      }
+    } catch { /* recovery failed */ }
+
+    return null;
   }
 
   private formatToolsForGroq(tools: ITool[]): Groq.Chat.Completions.ChatCompletionTool[] {

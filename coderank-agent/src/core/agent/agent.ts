@@ -40,7 +40,7 @@ export class Agent {
   async processQuery(userToken: string, userMessage: string): Promise<string> {
     const apiClient = createInternalClient(userToken);
     let currentMessage: any = userMessage;
-    const MAX_ITERATIONS = 50;
+    const MAX_ITERATIONS = 10;
 
     // Log the initial user query
     console.log(`\n==================================================`);
