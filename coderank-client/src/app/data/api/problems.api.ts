@@ -92,7 +92,7 @@ export class ProblemsApi extends BaseApi {
    */
   createTestcase(problemId: string, dto: CreateTestcaseDto): Observable<ApiResponse<TestcasesModel>> {
     return this.apiService.post<ApiResponse<TestcasesModel>>(
-      this.getUrl(`/${problemId}/testcases`),
+      this.getUrl(`/${problemId}/testcase`),
       dto
     );
   }

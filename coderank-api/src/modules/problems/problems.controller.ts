@@ -148,7 +148,7 @@ export class ProblemsController {
     return this.problemsService.delete(problemId);
   }
 
-  @Post(':problemId/testcases')
+  @Post(':problemId/testcase')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
   @Owner(ProblemsEntity, 'authorId', 'problemId')
   @ApiBearerAuth('JWT-auth')
