@@ -172,7 +172,7 @@ class CreateTestcaseTool extends BaseTool {
 
   protected async run(args: z.infer<typeof CreateTestcaseSchema> & { problemId: string }, client: IApiClient) {
     const { problemId, ...body } = args;
-    const response = await client.post(`/problems/${problemId}/testcases`, body);
+    const response = await client.post(`/problems/${problemId}/testcase`, body);
     return response.data;
   }
 }

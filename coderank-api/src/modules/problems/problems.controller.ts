@@ -32,6 +32,7 @@ import { SolutionsService } from './services/solutions.service';
 import { CreateSolutionDto } from './dto/solution/create-solution.dto';
 import { UpdateSolutionDto } from './dto/solution/update-solution.dto';
 import { SolutionsEntity } from './entities/solutions.entity';
+import { TestcasesEntity } from './entities/testcases.entity';
 
 @Controller('problems')
 export class ProblemsController {
@@ -162,6 +163,27 @@ export class ProblemsController {
       problemId: problemId,
       authorId: currentUser.userId,
     });
+  }
+
+  @Post(':problemId/testcases')
+  @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
+  @Owner(ProblemsEntity, 'authorId', 'problemId')
+  @ApiBearerAuth('JWT-auth')
+  async createTestcases(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Body() createTestcaseDtos: CreateTestcaseDto[],
+    @Param('problemId') problemId: string,
+  ) {
+    const createdTestcases: TestcasesEntity[] = [];
+    for (const dto of createTestcaseDtos) {
+      const created = await this.testcasesService.create({
+        ...dto,
+        problemId: problemId,
+        authorId: currentUser.userId,
+      });
+      createdTestcases.push(created);
+    }
+    return createdTestcases;
   }
 
   @Get(':problemId/testcases')
