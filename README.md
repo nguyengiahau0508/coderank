@@ -304,6 +304,27 @@ Dự án đã được cấu hình để làm việc tối ưu với Claude Code
 - **`.env.example`** — Mẫu biến môi trường cho API và Agent
 - Cấu trúc thư mục rõ ràng, convention nhất quán giúp Claude Code navigate hiệu quả
 
+### Hướng dẫn AI xây dựng UI
+
+> **Prompt mẫu cho AI khi xây dựng giao diện:**
+>
+> Build a minimal developer tools landing page with dark mode, code snippet previews, feature comparison table, integration logos, and documentation link. Use syntax highlighting colors.
+
+**Chi tiết yêu cầu thiết kế:**
+
+- **Dark mode** — Giao diện tối làm chủ đạo, phù hợp với developer tools. Nền tối (`#0d1117`, `#161b22`), text sáng (`#c9d1d9`, `#f0f6fc`)
+- **Code snippet previews** — Hiển thị đoạn code mẫu với syntax highlighting, sử dụng Monaco Editor hoặc block code có màu sắc (keyword: `#ff7b72`, string: `#a5d6ff`, function: `#d2a8ff`, comment: `#8b949e`)
+- **Feature comparison table** — Bảng so sánh tính năng giữa các plan/tier hoặc giữa CodeRank với các nền tảng khác, sử dụng PrimeNG Table component
+- **Integration logos** — Grid hiển thị logo các công nghệ/ngôn ngữ được hỗ trợ (Python, C++, Java, JavaScript, TypeScript, Go, Rust, C)
+- **Documentation link** — CTA button/link dẫn tới tài liệu API (`/api-docs`) và hướng dẫn sử dụng
+- **Syntax highlighting colors** — Áp dụng bảng màu syntax highlighting xuyên suốt UI cho headings, badges, accents để tạo cảm giác "code editor"
+
+**Tech stack cho UI:**
+- Angular 21 standalone components
+- PrimeNG 21 (Aura dark preset)
+- Tailwind CSS 4 utility classes
+- Responsive design (mobile-first)
+
 ## License
 
 Private — All rights reserved.
