@@ -21,5 +21,18 @@ export const guestGuard: CanActivateFn = () => {
     return true;
   }
 
-  return router.createUrlTree(['/']);
+  return router.createUrlTree([getDashboardPath(authService.getPrimaryRole())]);
 };
+
+export function getDashboardPath(role: string | null): string {
+  switch (role) {
+    case 'admin':
+      return '/admin/dashboard';
+    case 'instructor':
+      return '/lecturer/dashboard';
+    case 'student':
+      return '/student/problems';
+    default:
+      return '/';
+  }
+}

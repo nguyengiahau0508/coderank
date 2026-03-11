@@ -5,7 +5,7 @@ import { NGX_MONACO_EDITOR_CONFIG } from 'ngx-monaco-editor-v2-alternative';
 
 import { routes } from './app.routes';
 import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeuix/themes/aura';
+import CodeRankPreset from './app.preset';
 import { authInterceptor, errorInterceptor, loadingInterceptor } from './core/interceptors';
 
 export const appConfig: ApplicationConfig = {
@@ -21,7 +21,10 @@ export const appConfig: ApplicationConfig = {
     ),
     providePrimeNG({
       theme: {
-        preset: Aura
+        preset: CodeRankPreset,
+        options: {
+          darkModeSelector: '.dark'
+        }
       }
     }),
     {
@@ -34,6 +37,7 @@ export const appConfig: ApplicationConfig = {
           automaticLayout: true,
           minimap: { enabled: false },
           fontSize: 14,
+          fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace",
         },
         onMonacoLoad: () => {
           console.log('Monaco Editor loaded successfully');

@@ -11,23 +11,26 @@ import { AuthService } from '../../../core/services/auth.service';
   selector: 'app-header',
   imports: [ButtonModule, AvatarModule, MenuModule, BadgeModule],
   template: `
-    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-      <div class="flex items-center justify-between h-16 px-6 mx-auto">
+    <header class="sticky top-0 z-50 backdrop-blur-md border-b" style="background: rgba(22, 27, 34, 0.85); border-color: var(--cr-border);">
+      <div class="flex items-center justify-between h-14 px-6 mx-auto">
         <!-- Left Section -->
         <div class="flex items-center gap-4">
           <button 
             pButton 
             icon="pi pi-bars" 
-            class="p-button-text p-button-rounded text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all"
+            class="p-button-text p-button-rounded transition-all"
+            style="color: var(--cr-text-muted);"
             (click)="toggleSidebar.emit()"
             aria-label="Toggle sidebar"
           ></button>
           
-          <div class="flex items-center gap-3 cursor-pointer" (click)="navigateHome()">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <i class="pi pi-code text-white text-lg"></i>
+          <div class="flex items-center gap-3 cursor-pointer group" (click)="navigateHome()">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, var(--cr-syntax-keyword), var(--cr-syntax-function));">
+              <i class="pi pi-code text-white text-sm"></i>
             </div>
-            <span class="text-xl font-semibold text-gray-900 tracking-tight hidden sm:block">CodeRank</span>
+            <span class="text-lg font-semibold tracking-tight hidden sm:block" style="color: var(--cr-text-primary);">
+              Code<span style="color: var(--cr-syntax-function);">Rank</span>
+            </span>
           </div>
         </div>
 
@@ -37,19 +40,21 @@ import { AuthService } from '../../../core/services/auth.service';
           <button 
             pButton 
             icon="pi pi-bell" 
-            class="p-button-text p-button-rounded text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all relative"
+            class="p-button-text p-button-rounded transition-all relative"
+            style="color: var(--cr-text-muted);"
             pBadge="3"
             severity="danger"
             aria-label="Notifications"
           ></button>
 
           <!-- Divider -->
-          <div class="w-px h-8 bg-gray-200 mx-2 hidden md:block"></div>
+          <div class="w-px h-6 mx-2 hidden md:block" style="background: var(--cr-border);"></div>
 
           <!-- User Menu -->
           @if (user(); as currentUser) {
             <div 
-              class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-all group"
+              class="flex items-center gap-3 px-3 py-1.5 rounded-lg cursor-pointer transition-all group"
+              style="hover: background: var(--cr-bg-elevated);"
               (click)="menu.toggle($event)"
             >
               @if (currentUser.avatar) {
@@ -57,23 +62,24 @@ import { AuthService } from '../../../core/services/auth.service';
                   [image]="currentUser.avatar" 
                   shape="circle" 
                   size="normal"
-                  styleClass="border-2 border-gray-200"
+                  styleClass="border border-[#30363d]"
                 />
               } @else {
                 <p-avatar 
                   [label]="currentUser.username.charAt(0).toUpperCase()" 
                   shape="circle" 
                   size="normal"
-                  styleClass="bg-gradient-to-br from-blue-500 to-purple-600 text-white border-2 border-gray-200"
+                  styleClass="border border-[#30363d]"
+                  style="background: linear-gradient(135deg, var(--cr-syntax-keyword), var(--cr-syntax-function)); color: white;"
                 />
               }
               
               <div class="hidden md:block">
-                <div class="text-sm font-medium text-gray-900">{{ currentUser.username }}</div>
-                <div class="text-xs text-gray-500">{{ currentUser.email }}</div>
+                <div class="text-sm font-medium" style="color: var(--cr-text-primary);">{{ currentUser.username }}</div>
+                <div class="text-xs" style="color: var(--cr-text-muted);">{{ currentUser.email }}</div>
               </div>
               
-              <i class="pi pi-angle-down text-gray-400 text-sm group-hover:text-gray-600 transition-colors hidden md:block"></i>
+              <i class="pi pi-angle-down text-sm transition-colors hidden md:block" style="color: var(--cr-text-subtle);"></i>
             </div>
           }
 
@@ -81,7 +87,7 @@ import { AuthService } from '../../../core/services/auth.service';
             #menu 
             [model]="menuItems" 
             [popup]="true"
-            styleClass="mt-2 shadow-lg border border-gray-100 rounded-xl"
+            styleClass="mt-2 rounded-lg"
           />
         </div>
       </div>
@@ -97,33 +103,37 @@ import { AuthService } from '../../../core/services/auth.service';
       }
       
       .p-menu {
-        border-radius: 0.75rem;
+        border-radius: 0.5rem;
         overflow: hidden;
         min-width: 12rem;
+        background: var(--cr-bg-elevated);
+        border: 1px solid var(--cr-border);
+        box-shadow: 0 8px 24px rgba(1, 4, 9, 0.5);
       }
       
       .p-menu .p-menuitem-link {
-        padding: 0.75rem 1rem;
+        padding: 0.625rem 1rem;
         transition: all 0.2s;
       }
       
       .p-menu .p-menuitem-link:hover {
-        background: #f3f4f6;
+        background: var(--cr-bg-tertiary);
       }
       
       .p-menu .p-menuitem-icon {
-        color: #6b7280;
+        color: var(--cr-text-muted);
         margin-right: 0.75rem;
       }
       
       .p-menu .p-menuitem-text {
-        color: #1f2937;
-        font-weight: 500;
+        color: var(--cr-text-secondary);
+        font-weight: 400;
+        font-size: 0.875rem;
       }
       
       .p-menu-separator {
         margin: 0.25rem 0;
-        border-top-color: #e5e7eb;
+        border-top-color: var(--cr-border);
       }
     }
   `],

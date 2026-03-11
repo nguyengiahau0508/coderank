@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { guestGuard, studentGuard, lecturerGuard, adminGuard, smartRedirectGuard } from './core/guards';
+import { guestGuard, studentGuard, lecturerGuard, adminGuard } from './core/guards';
 
 export const routes: Routes = [
   {
@@ -31,9 +31,8 @@ export const routes: Routes = [
   },
   {
     path: '',
-    canActivate: [smartRedirectGuard],
     pathMatch: 'full',
-    children: []
+    loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent)
   },
   {
     path: '**',

@@ -1,115 +1,170 @@
-/* Minimalist Design System */
+/* Dark Developer Tools Design System */
+/* Color Palette: GitHub Dark + Syntax Highlighting */
 
 @import "tailwindcss";
 @import "primeicons/primeicons.css";
 
-/* Custom Prose Styling for Markdown */
+/* CSS Custom Properties — Syntax Highlighting Colors */
+:root {
+  --cr-bg-primary: #0d1117;
+  --cr-bg-secondary: #161b22;
+  --cr-bg-tertiary: #1c2128;
+  --cr-bg-elevated: #21262d;
+  --cr-border: #30363d;
+  --cr-border-light: #21262d;
+  --cr-text-primary: #f0f6fc;
+  --cr-text-secondary: #c9d1d9;
+  --cr-text-muted: #8b949e;
+  --cr-text-subtle: #6e7681;
+
+  /* Syntax Highlighting */
+  --cr-syntax-keyword: #ff7b72;
+  --cr-syntax-string: #a5d6ff;
+  --cr-syntax-function: #d2a8ff;
+  --cr-syntax-comment: #8b949e;
+  --cr-syntax-variable: #ffa657;
+  --cr-syntax-type: #79c0ff;
+  --cr-syntax-number: #79c0ff;
+  --cr-syntax-operator: #ff7b72;
+  --cr-syntax-class: #ffa657;
+  --cr-syntax-constant: #79c0ff;
+
+  /* Accent */
+  --cr-accent-blue: #58a6ff;
+  --cr-accent-green: #3fb950;
+  --cr-accent-red: #f85149;
+  --cr-accent-yellow: #d29922;
+  --cr-accent-purple: #bc8cff;
+  --cr-accent-cyan: #39d2c0;
+}
+
+/* Base Dark Mode */
+html, body {
+  background-color: var(--cr-bg-primary);
+  color: var(--cr-text-secondary);
+}
+
+/* Custom Prose Styling for Markdown — Dark Mode */
 .prose-custom {
-  @apply text-gray-700 dark:text-gray-300 leading-relaxed;
+  color: var(--cr-text-secondary);
+  line-height: 1.75;
 }
 
 .prose-custom h1,
 .prose-custom h2,
 .prose-custom h3,
 .prose-custom h4 {
-  @apply font-normal text-gray-900 dark:text-white mt-8 mb-4;
+  color: var(--cr-text-primary);
+  font-weight: 400;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 
-.prose-custom h1 { @apply text-2xl; }
-.prose-custom h2 { @apply text-xl; }
-.prose-custom h3 { @apply text-lg; }
+.prose-custom h1 { font-size: 1.5rem; }
+.prose-custom h2 { font-size: 1.25rem; }
+.prose-custom h3 { font-size: 1.125rem; }
 
 .prose-custom p {
-  @apply mb-4 font-light;
+  margin-bottom: 1rem;
+  font-weight: 300;
 }
 
 .prose-custom pre {
-  @apply p-4 bg-gray-50 dark:bg-gray-900 rounded-none my-4 overflow-x-auto;
+  padding: 1rem;
+  background-color: var(--cr-bg-secondary);
+  border: 1px solid var(--cr-border);
+  border-radius: 0.375rem;
+  margin: 1rem 0;
+  overflow-x: auto;
 }
 
 .prose-custom code {
-  @apply px-2 py-1 bg-gray-100 dark:bg-gray-800 text-sm font-mono;
+  padding: 0.125rem 0.375rem;
+  background-color: var(--cr-bg-elevated);
+  border: 1px solid var(--cr-border);
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: ui-monospace, 'Cascadia Code', 'JetBrains Mono', 'Fira Code', monospace;
+  color: var(--cr-syntax-string);
 }
 
 .prose-custom ul,
 .prose-custom ol {
-  @apply ml-6 mb-4 space-y-2;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
 }
 
+.prose-custom ul { list-style-type: disc; }
+.prose-custom ol { list-style-type: decimal; }
+
 .prose-custom li {
-  @apply font-light;
+  font-weight: 300;
+  margin-bottom: 0.25rem;
 }
 
 .prose-custom a {
-  @apply text-blue-600 dark:text-blue-400 hover:underline;
+  color: var(--cr-accent-blue);
+}
+.prose-custom a:hover {
+  text-decoration: underline;
 }
 
 .prose-custom blockquote {
-  @apply border-l-4 pl-4 my-4 italic;
-  border-color: var(--p-surface-300);
-  color: var(--p-surface-600);
-}
-
-:is(.dark) .prose-custom blockquote {
-  border-color: var(--p-surface-600);
-  color: var(--p-surface-400);
+  border-left: 4px solid var(--cr-border);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: var(--cr-text-muted);
 }
 
 .prose-custom del {
-  @apply line-through;
-  color: var(--p-surface-400);
+  text-decoration: line-through;
+  color: var(--cr-text-muted);
 }
 
 .prose-custom mark {
-  @apply px-1 rounded-sm;
-  background-color: rgb(254 240 138);
-  color: var(--p-surface-900);
-}
-
-:is(.dark) .prose-custom mark {
-  background-color: rgb(133 77 14);
-  color: var(--p-surface-100);
+  padding: 0 0.25rem;
+  border-radius: 0.125rem;
+  background-color: rgba(210, 168, 255, 0.2);
+  color: var(--cr-syntax-function);
 }
 
 .prose-custom hr {
-  @apply my-6;
-  border-color: var(--p-surface-200);
-}
-
-:is(.dark) .prose-custom hr {
-  border-color: var(--p-surface-700);
+  margin: 1.5rem 0;
+  border-color: var(--cr-border);
 }
 
 .prose-custom table {
-  @apply w-full border-collapse my-4;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
 }
 
 .prose-custom th {
-  @apply px-3 py-2 text-left text-sm font-medium;
-  border: 1px solid var(--p-surface-200);
-  background-color: var(--p-surface-50);
-}
-
-:is(.dark) .prose-custom th {
-  border-color: var(--p-surface-700);
-  background-color: var(--p-surface-800);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid var(--cr-border);
+  background-color: var(--cr-bg-secondary);
+  color: var(--cr-text-primary);
 }
 
 .prose-custom td {
-  @apply px-3 py-2 text-sm;
-  border: 1px solid var(--p-surface-200);
-}
-
-:is(.dark) .prose-custom td {
-  border-color: var(--p-surface-700);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--cr-border);
 }
 
 .prose-custom img {
-  @apply max-w-full rounded-lg my-4;
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  border: 1px solid var(--cr-border);
 }
 
 .prose-custom input[type="checkbox"] {
-  @apply mr-2;
+  margin-right: 0.5rem;
 }
 
 /* Line Clamp Utility */
@@ -120,31 +175,109 @@
   overflow: hidden;
 }
 
-/* Monaco Editor Minimal Override */
+/* Monaco Editor Override */
 .monaco-editor {
-  @apply font-mono text-sm;
+  font-family: ui-monospace, 'Cascadia Code', 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.875rem;
 }
 
-/* PrimeNG Minimal Overrides */
+/* PrimeNG Dark Overrides */
 .p-paginator {
-  @apply border-0 bg-transparent;
+  border: none;
+  background: transparent;
 }
 
 .p-paginator .p-paginator-pages .p-paginator-page {
-  @apply min-w-10 h-10 text-sm font-light border-0 bg-transparent text-gray-500;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.875rem;
+  font-weight: 300;
+  border: none;
+  background: transparent;
+  color: var(--cr-text-muted);
 }
 
 .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
-  @apply bg-gray-900 dark:bg-white text-white dark:text-black;
+  background-color: var(--cr-accent-blue);
+  color: var(--cr-bg-primary);
 }
 
-/* Focus States - Minimal */
+/* Focus States */
 *:focus-visible {
-  @apply outline-none ring-1 ring-gray-300 dark:ring-gray-700;
+  outline: none;
+  box-shadow: 0 0 0 1px var(--cr-border);
 }
 
 /* Transitions */
 * {
-  @apply transition-colors duration-200;
+  transition-property: color, background-color, border-color, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
 }
+
+/* Custom Scrollbar — Dark */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--cr-bg-elevated);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cr-border);
+}
+
+/* Syntax Badge Colors */
+.badge-keyword { background-color: rgba(255, 123, 114, 0.15); color: var(--cr-syntax-keyword); }
+.badge-string { background-color: rgba(165, 214, 255, 0.15); color: var(--cr-syntax-string); }
+.badge-function { background-color: rgba(210, 168, 255, 0.15); color: var(--cr-syntax-function); }
+.badge-variable { background-color: rgba(255, 166, 87, 0.15); color: var(--cr-syntax-variable); }
+.badge-type { background-color: rgba(121, 192, 255, 0.15); color: var(--cr-syntax-type); }
+.badge-success { background-color: rgba(63, 185, 80, 0.15); color: var(--cr-accent-green); }
+.badge-error { background-color: rgba(248, 81, 73, 0.15); color: var(--cr-accent-red); }
+.badge-warning { background-color: rgba(210, 153, 34, 0.15); color: var(--cr-accent-yellow); }
+
+/* Code Block with Line Numbers */
+.code-block {
+  background: var(--cr-bg-secondary);
+  border: 1px solid var(--cr-border);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: var(--cr-bg-tertiary);
+  border-bottom: 1px solid var(--cr-border);
+  font-size: 0.75rem;
+  color: var(--cr-text-muted);
+}
+
+.code-block-body {
+  padding: 1rem;
+  font-family: ui-monospace, 'Cascadia Code', 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+/* Difficulty Tags */
+.difficulty-easy { color: var(--cr-accent-green); }
+.difficulty-medium { color: var(--cr-accent-yellow); }
+.difficulty-hard { color: var(--cr-accent-red); }
+
+/* Glow Effects */
+.glow-blue { box-shadow: 0 0 20px rgba(88, 166, 255, 0.15); }
+.glow-purple { box-shadow: 0 0 20px rgba(188, 140, 255, 0.15); }
+.glow-green { box-shadow: 0 0 20px rgba(63, 185, 80, 0.15); }
 

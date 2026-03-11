@@ -17,10 +17,10 @@ import { SidebarComponent, MenuItem } from '../shared/sidebar/sidebar.component'
   selector: 'app-base-layout',
   imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent],
   template: `
-    <div class="h-screen flex flex-col overflow-hidden bg-gray-50">
+    <div class="h-screen flex flex-col overflow-hidden" style="background-color: var(--cr-bg-primary);">
       <!-- Loading bar for route changes -->
       @if (isNavigating()) {
-        <div class="fixed top-0 left-0 right-0 z-[9999] h-1 bg-blue-600 animate-pulse shadow-lg shadow-blue-500/50"></div>
+        <div class="fixed top-0 left-0 right-0 z-[9999] h-0.5 animate-pulse" style="background: linear-gradient(90deg, var(--cr-syntax-keyword), var(--cr-syntax-function), var(--cr-accent-blue));"></div>
       }
 
       <app-header (toggleSidebar)="toggleSidebar()" />
@@ -29,7 +29,8 @@ import { SidebarComponent, MenuItem } from '../shared/sidebar/sidebar.component'
         <!-- Mobile overlay when sidebar is open -->
         @if (!sidebarCollapsed() && isMobile()) {
           <div 
-            class="fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm transition-opacity duration-300"
+            class="fixed inset-0 z-30 lg:hidden backdrop-blur-sm transition-opacity duration-300"
+            style="background: rgba(1, 4, 9, 0.7);"
             (click)="closeSidebar()"
           ></div>
         }
@@ -46,9 +47,8 @@ import { SidebarComponent, MenuItem } from '../shared/sidebar/sidebar.component'
           class="flex-1 overflow-y-auto transition-all duration-300 ease-in-out"
           [class.lg:ml-0]="sidebarCollapsed()"
         >
-          <div class="min-h-full bg-gradient-to-br from-gray-50 via-white to-gray-50">
+          <div class="min-h-full" style="background-color: var(--cr-bg-primary);">
             <div class="container mx-auto px-4 sm:px-6 py-4 sm:py-5">
-              <!-- Page content with fade transition -->
               <div class="animate-fade-in">
                 <router-outlet />
               </div>
@@ -75,7 +75,7 @@ import { SidebarComponent, MenuItem } from '../shared/sidebar/sidebar.component'
       left: 0;
       right: 0;
       height: 200px;
-      background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);
+      background: linear-gradient(180deg, rgba(88, 166, 255, 0.03) 0%, transparent 100%);
       pointer-events: none;
       z-index: 0;
     }
@@ -90,12 +90,12 @@ import { SidebarComponent, MenuItem } from '../shared/sidebar/sidebar.component'
     }
 
     main::-webkit-scrollbar-thumb {
-      background: #d1d5db;
+      background: var(--cr-bg-elevated);
       border-radius: 4px;
     }
 
     main::-webkit-scrollbar-thumb:hover {
-      background: #9ca3af;
+      background: var(--cr-border);
     }
 
     /* Fade in animation for page transitions */

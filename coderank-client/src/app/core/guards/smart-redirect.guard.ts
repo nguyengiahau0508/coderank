@@ -7,7 +7,7 @@ export const smartRedirectGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   if (!authService.isAuthenticated()) {
-    return router.createUrlTree(['/login']);
+    return true;
   }
 
   const primaryRole = authService.getPrimaryRole();

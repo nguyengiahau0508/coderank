@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../../core/services';
+import { getDashboardPath } from '../../../../core/guards/auth.guard';
 
 @Component({
   selector: 'app-callback',
@@ -56,7 +57,7 @@ export class CallbackComponent implements OnInit {
 
       this.message = 'Đăng nhập thành công!';
       setTimeout(() => {
-        const returnUrl = queryParams['returnUrl'] || '/';
+        const returnUrl = queryParams['returnUrl'] || getDashboardPath(this.authService.getPrimaryRole());
         this.router.navigate([returnUrl]);
       }, 1000);
     } catch (error) {

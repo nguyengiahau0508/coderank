@@ -14,7 +14,8 @@ export interface MenuItem {
   imports: [RouterModule],
   template: `
     <aside 
-      class="flex flex-col bg-white border-r border-gray-100 transition-all duration-300 ease-in-out h-full"
+      class="flex flex-col transition-all duration-300 ease-in-out h-full"
+      style="background-color: var(--cr-bg-secondary); border-right: 1px solid var(--cr-border);"
       [class.w-64]="!collapsed()"
       [class.w-20]="collapsed()"
     >
@@ -35,7 +36,9 @@ export interface MenuItem {
                 
                 @if (item.badge) {
                   <span 
-                    [class]="'nav-badge ' + (item.badgeClass || 'bg-blue-500 text-white')"
+                    class="nav-badge"
+                    [style.background-color]="'rgba(248, 81, 73, 0.15)'"
+                    [style.color]="'var(--cr-accent-red)'"
                   >
                     {{ item.badge }}
                   </span>
@@ -49,15 +52,15 @@ export interface MenuItem {
       </nav>
 
       <!-- Footer -->
-      <div class="border-t border-gray-100 p-4">
+      <div class="p-4" style="border-top: 1px solid var(--cr-border);">
         @if (!collapsed()) {
           <div class="text-center">
-            <p class="text-xs text-gray-400 font-medium">CodeRank</p>
-            <p class="text-xs text-gray-400 mt-1">© 2026</p>
+            <p class="text-xs font-medium" style="color: var(--cr-text-subtle);">CodeRank</p>
+            <p class="text-xs mt-1" style="color: var(--cr-text-subtle);">© 2026</p>
           </div>
         } @else {
           <div class="flex justify-center">
-            <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+            <div class="w-2 h-2 rounded-full" style="background: var(--cr-border);"></div>
           </div>
         }
       </div>
@@ -73,16 +76,16 @@ export interface MenuItem {
       display: flex;
       align-items: center;
       position: relative;
-      padding: 0.625rem 0.75rem;
-      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.375rem;
       cursor: pointer;
-      color: rgb(75 85 99);
+      color: var(--cr-text-muted);
       transition: all 0.2s;
     }
 
     .nav-link:hover {
-      color: rgb(17 24 39);
-      background-color: rgb(249 250 251);
+      color: var(--cr-text-primary);
+      background-color: var(--cr-bg-tertiary);
     }
 
     .nav-link-content {
@@ -93,26 +96,26 @@ export interface MenuItem {
     }
 
     .nav-icon {
-      font-size: 1.125rem;
+      font-size: 1rem;
       flex-shrink: 0;
       transition: transform 0.2s;
     }
 
     .nav-link:hover .nav-icon {
-      transform: scale(1.1);
+      transform: scale(1.05);
     }
 
     .nav-label {
       font-size: 0.875rem;
-      font-weight: 500;
+      font-weight: 400;
       flex: 1;
       white-space: nowrap;
     }
 
     .nav-badge {
       padding: 0.125rem 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
+      font-size: 0.6875rem;
+      font-weight: 500;
       border-radius: 9999px;
       flex-shrink: 0;
     }
@@ -123,7 +126,7 @@ export interface MenuItem {
       right: 0.5rem;
       width: 0.5rem;
       height: 0.5rem;
-      background-color: rgb(239 68 68);
+      background-color: var(--cr-accent-red);
       border-radius: 9999px;
       animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
@@ -138,13 +141,12 @@ export interface MenuItem {
     }
 
     .active-link {
-      background: linear-gradient(to right, rgb(239 246 255), rgb(250 245 255));
-      color: rgb(37 99 235);
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      background: rgba(88, 166, 255, 0.1);
+      color: var(--cr-accent-blue);
     }
 
     .active-link .nav-icon {
-      color: rgb(37 99 235);
+      color: var(--cr-accent-blue);
     }
 
     .active-link::before {
@@ -153,15 +155,15 @@ export interface MenuItem {
       left: 0;
       top: 50%;
       transform: translateY(-50%);
-      width: 0.25rem;
-      height: 2rem;
-      background: linear-gradient(to bottom, rgb(59 130 246), rgb(147 51 234));
+      width: 0.1875rem;
+      height: 1.5rem;
+      background: linear-gradient(to bottom, var(--cr-accent-blue), var(--cr-syntax-function));
       border-radius: 0 9999px 9999px 0;
     }
 
     /* Smooth scrollbar */
     nav::-webkit-scrollbar {
-      width: 6px;
+      width: 4px;
     }
 
     nav::-webkit-scrollbar-track {
@@ -169,12 +171,12 @@ export interface MenuItem {
     }
 
     nav::-webkit-scrollbar-thumb {
-      background: rgb(229 231 235);
-      border-radius: 3px;
+      background: var(--cr-bg-elevated);
+      border-radius: 2px;
     }
 
     nav::-webkit-scrollbar-thumb:hover {
-      background: rgb(209 213 219);
+      background: var(--cr-border);
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
