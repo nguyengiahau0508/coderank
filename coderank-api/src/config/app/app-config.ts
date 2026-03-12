@@ -7,6 +7,7 @@ export default registerAs('appConfig', () => ({
 	host: process.env.APP_HOST,
 	port: process.env.APP_PORT,
 	url: process.env.APP_URL,
-	client_student_url: process.env.CLIENT_URL
+	client_url: process.env.CLIENT_URL,
+	agent_url: process.env.AGENT_URL
 }))
 

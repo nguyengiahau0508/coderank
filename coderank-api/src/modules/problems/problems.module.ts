@@ -17,6 +17,7 @@ import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { SubmissionCompletedListener } from './listeners/submission-completed.listener';
 import { SolutionsService } from './services/solutions.service';
+import { SubmissionGateway } from './gateways/submission.gateway';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -36,7 +37,7 @@ import { SolutionsService } from './services/solutions.service';
     }),
   ],
   controllers: [ProblemsController],
-  providers: [ProblemsService, TestcasesService, TagsService, HintsService, SubmissionsService, SubmissionCompletedListener, SolutionsService],
+  providers: [ProblemsService, TestcasesService, TagsService, HintsService, SubmissionsService, SubmissionCompletedListener, SolutionsService, SubmissionGateway],
   exports: [],
 })
 export class ProblemsModule { }

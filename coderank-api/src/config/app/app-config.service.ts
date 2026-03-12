@@ -25,7 +25,11 @@ export class AppConfigService {
 		return this.configurationService.get<string>('appConfig.url', 'http://localhost:3000')
 	}
 
-	get student_url(): string  {
+	get client_url(): string  {
 		return this.configurationService.get<string>('appConfig.client_url', 'http://localhost:4200')
+	}
+
+	get agent_url(): string  {
+		return this.configurationService.get<string>('appConfig.agent_url', 'http://localhost:4000')
 	}
 }

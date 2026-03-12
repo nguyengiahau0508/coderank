@@ -12,11 +12,15 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerConfig, swaggerCustomOptions } from './config/swagger';
 import { GlobalExceptionFilter } from './common/filters';
 import { TransformInterceptor } from './common/interceptors';
+import { SocketIoAdapter } from './common/adapters/socket-io.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['debug', 'fatal', 'error', 'warn', 'verbose', 'log'],
   });
+
+  const appConfig: AppConfigService = app.get(AppConfigService);
+  const mariadbConfig: MariadbConfigService = app.get(MariadbConfigService);
 
   const reflector = app.get(Reflector);
 
@@ -29,11 +33,13 @@ async function bootstrap() {
   app.use(helmet());
   app.enableCors({
     origin: [
-      'http://localhost:4200',
-      'http://localhost:4000',
+      appConfig.client_url,
+      appConfig.agent_url,
     ],
     credentials: true
   });
+
+  app.useWebSocketAdapter(new SocketIoAdapter(app));
 
 
   app.setGlobalPrefix('api');
@@ -48,8 +54,7 @@ async function bootstrap() {
     },
   }));
 
-  const appConfig: AppConfigService = app.get(AppConfigService);
-  const mariadbConfig: MariadbConfigService = app.get(MariadbConfigService);
+
 
   // Setup Swagger Documentation
   const document = SwaggerModule.createDocument(app, swaggerConfig, {
