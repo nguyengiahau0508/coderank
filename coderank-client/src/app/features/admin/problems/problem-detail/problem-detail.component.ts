@@ -2,6 +2,7 @@ import {
   Component,
   ChangeDetectionStrategy,
   OnInit,
+  OnDestroy,
   signal,
   inject,
   computed,
@@ -34,6 +35,11 @@ import { HintsModel } from '../../../../data/models/hints.model';
 import { SubmissionsModel } from '../../../../data/models/submissions.model';
 import { SolutionsModel } from '../../../../data/models/solutions.model';
 import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../data/enums/enums';
+import { Subscription } from 'rxjs';
+import {
+  SubmissionCompletedSocketPayload,
+  SubmissionSocket,
+} from '../../../../data/socket/submission.socket';
 
 export interface CustomTestcase {
   id: number;
@@ -57,7 +63,7 @@ export interface CustomTestcase {
   templateUrl: './problem-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminProblemDetailComponent implements OnInit {
+export class AdminProblemDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly problemsService = inject(ProblemsService);
@@ -67,6 +73,8 @@ export class AdminProblemDetailComponent implements OnInit {
   private readonly solutionsService = inject(SolutionsService);
   private readonly runnerApi = inject(RunnerApi);
   private readonly messageService = inject(MessageService);
+  private readonly submissionSocketApi = inject(SubmissionSocket);
+  private submissionCompletedSubscription?: Subscription;
 
   // State
   readonly problem = signal<ProblemsModel | null>(null);
@@ -132,6 +140,8 @@ export class AdminProblemDetailComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    this.setupSubmissionSocket();
+
     const problemId = this.route.snapshot.paramMap.get('id');
     if (problemId) {
       this.loadProblem(problemId);
@@ -140,6 +150,53 @@ export class AdminProblemDetailComponent implements OnInit {
       this.loadSubmissionHistory(problemId);
       this.loadSolutions(problemId);
       this.loadMySolutions(problemId);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.disconnectSubmissionSocket();
+  }
+
+  private setupSubmissionSocket(): void {
+    this.submissionSocketApi.connect();
+    this.submissionCompletedSubscription = this.submissionSocketApi
+      .onSubmissionCompleted()
+      .subscribe((payload) => this.handleSubmissionCompleted(payload));
+  }
+
+  private disconnectSubmissionSocket(): void {
+    this.submissionCompletedSubscription?.unsubscribe();
+    this.submissionCompletedSubscription = undefined;
+    this.submissionSocketApi.disconnect();
+  }
+
+  private handleSubmissionCompleted(payload: SubmissionCompletedSocketPayload): void {
+    const current = this.currentSubmission();
+    if (!current || current.id.toString() !== String(payload?.submissionId)) return;
+
+    const updatedSubmission: SubmissionsModel = {
+      ...current,
+      status: payload.status,
+      score: payload.score,
+      passedTestcases: payload.passedTestcases,
+      totalTestcases: payload.totalTestcases,
+      executionTimeMs: payload.executionTimeMs,
+      memoryUsageMb: payload.memoryUsedMb,
+      errorMessage: payload.errorMessage ?? null,
+      output: payload.output ?? null,
+    };
+
+    this.currentSubmission.set(updatedSubmission);
+    this.submissionsService.setCurrentSubmission(updatedSubmission);
+
+    const selected = this.selectedSubmission();
+    if (selected && selected.id.toString() === String(payload.submissionId)) {
+      this.selectedSubmission.set(updatedSubmission);
+    }
+
+    const problemId = this.problem()?.id?.toString();
+    if (problemId) {
+      this.loadSubmissionHistory(problemId);
     }
   }
 
@@ -451,8 +508,7 @@ export class AdminProblemDetailComponent implements OnInit {
    * Poll submission result (simplified - in production use WebSocket)
    */
   private pollSubmissionResult(submissionId: string): void {
-    // TODO: Implement polling or WebSocket for real-time updates
-    // For now, we'll just show the initial result
+    // Results are pushed by websocket via submission:completed event.
   }
 
   /**
