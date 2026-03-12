@@ -6,11 +6,13 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Button } from 'primeng/button';
+import { Tooltip } from 'primeng/tooltip';
 import { SolutionsModel } from '../../../../../data/models/solutions.model';
 
 @Component({
   selector: 'app-admin-solution-list',
-  imports: [CommonModule],
+  imports: [CommonModule, Button, Tooltip],
   templateUrl: './solution-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },

@@ -5,7 +5,6 @@ import { FormsModule } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
-import { Tag } from 'primeng/tag';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { ProgressSpinner } from 'primeng/progressspinner';
@@ -30,7 +29,6 @@ export interface DuplicateCourseEvent {
     Dialog,
     Button,
     InputText,
-    Tag,
     IconField,
     InputIcon,
     ProgressSpinner,
@@ -49,7 +47,7 @@ export interface DuplicateCourseEvent {
       <!-- Step 1: Select source course -->
       @if (step() === 'select') {
         <div class="space-y-4 pt-2">
-          <p class="text-sm text-surface-500 dark:text-surface-400">
+          <p class="text-sm" style="color: var(--cr-text-muted);">
             Chọn một khóa học của bạn để nhân bản. Tất cả nội dung (chương, bài học, bài tập, bài kiểm tra, ...) sẽ được sao chép.
             Sinh viên và bài làm sẽ <strong>không</strong> được sao chép.
           </p>
@@ -73,7 +71,7 @@ export interface DuplicateCourseEvent {
               <p-progressSpinner [style]="{ width: '40px', height: '40px' }" strokeWidth="4" />
             </div>
           } @else if (myCourses().length === 0) {
-            <div class="flex flex-col items-center justify-center py-8 text-surface-400">
+            <div class="flex flex-col items-center justify-center py-8" style="color: var(--cr-text-subtle);">
               <i class="pi pi-inbox text-3xl mb-2"></i>
               <p class="text-sm">Không tìm thấy khóa học nào</p>
             </div>
@@ -82,22 +80,32 @@ export interface DuplicateCourseEvent {
             <div class="space-y-2 max-h-96 overflow-y-auto">
               @for (course of myCourses(); track course.id) {
                 <div
-                  class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all"
-                  [class]="selectedCourse()?.id === course.id
-                    ? 'border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary'
-                    : 'border-surface-200 dark:border-surface-700 hover:border-surface-300 dark:hover:border-surface-600 hover:bg-surface-50 dark:hover:bg-surface-800'"
+                  class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all"
+                  [style]="selectedCourse()?.id === course.id
+                    ? 'background: rgba(88, 166, 255, 0.08); border: 1px solid var(--cr-accent-blue); box-shadow: 0 0 0 1px var(--cr-accent-blue);'
+                    : 'background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);'"
                   (click)="selectCourse(course)"
                 >
                   <!-- Color indicator -->
-                  <div [class]="'w-1 h-10 rounded-full shrink-0 ' + (course.level === 'beginner' ? 'bg-green-500' : course.level === 'intermediate' ? 'bg-blue-500' : 'bg-orange-500')"></div>
+                  <div
+                    class="w-1 h-10 rounded-full shrink-0"
+                    [style.background]="course.level === 'beginner' ? 'var(--cr-accent-green)' : course.level === 'intermediate' ? 'var(--cr-accent-blue)' : 'var(--cr-syntax-variable)'"
+                  ></div>
 
                   <!-- Course info -->
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
-                      <h4 class="text-sm font-semibold text-surface-900 dark:text-surface-0 truncate">{{ course.title }}</h4>
-                      <p-tag [value]="getLevelLabel(course.level)" [severity]="getLevelSeverity(course.level)" [rounded]="true" />
+                      <h4 class="text-sm font-semibold truncate" style="color: var(--cr-text-primary);">{{ course.title }}</h4>
+                      <span
+                        class="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                        [style]="course.level === 'beginner'
+                          ? 'background: rgba(63, 185, 80, 0.12); color: var(--cr-accent-green);'
+                          : course.level === 'intermediate'
+                            ? 'background: rgba(88, 166, 255, 0.12); color: var(--cr-accent-blue);'
+                            : 'background: rgba(255, 166, 87, 0.12); color: var(--cr-syntax-variable);'"
+                      >{{ getLevelLabel(course.level) }}</span>
                     </div>
-                    <div class="flex items-center gap-3 text-xs text-surface-400 mt-0.5">
+                    <div class="flex items-center gap-3 text-xs mt-0.5" style="color: var(--cr-text-subtle);">
                       <span><i class="pi pi-users mr-1"></i>{{ course.enrollmentCount }} SV</span>
                       <span><i class="pi pi-book mr-1"></i>{{ getStatusLabel(course.status) }}</span>
                       @if (course.category) {
@@ -108,7 +116,7 @@ export interface DuplicateCourseEvent {
 
                   <!-- Selected indicator -->
                   @if (selectedCourse()?.id === course.id) {
-                    <i class="pi pi-check-circle text-primary text-lg shrink-0"></i>
+                    <i class="pi pi-check-circle text-lg shrink-0" style="color: var(--cr-accent-blue);"></i>
                   }
                 </div>
               }
@@ -138,26 +146,33 @@ export interface DuplicateCourseEvent {
       @if (step() === 'confirm') {
         <div class="space-y-5 pt-2">
           <!-- Source course info -->
-          <div class="rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800/50 p-4">
-            <p class="text-xs text-surface-400 mb-1">Nhân bản từ</p>
+          <div class="rounded-lg p-4" style="background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border);">
+            <p class="text-xs mb-1" style="color: var(--cr-text-subtle);">Nhân bản từ</p>
             <div class="flex items-center gap-2">
-              <h4 class="text-sm font-semibold text-surface-900 dark:text-surface-0">{{ selectedCourse()!.title }}</h4>
-              <p-tag [value]="getLevelLabel(selectedCourse()!.level)" [severity]="getLevelSeverity(selectedCourse()!.level)" [rounded]="true" />
+              <h4 class="text-sm font-semibold" style="color: var(--cr-text-primary);">{{ selectedCourse()!.title }}</h4>
+              <span
+                class="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                [style]="selectedCourse()!.level === 'beginner'
+                  ? 'background: rgba(63, 185, 80, 0.12); color: var(--cr-accent-green);'
+                  : selectedCourse()!.level === 'intermediate'
+                    ? 'background: rgba(88, 166, 255, 0.12); color: var(--cr-accent-blue);'
+                    : 'background: rgba(255, 166, 87, 0.12); color: var(--cr-syntax-variable);'"
+              >{{ getLevelLabel(selectedCourse()!.level) }}</span>
             </div>
             @if (selectedCourse()!.summary) {
-              <div class="text-xs text-surface-500 mt-1 line-clamp-2 ql-editor p-0" [innerHTML]="selectedCourse()!.summary"></div>
+              <div class="text-xs mt-1 line-clamp-2 ql-editor p-0" style="color: var(--cr-text-muted);" [innerHTML]="selectedCourse()!.summary"></div>
             }
           </div>
 
-          <div class="flex items-center gap-2 text-xs text-surface-500">
+          <div class="flex items-center gap-2 text-xs" style="color: var(--cr-text-muted);">
             <i class="pi pi-info-circle"></i>
             <span>Nội dung sẽ được sao chép: chương, bài học, bài tập, bài kiểm tra, câu hỏi. Sinh viên và bài làm sẽ không được sao chép.</span>
           </div>
 
           <!-- New course title -->
-          <div>
-            <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">
-              Tiêu đề khóa học mới <span class="text-red-500">*</span>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium" style="color: var(--cr-text-muted);">
+              Tiêu đề khóa học mới <span style="color: var(--cr-accent-red);">*</span>
             </label>
             <input
               pInputText
@@ -169,9 +184,9 @@ export interface DuplicateCourseEvent {
           </div>
 
           <!-- New slug -->
-          <div>
-            <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">
-              Slug <span class="text-red-500">*</span>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium" style="color: var(--cr-text-muted);">
+              Slug <span style="color: var(--cr-accent-red);">*</span>
             </label>
             <input
               pInputText

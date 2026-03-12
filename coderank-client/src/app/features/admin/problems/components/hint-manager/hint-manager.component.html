@@ -1,336 +1,277 @@
-<p-toast position="top-right" />
-
-<div class="space-y-4">
-  <!-- Header + Actions -->
-  <div class="flex items-center justify-between flex-wrap gap-3">
-    <div class="flex items-center gap-3">
-      <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Gợi ý</h3>
-      @if (hints().length > 0) {
-        <div class="flex items-center gap-2 text-xs text-surface-400">
-          <span>{{ hints().length }} tổng</span>
-          <span class="text-surface-300">|</span>
-          <span class="text-green-500">{{ publicCount() }} công khai</span>
-          <span class="text-surface-300">|</span>
-          <span class="text-orange-500">{{ hiddenCount() }} ẩn</span>
-        </div>
-      }
+<!-- Hint Manager -->
+<div class="h-full flex flex-col">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-4">
+      <h2 class="text-lg font-bold" style="color: var(--cr-text-primary);">
+        <i class="pi pi-lightbulb mr-2" style="color: var(--cr-syntax-variable);"></i>
+        G&#7907;i &#253;
+      </h2>
+      <div class="flex items-center gap-2 text-xs">
+        <span class="px-2 py-0.5 rounded-full" style="background: rgba(63, 185, 80, 0.12); color: var(--cr-accent-green);">
+          {{ publicCount() }} c&#244;ng khai
+        </span>
+        <span class="px-2 py-0.5 rounded-full" style="background: rgba(210, 169, 34, 0.12); color: var(--cr-accent-yellow);">
+          {{ hiddenCount() }} &#7849;n
+        </span>
+      </div>
     </div>
 
     <div class="flex items-center gap-2">
-      <!-- Bulk delete -->
-      @if (selectedHints().length > 0) {
-        <p-button
-          [label]="'Xóa (' + selectedHints().length + ')'"
-          icon="pi pi-trash"
-          severity="danger"
-          size="small"
-          [outlined]="true"
-          (onClick)="confirmBulkDelete()"
-          [loading]="isSubmitting()"
-        />
-      }
-
       <!-- Import -->
-      <p-button
-        icon="pi pi-upload"
-        severity="secondary"
-        size="small"
-        [outlined]="true"
-        pTooltip="Import từ JSON"
-        tooltipPosition="top"
-        (onClick)="fileInput.click()"
-        [disabled]="loading() || isSubmitting()"
-      />
-      <input
-        #fileInput
-        type="file"
-        accept=".json"
-        class="hidden"
-        (change)="onImportFile($event)"
-        aria-label="Import gợi ý từ file JSON"
-      />
+      <label class="cursor-pointer">
+        <input type="file" accept=".json" (change)="onImportFile($event)" class="hidden" />
+        <span
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+          style="background: var(--cr-bg-elevated); color: var(--cr-text-secondary); border: 1px solid var(--cr-border);"
+        >
+          <i class="pi pi-upload text-[10px]"></i> Import
+        </span>
+      </label>
 
       <!-- Export -->
-      @if (hints().length > 0) {
+      <p-button
+        label="Export"
+        icon="pi pi-download"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        (onClick)="exportHints()"
+        [disabled]="hints().length === 0"
+      />
+
+      <!-- Bulk Delete -->
+      @if (selectedHints().length > 0) {
         <p-button
-          icon="pi pi-download"
-          severity="secondary"
-          size="small"
+          [label]="'X&#243;a (' + selectedHints().length + ')'"
+          icon="pi pi-trash"
+          severity="danger"
           [outlined]="true"
-          pTooltip="Export JSON"
-          tooltipPosition="top"
-          (onClick)="exportHints()"
-          [disabled]="loading()"
+          size="small"
+          (onClick)="confirmBulkDelete()"
         />
       }
 
       <!-- Add -->
       <p-button
-        label="Thêm"
+        label="Th&#234;m g&#7907;i &#253;"
         icon="pi pi-plus"
         size="small"
         (onClick)="openCreateDialog()"
-        [disabled]="loading()"
       />
     </div>
   </div>
 
-  <!-- Empty State -->
-  @if (!loading() && hints().length === 0) {
-    <div class="text-center py-8 rounded-xl border-2 border-dashed border-surface-200 dark:border-surface-700">
-      <div class="flex items-center justify-center w-14 h-14 rounded-full bg-surface-100 dark:bg-surface-700 mx-auto mb-3">
-        <i class="pi pi-lightbulb text-2xl text-surface-400"></i>
-      </div>
-      <p class="text-sm font-medium text-surface-600 dark:text-surface-300">Chưa có gợi ý nào</p>
-      <p class="text-xs text-surface-400 mt-1 mb-3">Thêm gợi ý để hỗ trợ sinh viên giải bài</p>
-      <div class="flex items-center justify-center gap-2">
-        <p-button
-          label="Thêm gợi ý"
-          icon="pi pi-plus"
-          size="small"
-          (onClick)="openCreateDialog()"
-        />
-        <p-button
-          label="Import JSON"
-          icon="pi pi-upload"
-          severity="secondary"
-          size="small"
-          [outlined]="true"
-          (onClick)="fileInput.click()"
-        />
-      </div>
-    </div>
-  }
-
-  <!-- Loading skeleton -->
+  <!-- Loading -->
   @if (loading()) {
-    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
-      @for (i of [1, 2, 3]; track i) {
-        <div class="px-4 py-3.5 border-b border-surface-100 dark:border-surface-800">
-          <div class="flex items-center gap-4">
-            <div class="w-5 h-5 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
-            <div class="w-8 h-4 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
-            <div class="flex-1 h-4 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
-            <div class="w-16 h-5 bg-surface-50 dark:bg-surface-800 rounded-full animate-pulse"></div>
+    <div class="flex flex-col items-center py-16">
+      <div class="animate-spin h-8 w-8 border-2 rounded-full mb-3" style="border-color: var(--cr-bg-elevated); border-top-color: var(--cr-accent-blue);"></div>
+      <p class="text-sm" style="color: var(--cr-text-subtle);">&#272;ang t&#7843;i g&#7907;i &#253;...</p>
+    </div>
+  } @else if (hints().length === 0) {
+    <!-- Empty State -->
+    <div class="flex flex-col items-center py-16 rounded-xl" style="background: var(--cr-bg-secondary); border: 1px dashed var(--cr-border);">
+      <i class="pi pi-lightbulb text-4xl mb-3" style="color: var(--cr-text-subtle);"></i>
+      <h3 class="text-sm font-semibold mb-1" style="color: var(--cr-text-primary);">Ch&#432;a c&#243; g&#7907;i &#253; n&#224;o</h3>
+      <p class="text-xs mb-4" style="color: var(--cr-text-subtle);">Th&#234;m g&#7907;i &#253; &#273;&#7875; h&#432;&#7899;ng d&#7851;n sinh vi&#234;n gi&#7843;i b&#224;i</p>
+      <p-button label="Th&#234;m g&#7907;i &#253; &#273;&#7847;u ti&#234;n" icon="pi pi-plus" size="small" (onClick)="openCreateDialog()" />
+    </div>
+  } @else {
+    <!-- Hint Cards -->
+    <div class="space-y-2">
+      @for (hint of hints(); track hint.id; let i = $index) {
+        <div
+          class="group flex items-start gap-3 p-3 rounded-xl transition-colors"
+          style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);"
+        >
+          <!-- Checkbox -->
+          <div class="pt-0.5">
+            <p-checkbox [binary]="true" [ngModel]="isSelected(hint)" (ngModelChange)="toggleSelect(hint)" />
+          </div>
+
+          <!-- Order Badge -->
+          <div
+            class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold"
+            style="background: var(--cr-bg-elevated); color: var(--cr-syntax-function);"
+          >
+            {{ hint.hintOrder }}
+          </div>
+
+          <!-- Content -->
+          <div class="flex-1 min-w-0">
+            <p
+              class="text-sm cursor-pointer"
+              style="color: var(--cr-text-secondary);"
+              (click)="openPreview(hint)"
+              pTooltip="Click &#273;&#7875; xem chi ti&#7871;t"
+              tooltipPosition="top"
+            >
+              {{ truncateText(hint.content) }}
+            </p>
+          </div>
+
+          <!-- Tags & Actions -->
+          <div class="flex items-center gap-2 flex-shrink-0">
+            @if (hint.isPublic) {
+              <span
+                class="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                style="background: rgba(63, 185, 80, 0.12); color: var(--cr-accent-green);"
+              >C&#244;ng khai</span>
+            } @else {
+              <span
+                class="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                style="background: rgba(210, 169, 34, 0.12); color: var(--cr-accent-yellow);"
+              >&#7848;n</span>
+            }
+
+            <button
+              class="p-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+              style="color: var(--cr-text-muted);"
+              (click)="openEditDialog(hint)"
+              pTooltip="S&#7917;a"
+              tooltipPosition="top"
+            >
+              <i class="pi pi-pencil text-xs"></i>
+            </button>
+            <button
+              class="p-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+              style="color: var(--cr-accent-red);"
+              (click)="confirmDelete(hint)"
+              pTooltip="X&#243;a"
+              tooltipPosition="top"
+            >
+              <i class="pi pi-trash text-xs"></i>
+            </button>
           </div>
         </div>
       }
     </div>
-  }
 
-  <!-- Table -->
-  @if (!loading() && hints().length > 0) {
-    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
-      <table class="w-full text-sm" aria-label="Bảng gợi ý">
-        <thead>
-          <tr class="border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900">
-            <th class="px-3 py-2.5 w-10">
-              <input
-                type="checkbox"
-                [checked]="isAllSelected()"
-                (change)="toggleSelectAll()"
-                class="rounded border-surface-300 dark:border-surface-600 cursor-pointer"
-                aria-label="Chọn tất cả gợi ý"
-              />
-            </th>
-            <th class="px-3 py-2.5 text-left text-xs font-medium text-surface-500 w-16">Thứ tự</th>
-            <th class="px-3 py-2.5 text-left text-xs font-medium text-surface-500">Nội dung</th>
-            <th class="px-3 py-2.5 text-center text-xs font-medium text-surface-500 w-20">Trạng thái</th>
-            <th class="px-3 py-2.5 w-24"><span class="sr-only">Hành động</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (hint of hints(); track hint.id) {
-            <tr
-              class="border-b border-surface-100 dark:border-surface-800 last:border-b-0 transition-colors"
-              [class.bg-primary-50]="isSelected(hint)"
-              [class.dark:bg-primary-950]="isSelected(hint)"
-              [class.hover:bg-surface-50]="!isSelected(hint)"
-              [class.dark:hover:bg-surface-900]="!isSelected(hint)"
-            >
-              <!-- Checkbox -->
-              <td class="px-3 py-2.5">
-                <input
-                  type="checkbox"
-                  [checked]="isSelected(hint)"
-                  (change)="toggleSelect(hint)"
-                  class="rounded border-surface-300 dark:border-surface-600 cursor-pointer"
-                  [attr.aria-label]="'Chọn gợi ý #' + hint.hintOrder"
-                />
-              </td>
-
-              <!-- Order -->
-              <td class="px-3 py-2.5">
-                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-surface-100 dark:bg-surface-700 text-xs font-semibold text-surface-600 dark:text-surface-300">
-                  {{ hint.hintOrder }}
-                </span>
-              </td>
-
-              <!-- Content (clickable preview) -->
-              <td class="px-3 py-2.5">
-                <button
-                  type="button"
-                  class="text-left w-full group/hint"
-                  (click)="openPreview(hint)"
-                >
-                  <p class="text-xs text-surface-600 dark:text-surface-400 group-hover/hint:text-surface-900 dark:group-hover/hint:text-surface-200 transition-colors line-clamp-2">
-                    {{ truncateText(hint.content, 120) }}
-                  </p>
-                </button>
-              </td>
-
-              <!-- Public/Hidden -->
-              <td class="px-3 py-2.5 text-center">
-                @if (hint.isPublic) {
-                  <p-tag value="Công khai" severity="success" styleClass="text-[10px]" />
-                } @else {
-                  <p-tag value="Ẩn" severity="warn" styleClass="text-[10px]" />
-                }
-              </td>
-
-              <!-- Actions -->
-              <td class="px-3 py-2.5">
-                <div class="flex gap-0.5 justify-end">
-                  <p-button
-                    icon="pi pi-copy"
-                    [text]="true"
-                    [rounded]="true"
-                    size="small"
-                    severity="secondary"
-                    pTooltip="Sao chép"
-                    tooltipPosition="top"
-                    (onClick)="copyToClipboard(hint.content)"
-                  />
-                  <p-button
-                    icon="pi pi-pencil"
-                    [text]="true"
-                    [rounded]="true"
-                    size="small"
-                    severity="secondary"
-                    pTooltip="Chỉnh sửa"
-                    tooltipPosition="top"
-                    (onClick)="openEditDialog(hint)"
-                  />
-                  <p-button
-                    icon="pi pi-trash"
-                    [text]="true"
-                    [rounded]="true"
-                    size="small"
-                    severity="danger"
-                    pTooltip="Xóa"
-                    tooltipPosition="top"
-                    (onClick)="confirmDelete(hint)"
-                  />
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+    <!-- Select All bar -->
+    <div class="flex items-center gap-3 mt-3">
+      <p-checkbox
+        [binary]="true"
+        [ngModel]="isAllSelected()"
+        (ngModelChange)="toggleSelectAll()"
+        inputId="selectAllHints"
+      />
+      <label for="selectAllHints" class="text-xs cursor-pointer" style="color: var(--cr-text-muted);">
+        Ch&#7885;n t&#7845;t c&#7843; ({{ hints().length }})
+      </label>
     </div>
   }
-
-  <!-- Create/Edit Dialog -->
-  <p-dialog
-    [header]="editingHint() ? 'Chỉnh sửa gợi ý' : 'Thêm gợi ý mới'"
-    [visible]="showDialog()"
-    (visibleChange)="!$event && closeDialog()"
-    [modal]="true"
-    [draggable]="false"
-    [dismissableMask]="true"
-    [style]="{ width: '90vw', maxWidth: '600px' }"
-  >
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4 pt-2">
-      <!-- Content -->
-      <div class="flex flex-col gap-1.5">
-        <label for="hint-content" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-          Nội dung <span class="text-red-500">*</span>
-        </label>
-        <textarea
-          pTextarea
-          id="hint-content"
-          formControlName="content"
-          [rows]="6"
-          placeholder="Nhập nội dung gợi ý..."
-          class="w-full"
-        ></textarea>
-        @if (form.get('content')?.invalid && form.get('content')?.touched) {
-          <small class="text-red-500 text-xs">Nội dung gợi ý phải có ít nhất 5 ký tự</small>
-        }
-      </div>
-
-      <!-- Order + Public -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="flex flex-col gap-1.5">
-          <label for="hint-order" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-            Thứ tự hiển thị <span class="text-red-500">*</span>
-          </label>
-          <p-inputNumber
-            inputId="hint-order"
-            formControlName="hintOrder"
-            [min]="1"
-            [showButtons]="true"
-            class="w-full"
-          />
-          <small class="text-[10px] text-surface-400">Gợi ý sẽ hiển thị theo thứ tự này</small>
-        </div>
-
-        <div class="flex items-end pb-5">
-          <div class="flex items-center gap-2">
-            <p-checkbox inputId="hint-isPublic" formControlName="isPublic" [binary]="true" />
-            <label for="hint-isPublic" class="text-sm text-surface-700 dark:text-surface-300 cursor-pointer">
-              Công khai cho sinh viên
-            </label>
-          </div>
-        </div>
-      </div>
-    </form>
-
-    <ng-template #footer>
-      <div class="flex justify-end gap-2">
-        <p-button
-          label="Hủy"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="closeDialog()"
-        />
-        <p-button
-          [label]="editingHint() ? 'Cập nhật' : 'Thêm'"
-          icon="pi pi-check"
-          (onClick)="onSubmit()"
-          [disabled]="form.invalid"
-          [loading]="isSubmitting()"
-        />
-      </div>
-    </ng-template>
-  </p-dialog>
-
-  <!-- Preview Dialog -->
-  <p-dialog
-    [header]="'Gợi ý #' + previewOrder()"
-    [visible]="showPreviewDialog()"
-    (visibleChange)="!$event && closePreview()"
-    [modal]="true"
-    [draggable]="false"
-    [dismissableMask]="true"
-    [style]="{ width: '90vw', maxWidth: '600px' }"
-  >
-    <div class="relative">
-      <div class="bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 rounded-lg p-4 text-sm whitespace-pre-wrap break-words max-h-96 overflow-auto">
-        {{ previewContent() }}
-      </div>
-      <div class="flex justify-end mt-3">
-        <p-button
-          label="Sao chép"
-          icon="pi pi-copy"
-          severity="secondary"
-          size="small"
-          [outlined]="true"
-          (onClick)="copyToClipboard(previewContent())"
-        />
-      </div>
-    </div>
-  </p-dialog>
-
-  <p-confirmDialog />
 </div>
+
+<!-- Create / Edit Dialog -->
+<p-dialog
+  [header]="editingHint() ? 'S&#7917;a g&#7907;i &#253;' : 'Th&#234;m g&#7907;i &#253; m&#7899;i'"
+  [visible]="showDialog()"
+  (visibleChange)="showDialog.set($event)"
+  (onHide)="closeDialog()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '560px' }"
+  [breakpoints]="{ '768px': '95vw' }"
+  appendTo="body"
+>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+    <!-- Content -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium" style="color: var(--cr-text-muted);">
+        N&#7897;i dung g&#7907;i &#253; <span style="color: var(--cr-accent-red);">*</span>
+      </label>
+      <textarea
+        pTextarea
+        formControlName="content"
+        rows="5"
+        class="w-full text-sm"
+        placeholder="Nh&#7853;p n&#7897;i dung g&#7907;i &#253;..."
+        [autoResize]="true"
+      ></textarea>
+      @if (form.get('content')?.invalid && form.get('content')?.touched) {
+        <small style="color: var(--cr-accent-red);" class="text-xs">N&#7897;i dung ph&#7843;i c&#243; &#237;t nh&#7845;t 5 k&#253; t&#7921;</small>
+      }
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <!-- Hint Order -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium" style="color: var(--cr-text-muted);">
+          Th&#7913; t&#7921; <span style="color: var(--cr-accent-red);">*</span>
+        </label>
+        <p-inputNumber
+          formControlName="hintOrder"
+          [min]="1"
+          [max]="99"
+          [showButtons]="true"
+          class="w-full"
+        />
+      </div>
+
+      <!-- Is Public -->
+      <div class="flex items-end pb-2">
+        <div class="flex items-center gap-2">
+          <p-checkbox
+            inputId="isPublic"
+            formControlName="isPublic"
+            [binary]="true"
+          />
+          <label for="isPublic" class="text-sm cursor-pointer" style="color: var(--cr-text-secondary);">
+            Hi&#7875;n th&#7883; c&#244;ng khai
+          </label>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <div class="flex items-center justify-end gap-2">
+      <p-button label="H&#7911;y" severity="secondary" [outlined]="true" (onClick)="closeDialog()" [disabled]="isSubmitting()" />
+      <p-button
+        [label]="editingHint() ? 'C&#7853;p nh&#7853;t' : 'Th&#234;m'"
+        icon="pi pi-check"
+        (onClick)="onSubmit()"
+        [loading]="isSubmitting()"
+        [disabled]="form.invalid"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Preview Dialog -->
+<p-dialog
+  header="Chi ti&#7871;t g&#7907;i &#253;"
+  [visible]="showPreviewDialog()"
+  (visibleChange)="showPreviewDialog.set($event)"
+  (onHide)="closePreview()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '520px' }"
+  [breakpoints]="{ '768px': '95vw' }"
+  appendTo="body"
+>
+  <div class="space-y-3">
+    <div class="flex items-center gap-2 text-xs" style="color: var(--cr-text-subtle);">
+      <span class="font-semibold" style="color: var(--cr-syntax-function);">Th&#7913; t&#7921;: {{ previewOrder() }}</span>
+    </div>
+    <div class="relative">
+      <button
+        class="absolute top-2 right-2 p-1.5 rounded-md transition-colors z-10"
+        style="background: var(--cr-bg-elevated); color: var(--cr-text-muted);"
+        (click)="copyToClipboard(previewContent())"
+        pTooltip="Copy"
+        tooltipPosition="left"
+      >
+        <i class="pi pi-copy text-xs"></i>
+      </button>
+      <div
+        class="p-4 rounded-lg text-sm whitespace-pre-wrap"
+        style="background: var(--cr-bg-tertiary); color: var(--cr-text-primary); border: 1px solid var(--cr-border);"
+      >{{ previewContent() }}</div>
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Confirm Dialog -->
+<p-confirmdialog />
+<p-toast />

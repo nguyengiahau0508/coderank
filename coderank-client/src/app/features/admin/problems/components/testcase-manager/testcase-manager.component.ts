@@ -11,6 +11,7 @@ import {
 import {
   FormBuilder,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
@@ -46,6 +47,7 @@ interface CompareTypeOption {
     ConfirmDialog,
     Toast,
     Tag,
+    FormsModule,
     ReactiveFormsModule,
   ],
   providers: [ConfirmationService, MessageService],

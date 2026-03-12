@@ -1,38 +1,58 @@
 <p-toast position="top-right" />
 <p-confirmDialog />
 
-<div class="space-y-4">
+<div class="space-y-5">
   <!-- Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Quản lý bài tập</h1>
-      <p class="mt-1 text-surface-500 dark:text-surface-400">Tạo, chỉnh sửa và quản lý các bài tập lập trình</p>
+      <h1 class="text-2xl font-semibold" style="color: var(--cr-text-primary);">Quản lý bài tập</h1>
+      <p class="mt-1 text-sm" style="color: var(--cr-text-muted);">Tạo, chỉnh sửa và quản lý các bài tập lập trình</p>
     </div>
     <p-button label="Tạo bài tập" icon="pi pi-plus" severity="primary" (onClick)="createProblem()" />
   </div>
 
   <!-- Stats -->
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
-      <p class="text-xs text-surface-400 mb-1">Tổng bài tập</p>
-      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">{{ totalRecords() }}</p>
+    <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <div class="flex items-center gap-2 mb-2">
+        <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background: rgba(88, 166, 255, 0.1);">
+          <i class="pi pi-code text-xs" style="color: var(--cr-accent-blue);"></i>
+        </div>
+        <p class="text-xs" style="color: var(--cr-text-muted);">Tổng bài tập</p>
+      </div>
+      <p class="text-xl font-bold" style="color: var(--cr-text-primary);">{{ totalRecords() }}</p>
     </div>
-    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
-      <p class="text-xs text-green-500 mb-1">Dễ</p>
-      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">—</p>
+    <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <div class="flex items-center gap-2 mb-2">
+        <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background: rgba(63, 185, 80, 0.1);">
+          <i class="pi pi-circle-fill text-[8px]" style="color: var(--cr-accent-green);"></i>
+        </div>
+        <p class="text-xs" style="color: var(--cr-accent-green);">Dễ</p>
+      </div>
+      <p class="text-xl font-bold" style="color: var(--cr-text-primary);">—</p>
     </div>
-    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
-      <p class="text-xs text-yellow-500 mb-1">Trung bình</p>
-      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">—</p>
+    <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <div class="flex items-center gap-2 mb-2">
+        <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background: rgba(210, 153, 34, 0.1);">
+          <i class="pi pi-circle-fill text-[8px]" style="color: var(--cr-accent-yellow);"></i>
+        </div>
+        <p class="text-xs" style="color: var(--cr-accent-yellow);">Trung bình</p>
+      </div>
+      <p class="text-xl font-bold" style="color: var(--cr-text-primary);">—</p>
     </div>
-    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
-      <p class="text-xs text-red-500 mb-1">Khó</p>
-      <p class="text-xl font-bold text-surface-900 dark:text-surface-0">—</p>
+    <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <div class="flex items-center gap-2 mb-2">
+        <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background: rgba(248, 81, 73, 0.1);">
+          <i class="pi pi-circle-fill text-[8px]" style="color: var(--cr-accent-red);"></i>
+        </div>
+        <p class="text-xs" style="color: var(--cr-accent-red);">Khó</p>
+      </div>
+      <p class="text-xl font-bold" style="color: var(--cr-text-primary);">—</p>
     </div>
   </div>
 
   <!-- Filters -->
-  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
+  <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
     <div class="flex flex-col lg:flex-row gap-3">
       <!-- Search -->
       <div class="flex-1">
@@ -64,10 +84,10 @@
       <!-- My Problems Toggle -->
       <button
         type="button"
-        [class]="'inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg border transition-colors ' +
-          (myProblemsOnly()
-            ? 'bg-primary text-primary-contrast border-primary'
-            : 'bg-surface-0 dark:bg-surface-800 text-surface-500 border-surface-200 dark:border-surface-700 hover:border-surface-300 dark:hover:border-surface-600')"
+        class="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors"
+        [style]="myProblemsOnly()
+          ? 'background: var(--cr-accent-blue); color: var(--cr-bg-primary); border: 1px solid var(--cr-accent-blue);'
+          : 'background: var(--cr-bg-tertiary); color: var(--cr-text-muted); border: 1px solid var(--cr-border);'"
         (click)="onMyProblemsToggle(!myProblemsOnly())"
       >
         <i class="pi pi-user text-xs"></i>
@@ -96,10 +116,10 @@
 
     <!-- Advanced Filters -->
     @if (showAdvancedFilters()) {
-      <div class="mt-4 pt-4 border-t border-surface-200 dark:border-surface-700 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="mt-4 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4" style="border-top: 1px solid var(--cr-border);">
         <!-- Tags -->
         <div>
-          <label class="block text-xs font-medium text-surface-500 dark:text-surface-400 mb-2">Tags</label>
+          <label class="block text-xs font-medium mb-2" style="color: var(--cr-text-muted);">Tags</label>
           <p-multiselect
             [(ngModel)]="selectedTags"
             [options]="tagOptions()"
@@ -115,7 +135,7 @@
 
         <!-- Points Range -->
         <div>
-          <label class="block text-xs font-medium text-surface-500 dark:text-surface-400 mb-2">
+          <label class="block text-xs font-medium mb-2" style="color: var(--cr-text-muted);">
             Điểm: {{ pointsRange()[0] }} — {{ pointsRange()[1] }}
           </label>
           <p-slider
@@ -134,44 +154,45 @@
 
   <!-- Problem Table -->
   @if (loading()) {
-    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+    <div class="rounded-xl overflow-hidden" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
       @for (i of [1, 2, 3, 4, 5]; track i) {
-        <div class="px-5 py-4 border-b border-surface-100 dark:border-surface-800">
+        <div class="px-5 py-4" style="border-bottom: 1px solid var(--cr-border-light);">
           <div class="flex items-center gap-4">
             <div class="flex-1 space-y-2">
-              <div class="h-4 w-48 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
-              <div class="h-3 w-96 bg-surface-50 dark:bg-surface-800 rounded animate-pulse"></div>
+              <div class="h-4 w-48 rounded animate-pulse" style="background: var(--cr-bg-elevated);"></div>
+              <div class="h-3 w-96 rounded animate-pulse" style="background: var(--cr-bg-tertiary);"></div>
             </div>
-            <div class="h-6 w-16 bg-surface-100 dark:bg-surface-700 rounded-full animate-pulse"></div>
+            <div class="h-6 w-16 rounded-full animate-pulse" style="background: var(--cr-bg-elevated);"></div>
           </div>
         </div>
       }
     </div>
   } @else if (problems().length > 0) {
-    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
+    <div class="rounded-xl overflow-hidden" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
       @for (problem of problems(); track problem.id) {
         <div
-          class="group px-5 py-4 border-b border-surface-100 dark:border-surface-800 last:border-b-0 hover:bg-surface-50 dark:hover:bg-surface-900 transition-colors cursor-pointer"
+          class="group px-5 py-4 last:border-b-0 cursor-pointer transition-colors"
+          style="border-bottom: 1px solid var(--cr-border-light);"
           (click)="viewProblem(problem)"
         >
           <div class="flex items-center gap-4">
             <!-- Main Info -->
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
-                <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0 group-hover:text-primary transition-colors truncate">
+                <h3 class="text-sm font-semibold truncate transition-colors" style="color: var(--cr-text-primary);">
                   {{ problem.title }}
                 </h3>
                 @if (!problem.isPublished) {
-                  <p-tag value="Nháp" severity="warn" styleClass="text-[10px]" />
+                  <span class="text-[10px] font-medium px-2 py-0.5 rounded-full" style="background: rgba(210, 153, 34, 0.15); color: var(--cr-accent-yellow);">Nháp</span>
                 }
               </div>
               @if (problem.description) {
-                <p class="text-xs text-surface-400 line-clamp-1">{{ problem.description }}</p>
+                <p class="text-xs line-clamp-1" style="color: var(--cr-text-subtle);">{{ problem.description }}</p>
               }
               @if (problem.tags && problem.tags.length) {
                 <div class="mt-2 flex gap-1.5 flex-wrap">
                   @for (tag of problem.tags; track tag.id) {
-                    <span class="text-[10px] text-surface-500 bg-surface-100 dark:bg-surface-700 px-2 py-0.5 rounded-full">
+                    <span class="text-[10px] px-2 py-0.5 rounded-full" style="background: var(--cr-bg-elevated); color: var(--cr-text-muted);">
                       {{ tag.name }}
                     </span>
                   }
@@ -181,12 +202,13 @@
 
             <!-- Meta -->
             <div class="flex items-center gap-3 flex-shrink-0">
-              <p-tag
-                [value]="getDifficultyLabel(problem.difficulty)"
-                [severity]="getDifficultySeverity(problem.difficulty)"
-                styleClass="text-xs"
-              />
-              <span class="text-xs text-surface-400 font-medium w-12 text-right">
+              <span
+                class="text-xs font-medium px-2.5 py-1 rounded-full"
+                [style]="'background: ' + getDifficultyBg(problem.difficulty) + '; color: ' + getDifficultyColor(problem.difficulty) + ';'"
+              >
+                {{ getDifficultyLabel(problem.difficulty) }}
+              </span>
+              <span class="text-xs font-medium w-12 text-right" style="color: var(--cr-text-muted);">
                 {{ problem.points || 0 }} đ
               </span>
             </div>
@@ -246,16 +268,17 @@
       </div>
     }
   } @else {
-    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-12 text-center">
-      <div class="flex items-center justify-center w-14 h-14 rounded-full bg-surface-100 dark:bg-surface-700 mx-auto mb-3">
-        <i class="pi pi-code text-2xl text-surface-400"></i>
+    <div class="rounded-xl p-12 text-center" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <div class="flex items-center justify-center w-14 h-14 rounded-full mx-auto mb-3" style="background: var(--cr-bg-elevated);">
+        <i class="pi pi-code text-2xl" style="color: var(--cr-text-subtle);"></i>
       </div>
-      <p class="text-surface-500 mb-1.5">Không tìm thấy bài tập nào</p>
+      <p class="mb-1.5" style="color: var(--cr-text-muted);">Không tìm thấy bài tập nào</p>
       @if (hasFilters()) {
         <button
           type="button"
           (click)="clearFilters()"
-          class="text-sm text-primary hover:underline"
+          class="text-sm hover:underline"
+          style="color: var(--cr-accent-blue);"
         >
           Xóa bộ lọc
         </button>

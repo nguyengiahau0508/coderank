@@ -14,8 +14,8 @@
   <div class="space-y-5">
     <!-- Title -->
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-medium text-surface-600 dark:text-surface-300">
-        Tiêu đề <span class="text-red-500">*</span>
+      <label class="text-xs font-medium" style="color: var(--cr-text-muted);">
+        Tiêu đề <span style="color: var(--cr-accent-red);">*</span>
       </label>
       <input
         pInputText
@@ -29,7 +29,7 @@
 
     <!-- Language -->
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-medium text-surface-600 dark:text-surface-300">
+      <label class="text-xs font-medium" style="color: var(--cr-text-muted);">
         Ngôn ngữ
       </label>
       <p-select
@@ -45,8 +45,8 @@
 
     <!-- Description (Rich text editor) -->
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-medium text-surface-600 dark:text-surface-300">
-        Giải thích cách giải <span class="text-red-500">*</span>
+      <label class="text-xs font-medium" style="color: var(--cr-text-muted);">
+        Giải thích cách giải <span style="color: var(--cr-accent-red);">*</span>
       </label>
       <p-editor
         [ngModel]="description()"
@@ -82,15 +82,16 @@
 
     <!-- Code -->
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-medium text-surface-600 dark:text-surface-300">
-        Source code <span class="text-red-500">*</span>
+      <label class="text-xs font-medium" style="color: var(--cr-text-muted);">
+        Source code <span style="color: var(--cr-accent-red);">*</span>
       </label>
       <textarea
         [ngModel]="code()"
         (ngModelChange)="code.set($event)"
         placeholder="Dán code solution của bạn ở đây..."
         rows="10"
-        class="w-full px-3 py-2.5 text-xs rounded-lg border border-surface-200 dark:border-surface-600 bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-surface-0 placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-none font-mono"
+        class="w-full px-3 py-2.5 text-xs rounded-lg resize-none font-mono focus:outline-none transition-colors"
+        style="background: var(--cr-bg-tertiary); color: var(--cr-text-primary); border: 1px solid var(--cr-border);"
       ></textarea>
     </div>
   </div>

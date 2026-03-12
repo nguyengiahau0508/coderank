@@ -8,7 +8,6 @@ import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
-import { Tag } from 'primeng/tag';
 import { Paginator } from 'primeng/paginator';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
@@ -37,7 +36,6 @@ import { AdminCourseDuplicateDialogComponent, DuplicateCourseEvent } from '../co
     Button,
     InputText,
     Select,
-    Tag,
     Paginator,
     IconField,
     InputIcon,

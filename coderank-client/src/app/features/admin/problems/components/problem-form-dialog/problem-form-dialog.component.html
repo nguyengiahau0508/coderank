@@ -1,12 +1,12 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
   <!-- Section: Basic Info -->
   <fieldset class="space-y-4">
-    <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-2">Thông tin cơ bản</legend>
+    <legend class="text-sm font-semibold mb-2" style="color: var(--cr-text-primary);">Thông tin cơ bản</legend>
 
     <!-- Title -->
     <div class="flex flex-col gap-1.5">
-      <label for="title" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-        Tiêu đề <span class="text-red-500">*</span>
+      <label for="title" class="text-xs font-medium" style="color: var(--cr-text-muted);">
+        Tiêu đề <span style="color: var(--cr-accent-red);">*</span>
       </label>
       <input
         pInputText
@@ -17,15 +17,15 @@
         [class.ng-invalid]="form.get('title')?.invalid && form.get('title')?.touched"
       />
       @if (form.get('title')?.invalid && form.get('title')?.touched) {
-        <small class="text-red-500 text-xs">{{ getFieldError('title') }}</small>
+        <small style="color: var(--cr-accent-red);" class="text-xs">{{ getFieldError('title') }}</small>
       }
     </div>
 
     <!-- Slug -->
     <div class="flex flex-col gap-1.5">
-      <label for="slug" class="text-xs font-medium text-surface-600 dark:text-surface-300">
+      <label for="slug" class="text-xs font-medium" style="color: var(--cr-text-muted);">
         Slug
-        <span class="text-surface-400 font-normal">(tự tạo nếu để trống)</span>
+        <span style="color: var(--cr-text-subtle);" class="font-normal">(tự tạo nếu để trống)</span>
       </label>
       <input
         pInputText
@@ -36,17 +36,17 @@
         [class.ng-invalid]="form.get('slug')?.invalid && form.get('slug')?.touched"
       />
       @if (form.get('slug')?.invalid && form.get('slug')?.touched) {
-        <small class="text-red-500 text-xs">{{ getFieldError('slug') }}</small>
+        <small style="color: var(--cr-accent-red);" class="text-xs">{{ getFieldError('slug') }}</small>
       }
     </div>
   </fieldset>
 
   <!-- Section: Tags -->
   <fieldset class="space-y-4">
-    <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-2">Tags</legend>
+    <legend class="text-sm font-semibold mb-2" style="color: var(--cr-text-primary);">Tags</legend>
 
     <div class="flex flex-col gap-1.5">
-      <label for="tags" class="text-xs font-medium text-surface-600 dark:text-surface-300">Chọn tags</label>
+      <label for="tags" class="text-xs font-medium" style="color: var(--cr-text-muted);">Chọn tags</label>
       <p-multiselect
         inputId="tags"
         [options]="tagOptions"
@@ -65,22 +65,20 @@
 
   <!-- Section: Description -->
   <fieldset class="space-y-4">
-    <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-2">Mô tả</legend>
+    <legend class="text-sm font-semibold mb-2" style="color: var(--cr-text-primary);">Mô tả</legend>
 
-    <!-- Description -->
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-medium text-surface-600 dark:text-surface-300">Đề bài</label>
+      <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Đề bài</label>
       <app-text-editor formControlName="description" />
     </div>
 
-    <!-- Input/Output -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-medium text-surface-600 dark:text-surface-300">Mô tả Input</label>
+        <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Mô tả Input</label>
         <app-text-editor formControlName="inputDescription" />
       </div>
       <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-medium text-surface-600 dark:text-surface-300">Mô tả Output</label>
+        <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Mô tả Output</label>
         <app-text-editor formControlName="outputDescription" />
       </div>
     </div>
@@ -88,13 +86,12 @@
 
   <!-- Section: Constraints -->
   <fieldset class="space-y-4">
-    <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-2">Giới hạn & Cấu hình</legend>
+    <legend class="text-sm font-semibold mb-2" style="color: var(--cr-text-primary);">Giới hạn & Cấu hình</legend>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <!-- Time Limit -->
       <div class="flex flex-col gap-1.5">
-        <label for="timeLimitMs" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-          Thời gian <span class="text-red-500">*</span>
+        <label for="timeLimitMs" class="text-xs font-medium" style="color: var(--cr-text-muted);">
+          Thời gian <span style="color: var(--cr-accent-red);">*</span>
         </label>
         <p-inputNumber
           inputId="timeLimitMs"
@@ -108,10 +105,9 @@
         />
       </div>
 
-      <!-- Memory Limit -->
       <div class="flex flex-col gap-1.5">
-        <label for="memoryLimitMb" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-          Bộ nhớ <span class="text-red-500">*</span>
+        <label for="memoryLimitMb" class="text-xs font-medium" style="color: var(--cr-text-muted);">
+          Bộ nhớ <span style="color: var(--cr-accent-red);">*</span>
         </label>
         <p-inputNumber
           inputId="memoryLimitMb"
@@ -125,10 +121,9 @@
         />
       </div>
 
-      <!-- Difficulty -->
       <div class="flex flex-col gap-1.5">
-        <label for="difficulty" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-          Độ khó <span class="text-red-500">*</span>
+        <label for="difficulty" class="text-xs font-medium" style="color: var(--cr-text-muted);">
+          Độ khó <span style="color: var(--cr-accent-red);">*</span>
         </label>
         <p-select
           inputId="difficulty"
@@ -145,10 +140,9 @@
         </p-select>
       </div>
 
-      <!-- Points -->
       <div class="flex flex-col gap-1.5">
-        <label for="points" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-          Điểm <span class="text-red-500">*</span>
+        <label for="points" class="text-xs font-medium" style="color: var(--cr-text-muted);">
+          Điểm <span style="color: var(--cr-accent-red);">*</span>
         </label>
         <p-inputNumber
           inputId="points"
@@ -170,14 +164,14 @@
       formControlName="isPublished"
       [binary]="true"
     />
-    <label for="isPublished" class="text-sm text-surface-700 dark:text-surface-300 cursor-pointer">
+    <label for="isPublished" class="text-sm cursor-pointer" style="color: var(--cr-text-secondary);">
       Xuất bản bài tập (sinh viên có thể xem và làm bài)
     </label>
   </div>
 </form>
 
 <!-- Actions -->
-<div class="flex justify-end gap-2 mt-4 pt-3 border-t border-surface-200 dark:border-surface-700">
+<div class="flex justify-end gap-2 mt-4 pt-3" style="border-top: 1px solid var(--cr-border);">
   <p-button
     label="Hủy"
     severity="secondary"

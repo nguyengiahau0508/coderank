@@ -1,346 +1,213 @@
-<div class="space-y-3">
-  <!-- ==================== Detail View (replaces entire content) ==================== -->
-  @if (selectedSolution(); as sol) {
-    <!-- Back button -->
+<!-- Solution List -->
+@if (selectedSolution(); as sol) {
+  <!-- Detail View -->
+  <div class="space-y-4">
     <button
-      type="button"
+      class="flex items-center gap-1.5 text-xs font-medium transition-colors"
+      style="color: var(--cr-accent-blue);"
       (click)="backToList()"
-      class="inline-flex items-center gap-1.5 text-xs text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-colors mb-1"
     >
-      <i class="pi pi-arrow-left text-[10px]"></i>
-      Quay lại danh sách
+      <i class="pi pi-arrow-left text-[10px]"></i> Quay l&#7841;i danh s&#225;ch
     </button>
 
-    <!-- Solution detail -->
-    <div class="space-y-4">
-      <!-- Title & meta -->
-      <div>
-        <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0">
-          {{ sol.title }}
-        </h3>
-        <div class="flex items-center gap-2 mt-2 flex-wrap">
-          <!-- Author -->
+    <div class="rounded-xl p-5" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <!-- Title & Meta -->
+      <div class="mb-4">
+        <h3 class="text-base font-bold mb-2" style="color: var(--cr-text-primary);">{{ sol.title }}</h3>
+        <div class="flex items-center gap-3 text-xs" style="color: var(--cr-text-subtle);">
           <div class="flex items-center gap-1.5">
-            @if (sol.author?.avatarUrl) {
-              <img
-                [src]="sol.author?.avatarUrl"
-                [alt]="sol.author?.fullName"
-                class="w-5 h-5 rounded-full object-cover"
-              />
-            } @else {
-              <div class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold">
-                {{ getInitials(sol.author?.fullName || sol.author?.username || '') }}
-              </div>
-            }
-            <span class="text-xs text-surface-500">
-              {{ sol.author?.fullName || sol.author?.username || 'Unknown' }}
-            </span>
+            <div
+              class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+              style="background: var(--cr-bg-elevated); color: var(--cr-syntax-function);"
+            >
+              {{ getInitials(sol.author?.fullName || 'U') }}
+            </div>
+            <span>{{ sol.author?.fullName || 'Unknown' }}</span>
           </div>
-
-          <span class="w-1 h-1 rounded-full bg-surface-300"></span>
-
-          <!-- Language badge -->
-          <span [class]="'text-[10px] font-medium px-1.5 py-0.5 rounded ' + getLanguageColor(sol.language)">
+          <span>&#8226;</span>
+          <span [class]="getLanguageColor(sol.language)" class="px-1.5 py-0.5 rounded text-[10px] font-medium">
             {{ getLanguageLabel(sol.language) }}
           </span>
-
-          <span class="w-1 h-1 rounded-full bg-surface-300"></span>
-
-          <!-- Date -->
-          <span class="text-xs text-surface-400">
-            {{ sol.createdAt | date:'dd/MM/yyyy HH:mm' }}
-          </span>
-
-          <span class="w-1 h-1 rounded-full bg-surface-300"></span>
-
-          <!-- Votes -->
-          <span class="inline-flex items-center gap-0.5 text-xs text-surface-400">
-            <i class="pi pi-thumbs-up text-[10px]"></i>
-            {{ sol.upvotes }}
-          </span>
-          <span class="inline-flex items-center gap-0.5 text-xs text-surface-400">
-            <i class="pi pi-thumbs-down text-[10px]"></i>
-            {{ sol.downvotes }}
-          </span>
+          @if (sol.createdAt) {
+            <span>&#8226;</span>
+            <span>{{ sol.createdAt | date:'dd/MM/yyyy' }}</span>
+          }
         </div>
       </div>
 
       <!-- Description -->
       @if (sol.description) {
-        <div>
-          <p class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1.5">Giải thích</p>
-          <div class="text-sm text-surface-600 dark:text-surface-300 prose prose-sm dark:prose-invert max-w-none" [innerHTML]="sol.description"></div>
-        </div>
+        <div
+          class="prose prose-sm prose-invert max-w-none mb-4 text-sm"
+          style="color: var(--cr-text-secondary);"
+          [innerHTML]="sol.description"
+        ></div>
       }
 
       <!-- Code -->
-      <div>
-        <p class="text-[10px] font-semibold text-surface-400 uppercase tracking-wider mb-1.5">Source code</p>
-        <pre class="p-4 text-xs font-mono text-surface-700 dark:text-surface-300 bg-surface-50 dark:bg-surface-900 rounded-lg overflow-x-auto border border-surface-200 dark:border-surface-700">{{ sol.code }}</pre>
+      @if (sol.code) {
+        <div>
+          <div class="flex items-center justify-between px-3 py-2 rounded-t-lg" style="background: var(--cr-bg-elevated); border: 1px solid var(--cr-border); border-bottom: none;">
+            <span class="text-[10px] font-medium" style="color: var(--cr-text-subtle);">SOURCE CODE</span>
+            <span [class]="getLanguageColor(sol.language)" class="text-[10px] font-medium px-1.5 py-0.5 rounded">
+              {{ getLanguageLabel(sol.language) }}
+            </span>
+          </div>
+          <pre
+            class="text-xs font-mono p-4 rounded-b-lg overflow-x-auto"
+            style="background: var(--cr-bg-tertiary); color: var(--cr-text-primary); border: 1px solid var(--cr-border); border-top: none; margin: 0;"
+          >{{ sol.code }}</pre>
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+  <!-- List View -->
+  <div class="space-y-4">
+    <!-- Sub-tab Toggle -->
+    <div class="flex items-center justify-between">
+      <div class="flex rounded-lg overflow-hidden" style="background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border);">
+        <button
+          class="px-4 py-2 text-xs font-medium transition-colors"
+          [style]="activeSubTab() === 0
+            ? 'background: var(--cr-accent-blue); color: #fff;'
+            : 'color: var(--cr-text-muted);'"
+          (click)="activeSubTab.set(0)"
+        >
+          T&#7845;t c&#7843; ({{ solutions().length }})
+        </button>
+        <button
+          class="px-4 py-2 text-xs font-medium transition-colors"
+          [style]="activeSubTab() === 1
+            ? 'background: var(--cr-accent-blue); color: #fff;'
+            : 'color: var(--cr-text-muted);'"
+          (click)="activeSubTab.set(1)"
+        >
+          C&#7911;a t&#244;i ({{ mySolutions().length }})
+        </button>
       </div>
-    </div>
-  } @else {
-    <!-- ==================== List View ==================== -->
 
-    <!-- Sub-tabs: All Solutions | My Solutions -->
-    <div class="flex items-center gap-1 p-1 rounded-lg bg-surface-100 dark:bg-surface-900 w-fit">
-      <button
-        type="button"
-        [class]="'px-3 py-1.5 text-xs font-medium rounded-md transition-colors ' +
-          (activeSubTab() === 0
-            ? 'bg-surface-0 dark:bg-surface-700 text-surface-900 dark:text-surface-0 shadow-sm'
-            : 'text-surface-500 hover:text-surface-700 dark:hover:text-surface-300')"
-        (click)="activeSubTab.set(0)"
-      >
-        Tất cả
-      </button>
-      <button
-        type="button"
-        [class]="'px-3 py-1.5 text-xs font-medium rounded-md transition-colors ' +
-          (activeSubTab() === 1
-            ? 'bg-surface-0 dark:bg-surface-700 text-surface-900 dark:text-surface-0 shadow-sm'
-            : 'text-surface-500 hover:text-surface-700 dark:hover:text-surface-300')"
-        (click)="activeSubTab.set(1)"
-      >
-        Của tôi
-        @if (mySolutions().length > 0) {
-          <span class="ml-1 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{{ mySolutions().length }}</span>
-        }
-      </button>
+      <p-button
+        label="Chia s&#7867; solution"
+        icon="pi pi-share-alt"
+        size="small"
+        (onClick)="shareSolution.emit()"
+        [disabled]="!hasAccepted()"
+      />
     </div>
 
-    <!-- ==================== All Solutions Tab ==================== -->
+    <!-- All Solutions Tab -->
     @if (activeSubTab() === 0) {
-      <!-- Header with share button -->
-      <div class="flex items-center justify-between">
-        <p class="text-xs text-surface-400">
-          {{ solutions().length }} solution{{ solutions().length !== 1 ? 's' : '' }}
-        </p>
-        @if (hasAccepted()) {
-          <button
-            type="button"
-            (click)="shareSolution.emit()"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-primary-contrast rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            <i class="pi pi-share-alt text-[10px]"></i>
-            Chia sẻ solution
-          </button>
-        }
-      </div>
-
       @if (loading()) {
-        <div class="space-y-3">
-          @for (i of [1, 2, 3]; track i) {
-            <div class="p-4 rounded-lg bg-surface-50 dark:bg-surface-900 animate-pulse">
-              <div class="h-4 w-48 bg-surface-200 dark:bg-surface-700 rounded mb-2"></div>
-              <div class="h-3 w-32 bg-surface-200 dark:bg-surface-700 rounded"></div>
-            </div>
-          }
+        <div class="flex flex-col items-center py-16">
+          <div class="animate-spin h-8 w-8 border-2 rounded-full mb-3" style="border-color: var(--cr-bg-elevated); border-top-color: var(--cr-accent-blue);"></div>
+          <p class="text-sm" style="color: var(--cr-text-subtle);">&#272;ang t&#7843;i solutions...</p>
+        </div>
+      } @else if (solutions().length === 0) {
+        <div class="flex flex-col items-center py-16 rounded-xl" style="background: var(--cr-bg-secondary); border: 1px dashed var(--cr-border);">
+          <i class="pi pi-code text-4xl mb-3" style="color: var(--cr-text-subtle);"></i>
+          <h3 class="text-sm font-semibold mb-1" style="color: var(--cr-text-primary);">Ch&#432;a c&#243; solution n&#224;o</h3>
+          <p class="text-xs" style="color: var(--cr-text-subtle);">H&#227;y l&#224; ng&#432;&#7901;i &#273;&#7847;u ti&#234;n chia s&#7867; l&#7901;i gi&#7843;i!</p>
         </div>
       } @else {
-        @for (sol of solutions(); track sol.id) {
-          <div class="rounded-lg border border-surface-200 dark:border-surface-700 overflow-hidden hover:border-surface-300 dark:hover:border-surface-600 transition-colors">
-            <!-- Solution header -->
-            <div class="px-4 py-3">
-              <div class="flex items-start justify-between gap-3">
-                <div class="flex-1 min-w-0">
-                  <h4 class="text-sm font-medium text-surface-900 dark:text-surface-0 truncate">
-                    {{ sol.title }}
-                  </h4>
-                  <div class="flex items-center gap-2 mt-1.5">
-                    <!-- Author -->
-                    <div class="flex items-center gap-1.5">
-                      @if (sol.author?.avatarUrl) {
-                        <img
-                          [src]="sol.author?.avatarUrl"
-                          [alt]="sol.author?.fullName"
-                          class="w-4 h-4 rounded-full object-cover"
-                        />
-                      } @else {
-                        <div class="w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[8px] font-bold">
-                          {{ getInitials(sol.author?.fullName || sol.author?.username || '') }}
-                        </div>
-                      }
-                      <span class="text-xs text-surface-500">
-                        {{ sol.author?.fullName || sol.author?.username || 'Unknown' }}
-                      </span>
-                    </div>
-
-                    <span class="w-1 h-1 rounded-full bg-surface-300"></span>
-
-                    <!-- Language badge -->
-                    <span [class]="'text-[10px] font-medium px-1.5 py-0.5 rounded ' + getLanguageColor(sol.language)">
-                      {{ getLanguageLabel(sol.language) }}
-                    </span>
-
-                    <span class="w-1 h-1 rounded-full bg-surface-300"></span>
-
-                    <!-- Date -->
-                    <span class="text-xs text-surface-400">
-                      {{ sol.createdAt | date:'dd/MM/yyyy' }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Votes -->
-                <div class="flex items-center gap-2 text-xs text-surface-400 shrink-0">
-                  <span class="inline-flex items-center gap-0.5">
-                    <i class="pi pi-thumbs-up text-[10px]"></i>
-                    {{ sol.upvotes }}
-                  </span>
-                  <span class="inline-flex items-center gap-0.5">
-                    <i class="pi pi-thumbs-down text-[10px]"></i>
-                    {{ sol.downvotes }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- View detail button -->
-            <button
-              type="button"
+        <div class="space-y-2">
+          @for (sol of solutions(); track sol.id) {
+            <div
+              class="group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors"
+              style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);"
               (click)="viewDetail(sol)"
-              class="w-full flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-surface-500 bg-surface-50 dark:bg-surface-900 hover:bg-surface-100 dark:hover:bg-surface-800 border-t border-surface-200 dark:border-surface-700 transition-colors"
             >
-              <i class="pi pi-eye text-[10px]"></i>
-              Xem chi tiết
-            </button>
-          </div>
-        } @empty {
-          <div class="flex flex-col items-center py-10 text-center">
-            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-surface-100 dark:bg-surface-700 mb-3">
-              <i class="pi pi-lightbulb text-xl text-surface-400"></i>
-            </div>
-            <p class="text-sm text-surface-500 dark:text-surface-400 mb-1">Chưa có solution nào</p>
-            @if (hasAccepted()) {
-              <p class="text-xs text-surface-400">Hãy là người đầu tiên chia sẻ cách giải!</p>
-            } @else {
-              <p class="text-xs text-surface-400">Giải thành công bài này để có thể xem và chia sẻ solution</p>
-            }
-          </div>
-        }
-      }
-    }
-
-    <!-- ==================== My Solutions Tab ==================== -->
-    @if (activeSubTab() === 1) {
-      <!-- Header with add button -->
-      <div class="flex items-center justify-between">
-        <p class="text-xs text-surface-400">
-          {{ mySolutions().length }} solution{{ mySolutions().length !== 1 ? 's' : '' }} của tôi
-        </p>
-        @if (hasAccepted()) {
-          <button
-            type="button"
-            (click)="shareSolution.emit()"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-primary-contrast rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            <i class="pi pi-plus text-[10px]"></i>
-            Thêm solution
-          </button>
-        }
-      </div>
-
-      @if (mySolutionsLoading()) {
-        <div class="space-y-3">
-          @for (i of [1, 2]; track i) {
-            <div class="p-4 rounded-lg bg-surface-50 dark:bg-surface-900 animate-pulse">
-              <div class="h-4 w-48 bg-surface-200 dark:bg-surface-700 rounded mb-2"></div>
-              <div class="h-3 w-32 bg-surface-200 dark:bg-surface-700 rounded"></div>
-            </div>
-          }
-        </div>
-      } @else {
-        @for (sol of mySolutions(); track sol.id) {
-          <div class="rounded-lg border border-surface-200 dark:border-surface-700 overflow-hidden hover:border-surface-300 dark:hover:border-surface-600 transition-colors">
-            <!-- Solution header -->
-            <div class="px-4 py-3">
-              <div class="flex items-start justify-between gap-3">
-                <div class="flex-1 min-w-0">
-                  <h4 class="text-sm font-medium text-surface-900 dark:text-surface-0 truncate">
-                    {{ sol.title }}
-                  </h4>
-                  <div class="flex items-center gap-2 mt-1.5">
-                    <!-- Language badge -->
-                    <span [class]="'text-[10px] font-medium px-1.5 py-0.5 rounded ' + getLanguageColor(sol.language)">
-                      {{ getLanguageLabel(sol.language) }}
-                    </span>
-
-                    <span class="w-1 h-1 rounded-full bg-surface-300"></span>
-
-                    <!-- Date -->
-                    <span class="text-xs text-surface-400">
-                      {{ sol.createdAt | date:'dd/MM/yyyy' }}
-                    </span>
-
-                    <span class="w-1 h-1 rounded-full bg-surface-300"></span>
-
-                    <!-- Votes -->
-                    <span class="inline-flex items-center gap-0.5 text-xs text-surface-400">
-                      <i class="pi pi-thumbs-up text-[10px]"></i>
-                      {{ sol.upvotes }}
-                    </span>
-                    <span class="inline-flex items-center gap-0.5 text-xs text-surface-400">
-                      <i class="pi pi-thumbs-down text-[10px]"></i>
-                      {{ sol.downvotes }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Action buttons -->
-                <div class="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    (click)="editSolution.emit(sol)"
-                    class="p-1.5 text-surface-400 hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
-                    title="Sửa"
-                  >
-                    <i class="pi pi-pencil text-xs"></i>
-                  </button>
-                  <button
-                    type="button"
-                    (click)="deleteSolution.emit(sol)"
-                    class="p-1.5 text-surface-400 hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
-                    title="Xóa"
-                  >
-                    <i class="pi pi-trash text-xs"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- View detail button -->
-            <button
-              type="button"
-              (click)="viewDetail(sol)"
-              class="w-full flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-surface-500 bg-surface-50 dark:bg-surface-900 hover:bg-surface-100 dark:hover:bg-surface-800 border-t border-surface-200 dark:border-surface-700 transition-colors"
-            >
-              <i class="pi pi-eye text-[10px]"></i>
-              Xem chi tiết
-            </button>
-          </div>
-        } @empty {
-          <div class="flex flex-col items-center py-10 text-center">
-            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-surface-100 dark:bg-surface-700 mb-3">
-              <i class="pi pi-code text-xl text-surface-400"></i>
-            </div>
-            <p class="text-sm text-surface-500 dark:text-surface-400 mb-1">Bạn chưa có solution nào</p>
-            @if (hasAccepted()) {
-              <p class="text-xs text-surface-400 mb-3">Chia sẻ cách giải của bạn cho cộng đồng!</p>
-              <button
-                type="button"
-                (click)="shareSolution.emit()"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-primary-contrast rounded-lg hover:bg-primary/90 transition-colors"
+              <!-- Avatar -->
+              <div
+                class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                style="background: var(--cr-bg-elevated); color: var(--cr-syntax-function);"
               >
-                <i class="pi pi-plus text-[10px]"></i>
-                Thêm solution
-              </button>
-            } @else {
-              <p class="text-xs text-surface-400">Giải thành công bài này để có thể chia sẻ solution</p>
-            }
-          </div>
-        }
+                {{ getInitials(sol.author?.fullName || 'U') }}
+              </div>
+
+              <!-- Info -->
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium truncate" style="color: var(--cr-text-primary);">{{ sol.title }}</div>
+                <div class="flex items-center gap-2 text-xs mt-0.5" style="color: var(--cr-text-subtle);">
+                  <span>{{ sol.author?.fullName || 'Unknown' }}</span>
+                  <span>&#8226;</span>
+                  <span [class]="getLanguageColor(sol.language)" class="px-1.5 py-0.5 rounded text-[10px] font-medium">
+                    {{ getLanguageLabel(sol.language) }}
+                  </span>
+                  @if (sol.createdAt) {
+                    <span>&#8226;</span>
+                    <span>{{ sol.createdAt | date:'dd/MM/yyyy' }}</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Arrow -->
+              <i class="pi pi-chevron-right text-xs opacity-0 group-hover:opacity-100 transition-opacity" style="color: var(--cr-text-subtle);"></i>
+            </div>
+          }
+        </div>
       }
     }
-  }
-</div>
+
+    <!-- My Solutions Tab -->
+    @if (activeSubTab() === 1) {
+      @if (mySolutionsLoading()) {
+        <div class="flex flex-col items-center py-16">
+          <div class="animate-spin h-8 w-8 border-2 rounded-full mb-3" style="border-color: var(--cr-bg-elevated); border-top-color: var(--cr-accent-blue);"></div>
+          <p class="text-sm" style="color: var(--cr-text-subtle);">&#272;ang t&#7843;i solutions c&#7911;a b&#7841;n...</p>
+        </div>
+      } @else if (mySolutions().length === 0) {
+        <div class="flex flex-col items-center py-16 rounded-xl" style="background: var(--cr-bg-secondary); border: 1px dashed var(--cr-border);">
+          <i class="pi pi-user text-4xl mb-3" style="color: var(--cr-text-subtle);"></i>
+          <h3 class="text-sm font-semibold mb-1" style="color: var(--cr-text-primary);">B&#7841;n ch&#432;a chia s&#7867; solution n&#224;o</h3>
+          <p class="text-xs" style="color: var(--cr-text-subtle);">Gi&#7843;i b&#224;i th&#224;nh c&#244;ng v&#224; chia s&#7867; c&#225;ch l&#224;m c&#7911;a b&#7841;n</p>
+        </div>
+      } @else {
+        <div class="space-y-2">
+          @for (sol of mySolutions(); track sol.id) {
+            <div
+              class="group flex items-center gap-3 p-3 rounded-xl transition-colors"
+              style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);"
+            >
+              <!-- Info -->
+              <div class="flex-1 min-w-0 cursor-pointer" (click)="viewDetail(sol)">
+                <div class="text-sm font-medium truncate" style="color: var(--cr-text-primary);">{{ sol.title }}</div>
+                <div class="flex items-center gap-2 text-xs mt-0.5" style="color: var(--cr-text-subtle);">
+                  <span [class]="getLanguageColor(sol.language)" class="px-1.5 py-0.5 rounded text-[10px] font-medium">
+                    {{ getLanguageLabel(sol.language) }}
+                  </span>
+                  @if (sol.createdAt) {
+                    <span>&#8226;</span>
+                    <span>{{ sol.createdAt | date:'dd/MM/yyyy' }}</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  class="p-1.5 rounded-md transition-colors"
+                  style="color: var(--cr-text-muted);"
+                  (click)="editSolution.emit(sol)"
+                  pTooltip="S&#7917;a"
+                  tooltipPosition="top"
+                >
+                  <i class="pi pi-pencil text-xs"></i>
+                </button>
+                <button
+                  class="p-1.5 rounded-md transition-colors"
+                  style="color: var(--cr-accent-red);"
+                  (click)="deleteSolution.emit(sol)"
+                  pTooltip="X&#243;a"
+                  tooltipPosition="top"
+                >
+                  <i class="pi pi-trash text-xs"></i>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+}

@@ -11,6 +11,7 @@ import {
 import {
   FormBuilder,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
@@ -40,6 +41,7 @@ import { HintsService } from '../../services/hints.service';
     Toast,
     Tooltip,
     Tag,
+    FormsModule,
     ReactiveFormsModule,
   ],
   providers: [ConfirmationService, MessageService],

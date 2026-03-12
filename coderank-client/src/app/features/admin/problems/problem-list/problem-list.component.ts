@@ -514,4 +514,22 @@ export class AdminProblemListComponent implements OnInit {
     };
     return labels[difficulty];
   }
+
+  getDifficultyColor(difficulty: DifficultyEnum): string {
+    switch (difficulty) {
+      case DifficultyEnum.Easy: return 'var(--cr-accent-green)';
+      case DifficultyEnum.Medium: return 'var(--cr-accent-yellow)';
+      case DifficultyEnum.Hard: return 'var(--cr-accent-red)';
+      default: return 'var(--cr-text-muted)';
+    }
+  }
+
+  getDifficultyBg(difficulty: DifficultyEnum): string {
+    switch (difficulty) {
+      case DifficultyEnum.Easy: return 'rgba(63, 185, 80, 0.12)';
+      case DifficultyEnum.Medium: return 'rgba(210, 153, 34, 0.12)';
+      case DifficultyEnum.Hard: return 'rgba(248, 81, 73, 0.12)';
+      default: return 'var(--cr-bg-elevated)';
+    }
+  }
 }

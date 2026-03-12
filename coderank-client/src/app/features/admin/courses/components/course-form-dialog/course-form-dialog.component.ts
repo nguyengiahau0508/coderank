@@ -38,32 +38,32 @@ import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/enums/enu
       <div class="space-y-5 pt-2">
         <!-- ===== BASIC INFO ===== -->
         <fieldset class="space-y-4">
-          <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-1">Thông tin cơ bản</legend>
+          <legend class="text-sm font-semibold mb-1" style="color: var(--cr-text-primary);">Thông tin cơ bản</legend>
 
           <!-- Title -->
-          <div>
-            <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Tiêu đề <span class="text-red-500">*</span></label>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Tiêu đề <span style="color: var(--cr-accent-red);">*</span></label>
             <input pInputText [(ngModel)]="form.title" class="w-full" placeholder="Nhập tiêu đề khóa học" (ngModelChange)="autoGenerateSlug()" />
           </div>
 
           <!-- Slug -->
-          <div>
-            <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Slug <span class="text-red-500">*</span></label>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Slug <span style="color: var(--cr-accent-red);">*</span></label>
             <input pInputText [(ngModel)]="form.slug" class="w-full" placeholder="tu-dong-tao-tu-tieu-de" />
           </div>
 
           <!-- Row: Level + Status + Category -->
           <div class="grid grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Cấp độ</label>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Cấp độ</label>
               <p-select [(ngModel)]="form.level" [options]="levelOptions" optionLabel="label" optionValue="value" placeholder="Chọn" styleClass="w-full" />
             </div>
-            <div>
-              <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Trạng thái</label>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Trạng thái</label>
               <p-select [(ngModel)]="form.status" [options]="statusOptions" optionLabel="label" optionValue="value" placeholder="Chọn" styleClass="w-full" />
             </div>
-            <div>
-              <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Danh mục</label>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Danh mục</label>
               <input pInputText [(ngModel)]="form.category" class="w-full" placeholder="vd: Data Structures" />
             </div>
           </div>
@@ -71,29 +71,29 @@ import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/enums/enu
 
         <!-- ===== DESCRIPTION ===== -->
         <fieldset class="space-y-4">
-          <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-1">Nội dung mô tả</legend>
+          <legend class="text-sm font-semibold mb-1" style="color: var(--cr-text-primary);">Nội dung mô tả</legend>
 
           <!-- Summary -->
-          <div>
-            <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Tóm tắt</label>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Tóm tắt</label>
             <app-text-editor [(ngModel)]="form.summary" />
           </div>
 
           <!-- Description -->
-          <div>
-            <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Mô tả chi tiết</label>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Mô tả chi tiết</label>
             <app-text-editor [(ngModel)]="form.description" />
           </div>
         </fieldset>
 
         <!-- ===== TAGS ===== -->
         <fieldset class="space-y-3">
-          <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-1">Tags</legend>
+          <legend class="text-sm font-semibold mb-1" style="color: var(--cr-text-primary);">Tags</legend>
 
           <!-- Chips-like tag display -->
           <div class="flex flex-wrap gap-2">
             @for (tag of form.tagList; track $index) {
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium" style="background: rgba(88, 166, 255, 0.12); color: var(--cr-accent-blue); border: 1px solid rgba(88, 166, 255, 0.2);">
                 {{ tag }}
                 <button type="button" class="hover:text-red-500 transition-colors" (click)="removeTag($index)">
                   <i class="pi pi-times text-[10px]"></i>
@@ -115,11 +115,11 @@ import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/enums/enu
 
         <!-- ===== LEARNING OBJECTIVES ===== -->
         <fieldset class="space-y-3">
-          <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-1">Mục tiêu học tập</legend>
+          <legend class="text-sm font-semibold mb-1" style="color: var(--cr-text-primary);">Mục tiêu học tập</legend>
 
           @for (obj of form.objectivesList; track $index) {
             <div class="flex gap-2 items-center">
-              <span class="text-xs text-surface-400 w-5 shrink-0 text-center">{{ $index + 1 }}.</span>
+              <span class="text-xs w-5 shrink-0 text-center" style="color: var(--cr-text-subtle);">{{ $index + 1 }}.</span>
               <input pInputText [(ngModel)]="form.objectivesList[$index]" class="flex-1" placeholder="Nhập mục tiêu học tập" />
               <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="removeObjective($index)" />
             </div>
@@ -129,11 +129,11 @@ import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/enums/enu
 
         <!-- ===== PREREQUISITES ===== -->
         <fieldset class="space-y-3">
-          <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-1">Yêu cầu tiên quyết</legend>
+          <legend class="text-sm font-semibold mb-1" style="color: var(--cr-text-primary);">Yêu cầu tiên quyết</legend>
 
           @for (prereq of form.prerequisitesList; track $index) {
             <div class="flex gap-2 items-center">
-              <span class="text-xs text-surface-400 w-5 shrink-0 text-center">{{ $index + 1 }}.</span>
+              <span class="text-xs w-5 shrink-0 text-center" style="color: var(--cr-text-subtle);">{{ $index + 1 }}.</span>
               <input pInputText [(ngModel)]="form.prerequisitesList[$index]" class="flex-1" placeholder="Nhập yêu cầu tiên quyết" />
               <p-button icon="pi pi-trash" [text]="true" severity="danger" size="small" (onClick)="removePrerequisite($index)" />
             </div>
@@ -143,15 +143,15 @@ import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/enums/enu
 
         <!-- ===== SETTINGS ===== -->
         <fieldset class="space-y-4">
-          <legend class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-1">Cài đặt</legend>
+          <legend class="text-sm font-semibold mb-1" style="color: var(--cr-text-primary);">Cài đặt</legend>
 
           <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Thời lượng ước tính (phút)</label>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Thời lượng ước tính (phút)</label>
               <p-inputNumber [(ngModel)]="form.estimatedDurationMinutes" [min]="0" styleClass="w-full" placeholder="vd: 600" />
             </div>
-            <div>
-              <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Số SV tối đa (0 = không giới hạn)</label>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Số SV tối đa (0 = không giới hạn)</label>
               <p-inputNumber [(ngModel)]="form.maxStudents" [min]="0" styleClass="w-full" />
             </div>
           </div>
@@ -159,22 +159,22 @@ import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/enums/enu
           <div class="grid grid-cols-2 gap-4">
             <div class="flex items-center gap-2">
               <p-toggleSwitch [(ngModel)]="form.isPublic" />
-              <label class="text-sm text-surface-700 dark:text-surface-300">Công khai</label>
+              <label class="text-sm" style="color: var(--cr-text-secondary);">Công khai</label>
             </div>
           </div>
 
           <!-- Password (only for private courses) -->
           @if (!form.isPublic) {
-            <div>
-              <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">Mật khẩu khóa học <span class="text-red-500">*</span></label>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Mật khẩu khóa học <span style="color: var(--cr-accent-red);">*</span></label>
               <input pInputText type="password" [(ngModel)]="form.password" class="w-full" placeholder="Nhập mật khẩu cho khóa học riêng tư" />
-              <small class="text-xs text-surface-400 mt-1 block">Sinh viên sẽ cần nhập mật khẩu này để đăng ký khóa học.</small>
+              <small class="text-xs mt-1 block" style="color: var(--cr-text-subtle);">Sinh viên sẽ cần nhập mật khẩu này để đăng ký khóa học.</small>
             </div>
           }
 
           <!-- Thumbnail -->
-          <div>
-            <label class="block text-xs font-medium text-surface-600 dark:text-surface-300 mb-1">URL ảnh bìa</label>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium" style="color: var(--cr-text-muted);">URL ảnh bìa</label>
             <input pInputText [(ngModel)]="form.thumbnailUrl" class="w-full" placeholder="https://..." />
           </div>
         </fieldset>

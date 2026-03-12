@@ -6,7 +6,6 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 // PrimeNG
 import { Button } from 'primeng/button';
-import { Tag } from 'primeng/tag';
 import { Toast } from 'primeng/toast';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
@@ -33,7 +32,6 @@ import { CoursesService } from '../services/courses.service';
     CommonModule,
     FormsModule,
     Button,
-    Tag,
     Toast,
     ConfirmDialog,
     Dialog,

@@ -1,388 +1,298 @@
-<p-toast position="top-right" />
-
-<div class="space-y-4">
-  <!-- Header + Actions -->
-  <div class="flex items-center justify-between flex-wrap gap-3">
-    <div class="flex items-center gap-3">
-      <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Testcases</h3>
-      @if (testcases().length > 0) {
-        <div class="flex items-center gap-2 text-xs text-surface-400">
-          <span>{{ testcases().length }} tổng</span>
-          <span class="text-surface-300">|</span>
-          <span class="text-green-500">{{ sampleCount() }} mẫu</span>
-          <span class="text-surface-300">|</span>
-          <span class="text-orange-500">{{ hiddenCount() }} ẩn</span>
-        </div>
-      }
+<!-- Testcase Manager -->
+<div class="h-full flex flex-col">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-4">
+      <h2 class="text-lg font-bold" style="color: var(--cr-text-primary);">
+        <i class="pi pi-list mr-2" style="color: var(--cr-accent-blue);"></i>
+        Testcases
+      </h2>
+      <div class="flex items-center gap-2 text-xs">
+        <span class="px-2 py-0.5 rounded-full" style="background: rgba(63, 185, 80, 0.12); color: var(--cr-accent-green);">
+          {{ sampleCount() }} m&#7851;u
+        </span>
+        <span class="px-2 py-0.5 rounded-full" style="background: rgba(210, 169, 34, 0.12); color: var(--cr-accent-yellow);">
+          {{ hiddenCount() }} &#7849;n
+        </span>
+      </div>
     </div>
 
     <div class="flex items-center gap-2">
-      <!-- Bulk delete -->
-      @if (selectedTestcases().length > 0) {
-        <p-button
-          [label]="'Xóa (' + selectedTestcases().length + ')'"
-          icon="pi pi-trash"
-          severity="danger"
-          size="small"
-          [outlined]="true"
-          (onClick)="confirmBulkDelete()"
-          [loading]="isSubmitting()"
-        />
-      }
-
       <!-- Import -->
-      <p-button
-        icon="pi pi-upload"
-        severity="secondary"
-        size="small"
-        [outlined]="true"
-        pTooltip="Import từ JSON"
-        tooltipPosition="top"
-        (onClick)="fileInput.click()"
-        [disabled]="loading() || isSubmitting()"
-      />
-      <input
-        #fileInput
-        type="file"
-        accept=".json"
-        class="hidden"
-        (change)="onImportFile($event)"
-        aria-label="Import testcases từ file JSON"
-      />
+      <label class="cursor-pointer">
+        <input type="file" accept=".json" (change)="onImportFile($event)" class="hidden" />
+        <span
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+          style="background: var(--cr-bg-elevated); color: var(--cr-text-secondary); border: 1px solid var(--cr-border);"
+        >
+          <i class="pi pi-upload text-[10px]"></i> Import
+        </span>
+      </label>
 
       <!-- Export -->
-      @if (testcases().length > 0) {
+      <p-button
+        label="Export"
+        icon="pi pi-download"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        (onClick)="exportTestcases()"
+        [disabled]="testcases().length === 0"
+      />
+
+      <!-- Bulk Delete -->
+      @if (selectedTestcases().length > 0) {
         <p-button
-          icon="pi pi-download"
-          severity="secondary"
-          size="small"
+          [label]="'X&#243;a (' + selectedTestcases().length + ')'"
+          icon="pi pi-trash"
+          severity="danger"
           [outlined]="true"
-          pTooltip="Export JSON"
-          tooltipPosition="top"
-          (onClick)="exportTestcases()"
-          [disabled]="loading()"
+          size="small"
+          (onClick)="confirmBulkDelete()"
         />
       }
 
       <!-- Add -->
       <p-button
-        label="Thêm"
+        label="Th&#234;m testcase"
         icon="pi pi-plus"
         size="small"
         (onClick)="openCreateDialog()"
-        [disabled]="loading()"
       />
     </div>
   </div>
 
-  <!-- Empty State -->
-  @if (!loading() && testcases().length === 0) {
-    <div class="text-center py-8 rounded-xl border-2 border-dashed border-surface-200 dark:border-surface-700">
-      <div class="flex items-center justify-center w-14 h-14 rounded-full bg-surface-100 dark:bg-surface-700 mx-auto mb-3">
-        <i class="pi pi-file text-2xl text-surface-400"></i>
-      </div>
-      <p class="text-sm font-medium text-surface-600 dark:text-surface-300">Chưa có testcase nào</p>
-      <p class="text-xs text-surface-400 mt-1 mb-3">Thêm testcase hoặc import từ file JSON</p>
-      <div class="flex items-center justify-center gap-2">
-        <p-button
-          label="Thêm testcase"
-          icon="pi pi-plus"
-          size="small"
-          (onClick)="openCreateDialog()"
-        />
-        <p-button
-          label="Import JSON"
-          icon="pi pi-upload"
-          severity="secondary"
-          size="small"
-          [outlined]="true"
-          (onClick)="fileInput.click()"
-        />
-      </div>
-    </div>
-  }
-
-  <!-- Loading skeleton -->
+  <!-- Loading -->
   @if (loading()) {
-    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
-      @for (i of [1, 2, 3]; track i) {
-        <div class="px-4 py-3.5 border-b border-surface-100 dark:border-surface-800">
-          <div class="flex items-center gap-4">
-            <div class="w-5 h-5 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
-            <div class="w-6 h-4 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
-            <div class="flex-1 h-4 bg-surface-100 dark:bg-surface-700 rounded animate-pulse"></div>
-            <div class="flex-1 h-4 bg-surface-50 dark:bg-surface-800 rounded animate-pulse"></div>
-            <div class="w-24 h-4 bg-surface-50 dark:bg-surface-800 rounded animate-pulse"></div>
-          </div>
-        </div>
-      }
+    <div class="flex flex-col items-center py-16">
+      <div class="animate-spin h-8 w-8 border-2 rounded-full mb-3" style="border-color: var(--cr-bg-elevated); border-top-color: var(--cr-accent-blue);"></div>
+      <p class="text-sm" style="color: var(--cr-text-subtle);">&#272;ang t&#7843;i testcases...</p>
     </div>
-  }
-
-  <!-- Table -->
-  @if (!loading() && testcases().length > 0) {
-    <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 overflow-hidden">
-      <table class="w-full text-sm" aria-label="Bảng testcases">
-        <thead>
-          <tr class="border-b border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900">
-            <th class="px-3 py-2.5 w-10">
-              <input
-                type="checkbox"
-                [checked]="isAllSelected()"
-                (change)="toggleSelectAll()"
-                class="rounded border-surface-300 dark:border-surface-600 cursor-pointer"
-                aria-label="Chọn tất cả testcase"
-              />
+  } @else if (testcases().length === 0) {
+    <!-- Empty State -->
+    <div class="flex flex-col items-center py-16 rounded-xl" style="background: var(--cr-bg-secondary); border: 1px dashed var(--cr-border);">
+      <i class="pi pi-inbox text-4xl mb-3" style="color: var(--cr-text-subtle);"></i>
+      <h3 class="text-sm font-semibold mb-1" style="color: var(--cr-text-primary);">Ch&#432;a c&#243; testcase n&#224;o</h3>
+      <p class="text-xs mb-4" style="color: var(--cr-text-subtle);">Th&#234;m testcase &#273;&#7875; ki&#7875;m tra l&#7901;i gi&#7843;i c&#7911;a sinh vi&#234;n</p>
+      <p-button label="Th&#234;m testcase &#273;&#7847;u ti&#234;n" icon="pi pi-plus" size="small" (onClick)="openCreateDialog()" />
+    </div>
+  } @else {
+    <!-- Table -->
+    <div class="rounded-xl overflow-hidden" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <p-table
+        [value]="testcases()"
+        [tableStyle]="{ 'min-width': '700px' }"
+        [scrollable]="true"
+        scrollHeight="calc(100vh - 400px)"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width: 40px; background: var(--cr-bg-tertiary);">
+              <p-checkbox [binary]="true" [ngModel]="isAllSelected()" (ngModelChange)="toggleSelectAll()" />
             </th>
-            <th class="px-3 py-2.5 text-left text-xs font-medium text-surface-500 w-12">#</th>
-            <th class="px-3 py-2.5 text-left text-xs font-medium text-surface-500">Input</th>
-            <th class="px-3 py-2.5 text-left text-xs font-medium text-surface-500">Output mong đợi</th>
-            <th class="px-3 py-2.5 text-left text-xs font-medium text-surface-500 w-36">Kiểu so sánh</th>
-            <th class="px-3 py-2.5 text-center text-xs font-medium text-surface-500 w-16">Loại</th>
-            <th class="px-3 py-2.5 w-24"><span class="sr-only">Hành động</span></th>
+            <th style="width: 50px; background: var(--cr-bg-tertiary); color: var(--cr-text-muted);" class="text-xs">#</th>
+            <th style="background: var(--cr-bg-tertiary); color: var(--cr-text-muted);" class="text-xs">Input</th>
+            <th style="background: var(--cr-bg-tertiary); color: var(--cr-text-muted);" class="text-xs">Expected output</th>
+            <th style="width: 150px; background: var(--cr-bg-tertiary); color: var(--cr-text-muted);" class="text-xs">So s&#225;nh</th>
+            <th style="width: 80px; background: var(--cr-bg-tertiary); color: var(--cr-text-muted);" class="text-xs">Lo&#7841;i</th>
+            <th style="width: 100px; background: var(--cr-bg-tertiary);"></th>
           </tr>
-        </thead>
-        <tbody>
-          @for (tc of testcases(); track tc.id; let i = $index) {
-            <tr
-              class="border-b border-surface-100 dark:border-surface-800 last:border-b-0 transition-colors"
-              [class.bg-primary-50]="isSelected(tc)"
-              [class.dark:bg-primary-950]="isSelected(tc)"
-              [class.hover:bg-surface-50]="!isSelected(tc)"
-              [class.dark:hover:bg-surface-900]="!isSelected(tc)"
-            >
-              <!-- Checkbox -->
-              <td class="px-3 py-2.5">
-                <input
-                  type="checkbox"
-                  [checked]="isSelected(tc)"
-                  (change)="toggleSelect(tc)"
-                  class="rounded border-surface-300 dark:border-surface-600 cursor-pointer"
-                  [attr.aria-label]="'Chọn testcase ' + (i + 1)"
-                />
-              </td>
+        </ng-template>
 
-              <!-- STT -->
-              <td class="px-3 py-2.5">
-                <span class="text-xs font-medium text-surface-400">{{ i + 1 }}</span>
-              </td>
-
-              <!-- Input (clickable preview) -->
-              <td class="px-3 py-2.5">
-                <button
-                  type="button"
-                  class="group/code text-left w-full"
-                  (click)="openPreview('Input - Testcase #' + (i + 1), tc.input)"
-                >
-                  <code class="text-xs bg-surface-100 dark:bg-surface-700 px-2 py-1 rounded font-mono inline-flex items-center gap-1.5 max-w-full group-hover/code:bg-surface-200 dark:group-hover/code:bg-surface-600 transition-colors">
-                    <span class="truncate">{{ truncateText(tc.input, 30) }}</span>
-                    @if (lineCount(tc.input) > 1) {
-                      <span class="text-[10px] text-surface-400 flex-shrink-0">{{ lineCount(tc.input) }} dòng</span>
-                    }
-                  </code>
-                </button>
-              </td>
-
-              <!-- Expected Output (clickable preview) -->
-              <td class="px-3 py-2.5">
-                <button
-                  type="button"
-                  class="group/code text-left w-full"
-                  (click)="openPreview('Output - Testcase #' + (i + 1), tc.expectedOutput)"
-                >
-                  <code class="text-xs bg-surface-100 dark:bg-surface-700 px-2 py-1 rounded font-mono inline-flex items-center gap-1.5 max-w-full group-hover/code:bg-surface-200 dark:group-hover/code:bg-surface-600 transition-colors">
-                    <span class="truncate">{{ truncateText(tc.expectedOutput, 30) }}</span>
-                    @if (lineCount(tc.expectedOutput) > 1) {
-                      <span class="text-[10px] text-surface-400 flex-shrink-0">{{ lineCount(tc.expectedOutput) }} dòng</span>
-                    }
-                  </code>
-                </button>
-              </td>
-
-              <!-- Compare Type -->
-              <td class="px-3 py-2.5">
-                <span class="text-xs text-surface-500">{{ getCompareTypeLabel(tc.compareType) }}</span>
-              </td>
-
-              <!-- Sample/Hidden -->
-              <td class="px-3 py-2.5 text-center">
-                @if (tc.isSample) {
-                  <p-tag value="Mẫu" severity="success" styleClass="text-[10px]" />
-                } @else {
-                  <p-tag value="Ẩn" severity="warn" styleClass="text-[10px]" />
+        <ng-template #body let-tc let-i="rowIndex">
+          <tr class="transition-colors" style="border-bottom: 1px solid var(--cr-border-light);">
+            <td>
+              <p-checkbox [binary]="true" [ngModel]="isSelected(tc)" (ngModelChange)="toggleSelect(tc)" />
+            </td>
+            <td>
+              <span class="text-xs font-mono" style="color: var(--cr-text-subtle);">{{ i + 1 }}</span>
+            </td>
+            <td>
+              <div
+                class="text-xs font-mono px-2.5 py-1.5 rounded cursor-pointer truncate max-w-[200px]"
+                style="background: var(--cr-bg-tertiary); color: var(--cr-syntax-variable);"
+                (click)="openPreview('Input #' + (i + 1), tc.input)"
+                pTooltip="Click &#273;&#7875; xem chi ti&#7871;t"
+                tooltipPosition="top"
+              >
+                {{ truncateText(tc.input) }}
+                @if (lineCount(tc.input) > 1) {
+                  <span class="ml-1 text-[10px]" style="color: var(--cr-text-subtle);">({{ lineCount(tc.input) }} d&#242;ng)</span>
                 }
-              </td>
-
-              <!-- Actions -->
-              <td class="px-3 py-2.5">
-                <div class="flex gap-0.5 justify-end">
-                  <p-button
-                    icon="pi pi-copy"
-                    [text]="true"
-                    [rounded]="true"
-                    size="small"
-                    severity="secondary"
-                    pTooltip="Sao chép input"
-                    tooltipPosition="top"
-                    (onClick)="copyToClipboard(tc.input)"
-                  />
-                  <p-button
-                    icon="pi pi-pencil"
-                    [text]="true"
-                    [rounded]="true"
-                    size="small"
-                    severity="secondary"
-                    pTooltip="Chỉnh sửa"
-                    tooltipPosition="top"
-                    (onClick)="openEditDialog(tc)"
-                  />
-                  <p-button
-                    icon="pi pi-trash"
-                    [text]="true"
-                    [rounded]="true"
-                    size="small"
-                    severity="danger"
-                    pTooltip="Xóa"
-                    tooltipPosition="top"
-                    (onClick)="confirmDelete(tc)"
-                  />
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+              </div>
+            </td>
+            <td>
+              <div
+                class="text-xs font-mono px-2.5 py-1.5 rounded cursor-pointer truncate max-w-[200px]"
+                style="background: var(--cr-bg-tertiary); color: var(--cr-syntax-string);"
+                (click)="openPreview('Output #' + (i + 1), tc.expectedOutput)"
+                pTooltip="Click &#273;&#7875; xem chi ti&#7871;t"
+                tooltipPosition="top"
+              >
+                {{ truncateText(tc.expectedOutput) }}
+                @if (lineCount(tc.expectedOutput) > 1) {
+                  <span class="ml-1 text-[10px]" style="color: var(--cr-text-subtle);">({{ lineCount(tc.expectedOutput) }} d&#242;ng)</span>
+                }
+              </div>
+            </td>
+            <td>
+              <span class="text-xs" style="color: var(--cr-text-muted);">{{ getCompareTypeLabel(tc.compareType) }}</span>
+            </td>
+            <td>
+              @if (tc.isSample) {
+                <span
+                  class="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                  style="background: rgba(63, 185, 80, 0.12); color: var(--cr-accent-green);"
+                >M&#7851;u</span>
+              } @else {
+                <span
+                  class="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                  style="background: rgba(210, 169, 34, 0.12); color: var(--cr-accent-yellow);"
+                >&#7848;n</span>
+              }
+            </td>
+            <td>
+              <div class="flex items-center gap-1">
+                <button
+                  class="p-1.5 rounded-md transition-colors"
+                  style="color: var(--cr-text-muted);"
+                  (click)="openEditDialog(tc)"
+                  pTooltip="S&#7917;a"
+                  tooltipPosition="top"
+                >
+                  <i class="pi pi-pencil text-xs"></i>
+                </button>
+                <button
+                  class="p-1.5 rounded-md transition-colors"
+                  style="color: var(--cr-accent-red);"
+                  (click)="confirmDelete(tc)"
+                  pTooltip="X&#243;a"
+                  tooltipPosition="top"
+                >
+                  <i class="pi pi-trash text-xs"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
     </div>
   }
+</div>
 
-  <!-- Create/Edit Dialog -->
-  <p-dialog
-    [header]="editingTestcase() ? 'Chỉnh sửa Testcase' : 'Thêm Testcase mới'"
-    [visible]="showDialog()"
-    (visibleChange)="!$event && closeDialog()"
-    [modal]="true"
-    [draggable]="false"
-    [dismissableMask]="true"
-    [style]="{ width: '90vw', maxWidth: '650px' }"
-  >
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4 pt-2">
-      <!-- Input -->
+<!-- Create / Edit Dialog -->
+<p-dialog
+  [header]="editingTestcase() ? 'S&#7917;a testcase' : 'Th&#234;m testcase m&#7899;i'"
+  [visible]="showDialog()"
+  (visibleChange)="showDialog.set($event)"
+  (onHide)="closeDialog()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '640px' }"
+  [breakpoints]="{ '768px': '95vw' }"
+  appendTo="body"
+>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+    <!-- Input -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium" style="color: var(--cr-text-muted);">
+        Input <span style="color: var(--cr-accent-red);">*</span>
+      </label>
+      <textarea
+        pTextarea
+        formControlName="input"
+        rows="6"
+        class="w-full font-mono text-xs"
+        placeholder="Nh&#7853;p d&#7919; li&#7879;u &#273;&#7847;u v&#224;o..."
+        [autoResize]="true"
+      ></textarea>
+    </div>
+
+    <!-- Expected Output -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium" style="color: var(--cr-text-muted);">
+        Expected Output <span style="color: var(--cr-accent-red);">*</span>
+      </label>
+      <textarea
+        pTextarea
+        formControlName="expectedOutput"
+        rows="6"
+        class="w-full font-mono text-xs"
+        placeholder="Nh&#7853;p k&#7871;t qu&#7843; mong &#273;&#7907;i..."
+        [autoResize]="true"
+      ></textarea>
+    </div>
+
+    <!-- Compare Type & isSample -->
+    <div class="grid grid-cols-2 gap-4">
       <div class="flex flex-col gap-1.5">
-        <div class="flex items-center justify-between">
-          <label for="tc-input" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-            Input <span class="text-red-500">*</span>
-          </label>
-          @if (form.get('input')?.value) {
-            <span class="text-[10px] text-surface-400">{{ lineCount(form.get('input')?.value) }} dòng</span>
-          }
-        </div>
-        <textarea
-          pTextarea
-          id="tc-input"
-          formControlName="input"
-          [rows]="5"
-          placeholder="Nhập dữ liệu input..."
-          class="w-full font-mono text-sm"
-        ></textarea>
-        @if (form.get('input')?.invalid && form.get('input')?.touched) {
-          <small class="text-red-500 text-xs">Input là bắt buộc</small>
-        }
+        <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Ki&#7875;u so s&#225;nh</label>
+        <p-select
+          formControlName="compareType"
+          [options]="compareTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          class="w-full"
+        />
       </div>
-
-      <!-- Expected Output -->
-      <div class="flex flex-col gap-1.5">
-        <div class="flex items-center justify-between">
-          <label for="tc-expectedOutput" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-            Output mong đợi <span class="text-red-500">*</span>
-          </label>
-          @if (form.get('expectedOutput')?.value) {
-            <span class="text-[10px] text-surface-400">{{ lineCount(form.get('expectedOutput')?.value) }} dòng</span>
-          }
-        </div>
-        <textarea
-          pTextarea
-          id="tc-expectedOutput"
-          formControlName="expectedOutput"
-          [rows]="5"
-          placeholder="Nhập output mong đợi..."
-          class="w-full font-mono text-sm"
-        ></textarea>
-        @if (form.get('expectedOutput')?.invalid && form.get('expectedOutput')?.touched) {
-          <small class="text-red-500 text-xs">Output mong đợi là bắt buộc</small>
-        }
-      </div>
-
-      <!-- Compare Type + Sample -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="flex flex-col gap-1.5">
-          <label for="tc-compareType" class="text-xs font-medium text-surface-600 dark:text-surface-300">
-            Kiểu so sánh <span class="text-red-500">*</span>
-          </label>
-          <p-select
-            inputId="tc-compareType"
-            formControlName="compareType"
-            [options]="compareTypeOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Chọn kiểu so sánh"
-            class="w-full"
+      <div class="flex items-end pb-2">
+        <div class="flex items-center gap-2">
+          <p-checkbox
+            inputId="isSample"
+            formControlName="isSample"
+            [binary]="true"
           />
+          <label for="isSample" class="text-sm cursor-pointer" style="color: var(--cr-text-secondary);">
+            Testcase m&#7851;u (hi&#7875;n th&#7883; cho sinh vi&#234;n)
+          </label>
         </div>
-
-        <div class="flex items-end pb-1">
-          <div class="flex items-center gap-2">
-            <p-checkbox inputId="tc-isSample" formControlName="isSample" [binary]="true" />
-            <label for="tc-isSample" class="text-sm text-surface-700 dark:text-surface-300 cursor-pointer">
-              Testcase mẫu
-            </label>
-          </div>
-        </div>
-      </div>
-    </form>
-
-    <ng-template #footer>
-      <div class="flex justify-end gap-2">
-        <p-button
-          label="Hủy"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="closeDialog()"
-        />
-        <p-button
-          [label]="editingTestcase() ? 'Cập nhật' : 'Thêm'"
-          icon="pi pi-check"
-          (onClick)="onSubmit()"
-          [disabled]="form.invalid"
-          [loading]="isSubmitting()"
-        />
-      </div>
-    </ng-template>
-  </p-dialog>
-
-  <!-- Preview Dialog -->
-  <p-dialog
-    [header]="previewTitle()"
-    [visible]="showPreviewDialog()"
-    (visibleChange)="!$event && closePreview()"
-    [modal]="true"
-    [draggable]="false"
-    [dismissableMask]="true"
-    [style]="{ width: '90vw', maxWidth: '600px' }"
-  >
-    <div class="relative">
-      <pre class="bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 rounded-lg p-4 text-sm font-mono whitespace-pre-wrap break-all max-h-96 overflow-auto">{{ previewContent() }}</pre>
-      <div class="flex justify-end mt-3">
-        <p-button
-          label="Sao chép"
-          icon="pi pi-copy"
-          severity="secondary"
-          size="small"
-          [outlined]="true"
-          (onClick)="copyToClipboard(previewContent())"
-        />
       </div>
     </div>
-  </p-dialog>
+  </form>
 
-  <p-confirmDialog />
-</div>
+  <ng-template #footer>
+    <div class="flex items-center justify-end gap-2">
+      <p-button label="H&#7911;y" severity="secondary" [outlined]="true" (onClick)="closeDialog()" [disabled]="isSubmitting()" />
+      <p-button
+        [label]="editingTestcase() ? 'C&#7853;p nh&#7853;t' : 'Th&#234;m'"
+        icon="pi pi-check"
+        (onClick)="onSubmit()"
+        [loading]="isSubmitting()"
+        [disabled]="form.invalid"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Preview Dialog -->
+<p-dialog
+  [header]="previewTitle()"
+  [visible]="showPreviewDialog()"
+  (visibleChange)="showPreviewDialog.set($event)"
+  (onHide)="closePreview()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '600px' }"
+  [breakpoints]="{ '768px': '95vw' }"
+  appendTo="body"
+>
+  <div class="relative">
+    <button
+      class="absolute top-2 right-2 p-1.5 rounded-md transition-colors z-10"
+      style="background: var(--cr-bg-elevated); color: var(--cr-text-muted);"
+      (click)="copyToClipboard(previewContent())"
+      pTooltip="Copy"
+      tooltipPosition="left"
+    >
+      <i class="pi pi-copy text-xs"></i>
+    </button>
+    <pre
+      class="text-xs font-mono p-4 rounded-lg overflow-auto max-h-[60vh] whitespace-pre-wrap"
+      style="background: var(--cr-bg-tertiary); color: var(--cr-text-primary); border: 1px solid var(--cr-border);"
+    >{{ previewContent() }}</pre>
+  </div>
+</p-dialog>
+
+<!-- Confirm Dialog -->
+<p-confirmdialog />
+<p-toast />
