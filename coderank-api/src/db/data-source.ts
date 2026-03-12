@@ -1,5 +1,6 @@
 import { HintsEntity } from "src/modules/problems/entities/hints.entity";
 import { ProblemsEntity } from "src/modules/problems/entities/problems.entity";
+import { SolutionsEntity } from "src/modules/problems/entities/solutions.entity";
 import { TagsEntity } from "src/modules/problems/entities/tags.entity";
 import { TestcasesEntity } from "src/modules/problems/entities/testcases.entity";
 import { AuthProvidersEntity } from "src/modules/users/entities/auth-provider.entity";
@@ -21,6 +22,7 @@ export const AppDataSource = new DataSource({
     SessionsEntity,
     AuthProvidersEntity,
     ProblemsEntity,
+    SolutionsEntity,
     TestcasesEntity,
     TagsEntity,
     HintsEntity

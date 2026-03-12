@@ -7,7 +7,7 @@ import { faker } from "@faker-js/faker/locale/zu_ZA";
 
 export class ProblemSeeder {
   async run() {
-    const repoProblems = AppDataSource.getRepository(ProblemsEntity);
+    // const repoProblems = AppDataSource.getRepository(ProblemsEntity);
     const repoTags = AppDataSource.getRepository(TagsEntity);
 
     // seed tags serially to avoid duplicate key race conditions
@@ -24,17 +24,19 @@ export class ProblemSeeder {
       }
     }
 
-    // fetch existing tag entities and use them when creating problems
-    const existingTags = await repoTags.find();
+    console.log("Seeded tags");
 
-    // seed 50 problems
-    for (let i = 0; i < 50; i++) {
-      const problemData = createProblemFactory();
-      // replace factory tag objects with actual Tag entities to avoid duplicate inserts
-      problemData.tags = faker.helpers.arrayElements(existingTags, { min: 2, max: 4 });
-      await repoProblems.save(repoProblems.create(problemData));
-    }
+    // // fetch existing tag entities and use them when creating problems
+    // const existingTags = await repoTags.find();
 
-    console.log("Seeded problems");
+    // // seed 50 problems
+    // for (let i = 0; i < 50; i++) {
+    //   const problemData = createProblemFactory();
+    //   // replace factory tag objects with actual Tag entities to avoid duplicate inserts
+    //   problemData.tags = faker.helpers.arrayElements(existingTags, { min: 2, max: 4 });
+    //   await repoProblems.save(repoProblems.create(problemData));
+    // }
+
+    // console.log("Seeded problems");
   }
 }
