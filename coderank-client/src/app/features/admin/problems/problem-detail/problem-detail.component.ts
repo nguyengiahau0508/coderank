@@ -4,6 +4,7 @@ import {
   OnInit,
   signal,
   inject,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -59,7 +60,9 @@ export class AdminProblemDetailComponent implements OnInit {
 
   // State
   readonly problem = signal<ProblemsModel | null>(null);
-  readonly sampleTestcases = signal<TestcasesModel[]>([]);
+  readonly allTestcases = signal<TestcasesModel[]>([]);
+  readonly sampleTestcases = computed(() => this.allTestcases().filter(tc => tc.isSample));
+  readonly hiddenTestcases = computed(() => this.allTestcases().filter(tc => !tc.isSample));
   readonly hints = signal<HintsModel[]>([]);
   readonly submissionHistory = signal<SubmissionsModel[]>([]);
   readonly solutions = signal<SolutionsModel[]>([]);
@@ -74,7 +77,7 @@ export class AdminProblemDetailComponent implements OnInit {
   readonly editingSolution = signal<SolutionsModel | null>(null);
   readonly selectedSubmission = signal<SubmissionsModel | null>(null);
   readonly selectedSubmissionLoading = signal<boolean>(false);
-  
+
   // Code editor state
   readonly currentCode = signal<string>('');
   readonly currentLanguage = signal<ProgrammingLanguageEnum>(ProgrammingLanguageEnum.Python);
@@ -83,20 +86,30 @@ export class AdminProblemDetailComponent implements OnInit {
   readonly visibleHints = signal<Set<number>>(new Set());
   readonly activeTabIndex = signal<number>(0);
 
+  // Computed stats
+  readonly acceptedCount = computed(() =>
+    this.submissionHistory().filter(s => s.status === SubmissionStatusEnum.Accepted).length
+  );
+  readonly acceptanceRate = computed(() => {
+    const total = this.submissionHistory().length;
+    if (total === 0) return 0;
+    return Math.round((this.acceptedCount() / total) * 100);
+  });
+
   readonly tabs = [
-    { label: 'Đề bài', index: 0 },
-    { label: 'Ví dụ', index: 1 },
-    { label: 'Gợi ý', index: 2 },
-    { label: 'Lịch sử', index: 3 },
-    { label: 'Solutions', index: 4 },
+    { label: 'Đề bài', icon: 'pi-file-edit', index: 0 },
+    { label: 'Test Cases', icon: 'pi-list-check', index: 1 },
+    { label: 'Gợi ý', icon: 'pi-lightbulb', index: 2 },
+    { label: 'Submissions', icon: 'pi-history', index: 3 },
+    { label: 'Solutions', icon: 'pi-code', index: 4 },
   ];
 
   ngOnInit(): void {
     const problemId = this.route.snapshot.paramMap.get('id');
     if (problemId) {
       this.loadProblem(problemId);
-      this.loadTestcases(problemId);
-      this.loadHints(problemId);
+      this.loadAllTestcases(problemId);
+      this.loadAllHints(problemId);
       this.loadSubmissionHistory(problemId);
       this.loadSolutions(problemId);
       this.loadMySolutions(problemId);
@@ -125,15 +138,15 @@ export class AdminProblemDetailComponent implements OnInit {
   }
 
   /**
-   * Load testcases
+   * Load ALL testcases (admin sees everything)
    */
-  private loadTestcases(problemId: string): void {
-    this.testcasesService.getSampleTestcases(problemId).subscribe({
+  private loadAllTestcases(problemId: string): void {
+    this.testcasesService.getTestcases(problemId).subscribe({
       next: (response) => {
-        // Only show sample testcases
-        this.sampleTestcases.set(
-          (response.data || []).filter((tc: any) => tc.isSample)
+        const testcases = (response.data || []).sort(
+          (a, b) => a.testcaseOrder - b.testcaseOrder
         );
+        this.allTestcases.set(testcases);
       },
       error: () => {
         this.messageService.add({
@@ -146,16 +159,15 @@ export class AdminProblemDetailComponent implements OnInit {
   }
 
   /**
-   * Load hints
+   * Load ALL hints (admin sees public + private)
    */
-  private loadHints(problemId: string): void {
+  private loadAllHints(problemId: string): void {
     this.hintsService.getHints(problemId).subscribe({
       next: (response) => {
-        // Only show public hints, sorted by hintOrder
-        const publicHints = (response.data || [])
-          .filter((h: any) => h.isPublic)
-          .sort((a, b) => a.hintOrder - b.hintOrder);
-        this.hints.set(publicHints);
+        const allHints = (response.data || []).sort(
+          (a, b) => a.hintOrder - b.hintOrder
+        );
+        this.hints.set(allHints);
       },
       error: () => {
         this.messageService.add({
@@ -467,6 +479,27 @@ export class AdminProblemDetailComponent implements OnInit {
       [DifficultyEnum.Hard]: 'Khó',
     };
     return labels[difficulty];
+  }
+
+  /**
+   * Navigate to edit problem page
+   */
+  editProblem(): void {
+    const prob = this.problem();
+    if (!prob) return;
+    this.router.navigate(['../../edit', prob.id], { relativeTo: this.route });
+  }
+
+  /**
+   * Get compare type label
+   */
+  getCompareTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      exact: 'Chính xác',
+      trim_whitespace: 'Bỏ khoảng trắng',
+      tokenize: 'Token hóa',
+    };
+    return labels[type] || type;
   }
 
   /**
