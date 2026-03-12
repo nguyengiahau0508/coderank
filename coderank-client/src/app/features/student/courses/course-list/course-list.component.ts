@@ -16,8 +16,8 @@ import { Button } from 'primeng/button';
 import { MessageService } from 'primeng/api';
 
 // Models & Enums
-import { CoursesModel } from '../../../../data/models/courses.model';
-import { CourseLevelEnum, CourseStatusEnum } from '../../../../data/enums/enums';
+import { CoursesModel } from '../../../../data';
+import { CourseLevelEnum, CourseStatusEnum } from '../../../../data';
 
 // Services
 import { StudentCoursesService } from '../services/courses.service';

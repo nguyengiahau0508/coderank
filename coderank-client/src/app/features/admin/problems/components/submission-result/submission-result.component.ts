@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SubmissionsModel } from '../../../../../data/models/submissions.model';
+import { SubmissionsModel } from '../../../../../data';
 import { SubmissionsService } from '../../services/submissions.service';
 
 @Component({

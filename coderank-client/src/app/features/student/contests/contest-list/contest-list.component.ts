@@ -14,8 +14,8 @@ import { Toast } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
 // Services & Models
-import { ContestsModel } from '../../../../data/models/contests.model';
-import { ContestStatusEnum } from '../../../../data/enums/enums';
+import { ContestsModel } from '../../../../data';
+import { ContestStatusEnum } from '../../../../data';
 import { StudentContestsService } from '../services/contests.service';
 
 @Component({

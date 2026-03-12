@@ -21,8 +21,8 @@ import {
   ContestProblemsModel,
   ContestParticipantsModel,
   ContestSubmissionsModel,
-} from '../../../../data/models/contests.model';
-import { ContestStatusEnum, DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../data/enums/enums';
+} from '../../../../data';
+import { ContestStatusEnum, DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../data';
 
 @Component({
   selector: 'app-student-contest-detail',

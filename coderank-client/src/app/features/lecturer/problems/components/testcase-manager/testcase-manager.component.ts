@@ -8,9 +8,9 @@ import { Checkbox } from 'primeng/checkbox';
 import { Select } from 'primeng/select';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
-import { TestcasesModel } from '../../../../../data/models/testcases.model';
-import { CreateTestcaseDto, UpdateTestcaseDto } from '../../../../../data/dto/problems';
-import { TestcaseCompareTypeEnum } from '../../../../../data/enums/enums';
+import { TestcasesModel } from '../../../../../data';
+import { CreateTestcaseDto, UpdateTestcaseDto } from '../../../../../data';
+import { TestcaseCompareTypeEnum } from '../../../../../data';
 
 interface CompareTypeOption {
   label: string;

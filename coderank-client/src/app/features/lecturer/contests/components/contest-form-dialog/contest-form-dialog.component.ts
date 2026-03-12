@@ -11,8 +11,8 @@ import { InputNumber } from 'primeng/inputnumber';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { TextEditorComponent } from '../../../../../shared/components/text-editor/text-editor.component';
-import { ContestsModel } from '../../../../../data/models/contests.model';
-import { ContestStatusEnum } from '../../../../../data/enums/enums';
+import { ContestsModel } from '../../../../../data';
+import { ContestStatusEnum } from '../../../../../data';
 
 @Component({
   selector: 'app-lecturer-contest-form-dialog',

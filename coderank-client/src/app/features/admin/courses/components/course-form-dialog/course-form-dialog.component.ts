@@ -9,8 +9,8 @@ import { Select } from 'primeng/select';
 import { InputNumber } from 'primeng/inputnumber';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import { TextEditorComponent } from '../../../../../shared/components/text-editor/text-editor.component';
-import { CoursesModel } from '../../../../../data/models/courses.model';
-import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/enums/enums';
+import { CoursesModel } from '../../../../../data';
+import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data';
 
 @Component({
   selector: 'app-admin-course-form-dialog',

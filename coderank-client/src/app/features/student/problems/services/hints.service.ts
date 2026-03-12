@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ProblemsApi } from '../../../../data/api/problems.api';
-import { ApiResponse } from '../../../../data/interfaces';
-import { HintsModel } from '../../../../data/models/hints.model';
+import { ProblemsApi } from '../../../../data';
+import { ApiResponse } from '../../../../data';
+import { HintsModel } from '../../../../data';
 
 /**
  * Student Hints Service - Read-only operations for hints

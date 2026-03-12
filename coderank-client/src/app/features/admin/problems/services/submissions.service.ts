@@ -1,10 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ProblemsApi } from '../../../../data/api/problems.api';
-import { ApiResponse } from '../../../../data/interfaces';
-import { SubmissionsModel } from '../../../../data/models/submissions.model';
-import { SubmissionStatusEnum } from '../../../../data/enums/enums';
-import { CreateSubmissionDto } from '../../../../data/dto/problems';
+import { ApiResponse, CreateSubmissionDto, ProblemsApi, SubmissionsModel, SubmissionStatusEnum } from '../../../../data';
+
 
 /**
  * Submissions Service - API calls and state management for submissions

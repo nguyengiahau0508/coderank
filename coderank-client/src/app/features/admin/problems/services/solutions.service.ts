@@ -1,9 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ProblemsApi } from '../../../../data/api/problems.api';
-import { ApiResponse } from '../../../../data/interfaces';
-import { SolutionsModel } from '../../../../data/models/solutions.model';
-import { CreateSolutionDto, UpdateSolutionDto } from '../../../../data/dto/problems';
+import { ApiResponse, CreateSolutionDto, ProblemsApi, SolutionsModel, UpdateSolutionDto } from '../../../../data';
 
 /**
  * Solutions Service - Business logic for community solutions

@@ -27,8 +27,8 @@ import {
   CourseQuizAttemptsModel,
   CourseAssignmentsModel,
   CourseAssignmentSubmissionsModel,
-} from '../../../../data/models/courses.model';
-import { LessonTypeEnum, QuizQuestionTypeEnum, AssignmentTypeEnum, AssignmentSubmissionStatusEnum } from '../../../../data/enums/enums';
+} from '../../../../data';
+import { LessonTypeEnum, QuizQuestionTypeEnum, AssignmentTypeEnum, AssignmentSubmissionStatusEnum } from '../../../../data';
 
 // Services
 import { StudentCoursesService } from '../services/courses.service';

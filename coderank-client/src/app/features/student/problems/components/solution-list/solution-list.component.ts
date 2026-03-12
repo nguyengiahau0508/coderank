@@ -6,7 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SolutionsModel } from '../../../../../data/models/solutions.model';
+import { SolutionsModel } from '../../../../../data';
 
 @Component({
   selector: 'app-student-solution-list',

@@ -1,0 +1,48 @@
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { ApiResponse, BaseApi } from '../../../shared';
+
+export interface RunCodeDto {
+  code: string;
+  language: string;
+  input: string;
+  timeLimit?: number;
+  memoryLimit?: number;
+}
+
+export enum RunStatusEnum {
+  OK = 'OK',
+  TLE = 'TLE',
+  MLE = 'MLE',
+  RE = 'RE',
+  CE = 'CE',
+}
+
+export interface RunResult {
+  status: RunStatusEnum;
+  stdout: string;
+  stderr?: string;
+  time: number;
+  memory: number;
+}
+
+/**
+ * Code Runner API Service
+ * Handles code execution and testing
+ */
+@Injectable({
+  providedIn: 'root'
+})
+export class RunnerApi extends BaseApi {
+  protected readonly endpoint = '/runner';
+
+  /**
+   * Run code with input
+   */
+  runCode(dto: RunCodeDto): Observable<ApiResponse<RunResult>> {
+    return this.apiService.post<ApiResponse<RunResult>>(
+      this.getUrl('/run'),
+      dto
+    );
+  }
+}

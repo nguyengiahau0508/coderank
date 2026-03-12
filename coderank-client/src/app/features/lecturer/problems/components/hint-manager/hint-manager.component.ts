@@ -8,8 +8,8 @@ import { InputNumber } from 'primeng/inputnumber';
 import { Checkbox } from 'primeng/checkbox';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
-import { HintsModel } from '../../../../../data/models/hints.model';
-import { CreateHintDto, UpdateHintDto } from '../../../../../data/dto/problems';
+import { HintsModel } from '../../../../../data';
+import { CreateHintDto, UpdateHintDto } from '../../../../../data';
 
 @Component({
   selector: 'app-hint-manager',

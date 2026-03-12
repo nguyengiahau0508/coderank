@@ -1,9 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ProblemsApi } from '../../../../data/api/problems.api';
-import { ApiResponse } from '../../../../data/interfaces';
-import { HintsModel } from '../../../../data/models/hints.model';
-import { CreateHintDto, UpdateHintDto } from '../../../../data/dto/problems';
+import { ApiResponse, CreateHintDto, HintsModel, ProblemsApi, UpdateHintDto } from '../../../../data';
 
 /**
  * Hints Service - CRUD operations for hints
@@ -14,7 +11,7 @@ import { CreateHintDto, UpdateHintDto } from '../../../../data/dto/problems';
 export class HintsService {
   private readonly problemsApi = inject(ProblemsApi);
 
-  /**
+  /*
    * Get all hints for a problem
    */
   getHints(problemId: string): Observable<ApiResponse<HintsModel[]>> {

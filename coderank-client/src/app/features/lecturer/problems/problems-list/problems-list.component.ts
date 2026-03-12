@@ -18,9 +18,9 @@ import { InputIcon } from 'primeng/inputicon';
 
 // Services & Models
 import { ProblemsService } from '../services/problems.service';
-import { ProblemsModel } from '../../../../data/models/problems.model';
-import { DifficultyEnum } from '../../../../data/enums/enums';
-import { TagsModel } from '../../../../data/models/tags.model';
+import { ProblemsModel } from '../../../../data';
+import { DifficultyEnum } from '../../../../data';
+import { TagsModel } from '../../../../data';
 
 @Component({
   selector: 'app-problems-list',

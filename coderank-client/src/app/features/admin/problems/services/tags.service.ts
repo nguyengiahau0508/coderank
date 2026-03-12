@@ -1,10 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ProblemsApi } from '../../../../data/api/problems.api';
-import { ApiResponse } from '../../../../data/interfaces';
-import { ProblemsModel } from '../../../../data/models/problems.model';
-import { TagsModel } from '../../../../data/models/tags.model';
-
+import { ApiResponse, ProblemsApi, ProblemsModel, TagsModel } from '../../../../data';
 /**
  * Tags Service - Operations for problem tags
  */

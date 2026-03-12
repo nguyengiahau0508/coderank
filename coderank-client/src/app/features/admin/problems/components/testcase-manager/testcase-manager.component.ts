@@ -25,9 +25,9 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Toast } from 'primeng/toast';
 import { Tag } from 'primeng/tag';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { TestcasesModel } from '../../../../../data/models/testcases.model';
-import { CreateTestcaseDto, UpdateTestcaseDto } from '../../../../../data/dto/problems';
-import { TestcaseCompareTypeEnum } from '../../../../../data/enums/enums';
+import { TestcasesModel } from '../../../../../data';
+import { CreateTestcaseDto, UpdateTestcaseDto } from '../../../../../data';
+import { TestcaseCompareTypeEnum } from '../../../../../data';
 import { TestcasesService } from '../../services/testcases.service';
 
 interface CompareTypeOption {

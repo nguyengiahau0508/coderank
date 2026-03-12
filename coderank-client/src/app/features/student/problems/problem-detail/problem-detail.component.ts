@@ -25,12 +25,12 @@ import { TestcasesService } from '../services/testcases.service';
 import { HintsService } from '../services/hints.service';
 import { SubmissionsService } from '../services/submissions.service';
 import { SolutionsService } from '../services/solutions.service';
-import { ProblemsModel } from '../../../../data/models/problems.model';
-import { TestcasesModel } from '../../../../data/models/testcases.model';
-import { HintsModel } from '../../../../data/models/hints.model';
-import { SubmissionsModel } from '../../../../data/models/submissions.model';
-import { SolutionsModel } from '../../../../data/models/solutions.model';
-import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../data/enums/enums';
+import { ProblemsModel } from '../../../../data';
+import { TestcasesModel } from '../../../../data';
+import { HintsModel } from '../../../../data';
+import { SubmissionsModel } from '../../../../data';
+import { SolutionsModel } from '../../../../data';
+import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../data';
 
 @Component({
   selector: 'app-student-problem-detail',

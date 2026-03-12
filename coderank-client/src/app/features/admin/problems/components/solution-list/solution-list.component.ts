@@ -8,7 +8,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { Button } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
-import { SolutionsModel } from '../../../../../data/models/solutions.model';
+import { SolutionsModel } from '../../../../../data';
 
 @Component({
   selector: 'app-admin-solution-list',

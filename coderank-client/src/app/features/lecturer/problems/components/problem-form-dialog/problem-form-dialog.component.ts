@@ -7,9 +7,9 @@ import { Textarea } from 'primeng/textarea';
 import { Select } from 'primeng/select';
 import { InputNumber } from 'primeng/inputnumber';
 import { Checkbox } from 'primeng/checkbox';
-import { DifficultyEnum } from '../../../../../data/enums/enums';
-import { ProblemsModel } from '../../../../../data/models/problems.model';
-import { CreateProblemDto, UpdateProblemDto } from '../../../../../data/dto/problems';
+import { DifficultyEnum } from '../../../../../data';
+import { ProblemsModel } from '../../../../../data';
+import { CreateProblemDto, UpdateProblemDto } from '../../../../../data';
 
 interface DifficultyOption {
   label: string;

@@ -11,8 +11,8 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { Tooltip } from 'primeng/tooltip';
 import { Paginator } from 'primeng/paginator';
 
-import { CoursesModel } from '../../../../../data/models/courses.model';
-import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/enums/enums';
+import { CoursesModel } from '../../../../../data';
+import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data';
 import { CoursesService } from '../../services/courses.service';
 
 export interface DuplicateCourseEvent {

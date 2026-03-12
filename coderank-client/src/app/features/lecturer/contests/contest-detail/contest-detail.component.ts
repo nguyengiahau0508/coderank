@@ -17,10 +17,10 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Services & Models
 import { LecturerContestsService } from '../services/contests.service';
-import { ProblemsApi } from '../../../../data/api/problems.api';
-import { ProblemsModel } from '../../../../data/models/problems.model';
-import { ContestsModel, ContestProblemsModel, ContestParticipantsModel, ContestSubmissionsModel } from '../../../../data/models/contests.model';
-import { ContestStatusEnum, DifficultyEnum, SubmissionStatusEnum } from '../../../../data/enums/enums';
+import { ProblemsApi } from '../../../../data';
+import { ProblemsModel } from '../../../../data';
+import { ContestsModel, ContestProblemsModel, ContestParticipantsModel, ContestSubmissionsModel } from '../../../../data';
+import { ContestStatusEnum, DifficultyEnum, SubmissionStatusEnum } from '../../../../data';
 
 @Component({
   selector: 'app-lecturer-contest-detail',

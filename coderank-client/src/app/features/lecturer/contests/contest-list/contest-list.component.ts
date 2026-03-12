@@ -18,8 +18,8 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Services & Models
-import { ContestsModel } from '../../../../data/models/contests.model';
-import { ContestStatusEnum } from '../../../../data/enums/enums';
+import { ContestsModel } from '../../../../data';
+import { ContestStatusEnum } from '../../../../data';
 import { LecturerContestsService } from '../services/contests.service';
 import { LecturerContestFormDialogComponent } from '../components/contest-form-dialog/contest-form-dialog.component';
 

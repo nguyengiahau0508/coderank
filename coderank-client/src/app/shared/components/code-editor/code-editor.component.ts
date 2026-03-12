@@ -11,7 +11,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { MonacoEditorModule, NgxEditorModel } from 'ngx-monaco-editor-v2-alternative';
 import { Select } from 'primeng/select';
-import { ProgrammingLanguageEnum } from '../../../data/enums/enums';
+import { ProgrammingLanguageEnum } from '../../../data';
 
 interface LanguageOption {
   label: string;

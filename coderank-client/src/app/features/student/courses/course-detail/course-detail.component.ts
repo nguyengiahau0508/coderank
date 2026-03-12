@@ -21,8 +21,8 @@ import {
   CourseEnrollmentsModel,
   CourseReviewsModel,
   CourseProgressSummary,
-} from '../../../../data/models/courses.model';
-import { CourseLevelEnum, CourseStatusEnum, LessonTypeEnum, EnrollmentStatusEnum } from '../../../../data/enums/enums';
+} from '../../../../data';
+import { CourseLevelEnum, CourseStatusEnum, LessonTypeEnum, EnrollmentStatusEnum } from '../../../../data';
 
 // Services
 import { StudentCoursesService } from '../services/courses.service';

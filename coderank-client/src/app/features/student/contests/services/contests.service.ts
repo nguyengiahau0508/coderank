@@ -1,19 +1,19 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ContestsApi } from '../../../../data/api/contests.api';
-import { ApiResponse, PaginatedResponse } from '../../../../data/interfaces';
+import { ContestsApi } from '../../../../data';
+import { ApiResponse, PaginatedResponse } from '../../../../data';
 import {
   ContestsModel,
   ContestProblemsModel,
   ContestParticipantsModel,
   ContestSubmissionsModel,
-} from '../../../../data/models/contests.model';
+} from '../../../../data';
 import {
   PaginationQueryContestsDto,
   JoinContestDto,
   CreateContestSubmissionDto,
-} from '../../../../data/dto/contests';
-import { ContestStatusEnum, SubmissionStatusEnum } from '../../../../data/enums/enums';
+} from '../../../../data';
+import { ContestStatusEnum, SubmissionStatusEnum } from '../../../../data';
 
 @Injectable({
   providedIn: 'root',

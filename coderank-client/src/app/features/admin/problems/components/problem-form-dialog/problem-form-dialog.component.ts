@@ -7,10 +7,10 @@ import { MultiSelect } from 'primeng/multiselect';
 import { InputNumber } from 'primeng/inputnumber';
 import { Checkbox } from 'primeng/checkbox';
 import { TextEditorComponent } from '../../../../../shared/components/text-editor/text-editor.component';
-import { DifficultyEnum } from '../../../../../data/enums/enums';
-import { ProblemsModel } from '../../../../../data/models/problems.model';
-import { TagsModel } from '../../../../../data/models/tags.model';
-import { CreateProblemDto, UpdateProblemDto } from '../../../../../data/dto/problems';
+import { DifficultyEnum } from '../../../../../data';
+import { ProblemsModel } from '../../../../../data';
+import { TagsModel } from '../../../../../data';
+import { CreateProblemDto, UpdateProblemDto } from '../../../../../data';
 
 interface DifficultyOption {
   label: string;

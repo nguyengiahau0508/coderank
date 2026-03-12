@@ -21,9 +21,9 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { FileUpload } from 'primeng/fileupload';
 
 import { TextEditorComponent } from '../../../../shared/components/text-editor/text-editor.component';
-import { CourseLessonsModel, CourseLessonProblemsModel, CourseQuizzesModel, CourseQuizQuestionsModel, CourseAssignmentsModel, CourseAssignmentSubmissionsModel } from '../../../../data/models/courses.model';
-import { ProblemsModel } from '../../../../data/models/problems.model';
-import { LessonTypeEnum, QuizQuestionTypeEnum, AssignmentTypeEnum, AssignmentSubmissionStatusEnum } from '../../../../data/enums/enums';
+import { CourseLessonsModel, CourseLessonProblemsModel, CourseQuizzesModel, CourseQuizQuestionsModel, CourseAssignmentsModel, CourseAssignmentSubmissionsModel } from '../../../../data';
+import { ProblemsModel } from '../../../../data';
+import { LessonTypeEnum, QuizQuestionTypeEnum, AssignmentTypeEnum, AssignmentSubmissionStatusEnum } from '../../../../data';
 import { CoursesService } from '../services/courses.service';
 
 @Component({

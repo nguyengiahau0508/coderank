@@ -22,11 +22,11 @@ import { ProblemsService } from '../services/problems.service';
 import { TestcasesService } from '../services/testcases.service';
 import { HintsService } from '../services/hints.service';
 import { SubmissionsService } from '../services/submissions.service';
-import { ProblemsModel } from '../../../../data/models/problems.model';
-import { TestcasesModel } from '../../../../data/models/testcases.model';
-import { HintsModel } from '../../../../data/models/hints.model';
-import { SubmissionsModel } from '../../../../data/models/submissions.model';
-import { DifficultyEnum, ProgrammingLanguageEnum } from '../../../../data/enums/enums';
+import { ProblemsModel } from '../../../../data';
+import { TestcasesModel } from '../../../../data';
+import { HintsModel } from '../../../../data';
+import { SubmissionsModel } from '../../../../data';
+import { DifficultyEnum, ProgrammingLanguageEnum } from '../../../../data';
 
 @Component({
   selector: 'app-problem-detail',

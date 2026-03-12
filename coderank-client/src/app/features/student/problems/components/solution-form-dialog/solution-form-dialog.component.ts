@@ -15,8 +15,8 @@ import { InputText } from 'primeng/inputtext';
 import { Editor, EditorTextChangeEvent } from 'primeng/editor';
 import { MessageService } from 'primeng/api';
 import { SolutionsService } from '../../services/solutions.service';
-import { SolutionsModel } from '../../../../../data/models/solutions.model';
-import { ProgrammingLanguageEnum } from '../../../../../data/enums/enums';
+import { SolutionsModel } from '../../../../../data';
+import { ProgrammingLanguageEnum } from '../../../../../data';
 
 interface LanguageOption {
   label: string;

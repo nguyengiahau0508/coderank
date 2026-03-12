@@ -26,8 +26,8 @@ import { TabPanel } from 'primeng/tabs';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Models & Enums
-import { CoursesModel, CourseSectionsModel, CourseLessonsModel, CourseReviewsModel } from '../../../../data/models/courses.model';
-import { CourseLevelEnum, CourseStatusEnum, LessonTypeEnum } from '../../../../data/enums/enums';
+import { CoursesModel, CourseSectionsModel, CourseLessonsModel, CourseReviewsModel } from '../../../../data';
+import { CourseLevelEnum, CourseStatusEnum, LessonTypeEnum } from '../../../../data';
 
 // Services
 import { CoursesService } from '../services/courses.service';

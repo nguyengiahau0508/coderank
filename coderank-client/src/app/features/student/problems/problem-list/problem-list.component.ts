@@ -19,9 +19,9 @@ import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 
 // Services & Models
-import { ProblemsModel } from '../../../../data/models/problems.model';
-import { DifficultyEnum } from '../../../../data/enums/enums';
-import { TagsModel } from '../../../../data/models/tags.model';
+import { ProblemsModel } from '../../../../data';
+import { DifficultyEnum } from '../../../../data';
+import { TagsModel } from '../../../../data';
 import { ProblemsService } from '../services/problems.service';
 import { TagsService } from '../services/tags.service';
 

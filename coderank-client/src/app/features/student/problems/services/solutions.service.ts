@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ProblemsApi } from '../../../../data/api/problems.api';
-import { ApiResponse } from '../../../../data/interfaces';
-import { SolutionsModel } from '../../../../data/models/solutions.model';
-import { CreateSolutionDto, UpdateSolutionDto } from '../../../../data/dto/problems';
+import { ProblemsApi } from '../../../../data';
+import { ApiResponse } from '../../../../data';
+import { SolutionsModel } from '../../../../data';
+import { CreateSolutionDto, UpdateSolutionDto } from '../../../../data';
 
 /**
  * Student Solutions Service - View and share solutions

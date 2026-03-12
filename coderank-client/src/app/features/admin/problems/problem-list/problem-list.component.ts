@@ -22,9 +22,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Services & Models
-import { ProblemsModel } from '../../../../data/models/problems.model';
-import { DifficultyEnum } from '../../../../data/enums/enums';
-import { TagsModel } from '../../../../data/models/tags.model';
+import { DifficultyEnum, ProblemsModel, TagsModel } from '../../../../data';
 import { AdminProblemFormDialogComponent } from '../components/problem-form-dialog/problem-form-dialog.component';
 import { AdminTestcaseManagerComponent } from '../components/testcase-manager/testcase-manager.component';
 import { AdminHintManagerComponent } from '../components/hint-manager/hint-manager.component';

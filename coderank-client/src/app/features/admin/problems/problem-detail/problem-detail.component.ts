@@ -28,18 +28,18 @@ import { TestcasesService } from '../services/testcases.service';
 import { HintsService } from '../services/hints.service';
 import { SubmissionsService } from '../services/submissions.service';
 import { SolutionsService } from '../services/solutions.service';
-import { RunnerApi, RunResult, RunStatusEnum } from '../../../../data/api/runner.api';
-import { ProblemsModel } from '../../../../data/models/problems.model';
-import { TestcasesModel } from '../../../../data/models/testcases.model';
-import { HintsModel } from '../../../../data/models/hints.model';
-import { SubmissionsModel } from '../../../../data/models/submissions.model';
-import { SolutionsModel } from '../../../../data/models/solutions.model';
-import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../data/enums/enums';
+import { RunnerApi, RunResult, RunStatusEnum } from '../../../../data';
+import { ProblemsModel } from '../../../../data';
+import { TestcasesModel } from '../../../../data';
+import { HintsModel } from '../../../../data';
+import { SubmissionsModel } from '../../../../data';
+import { SolutionsModel } from '../../../../data';
+import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../data';
 import { Subscription } from 'rxjs';
 import {
   SubmissionCompletedSocketPayload,
   SubmissionSocket,
-} from '../../../../data/socket/submission.socket';
+} from '../../../../data';
 
 export interface CustomTestcase {
   id: number;

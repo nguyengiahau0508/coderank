@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ProblemsApi } from '../../../../data/api/problems.api';
-import { ApiResponse } from '../../../../data/interfaces';
-import { TestcasesModel } from '../../../../data/models/testcases.model';
+import { ProblemsApi } from '../../../../data';
+import { ApiResponse } from '../../../../data';
+import { TestcasesModel } from '../../../../data';
 
 /**
  * Student Testcases Service - Read-only operations for sample testcases
