@@ -107,3 +107,11 @@ export enum QuizQuestionTypeEnum {
   ShortAnswer = 'short_answer',
   Code = 'code',
 }
+
+// ===== AI ENUMS =====
+
+export enum AiProviderEnum {
+  Gemini = 'gemini',
+  Ollama = 'ollama',
+  Groq = 'groq',
+}

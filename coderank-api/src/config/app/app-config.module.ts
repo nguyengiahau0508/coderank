@@ -18,6 +18,7 @@ import { AppConfigService } from "./app-config.service";
 	    APP_URL: Joi.string(),
 	    CLIENT_URL: Joi.string().required(),
       AGENT_URL: Joi.string().required(),
+      AGENT_SECRET_TOKEN: Joi.string().required(),
       })
     })
   ],

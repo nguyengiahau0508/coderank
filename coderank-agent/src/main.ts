@@ -1,4 +1,4 @@
-import express, {Request, Response} from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { config } from './config';
 import cors from 'cors';
 import { Agent } from './core/agent/agent';
@@ -7,57 +7,49 @@ const PORT = config.PORT;
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: config.NESTJS_API_URL.replace('/api', '') }));
 app.use(express.json());
 
-app.get('/health', (req, res) => {
+// Middleware: verify agent secret token (only NestJS API can call this service)
+function verifyAgentSecret(req: Request, res: Response, next: NextFunction) {
+  const secret = req.headers['x-agent-secret'];
+  if (!config.AGENT_SECRET_TOKEN || secret !== config.AGENT_SECRET_TOKEN) {
+    return res.status(403).json({ success: false, error: 'Unauthorized: invalid agent secret' });
+  }
+  next();
+}
+
+app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-app.post('/agent/query', async (req: Request, res: Response) => {
-  const { userToken, message, role } = req.body;
+app.post('/agent/chat', verifyAgentSecret, async (req: Request, res: Response) => {
+  const { userToken, message, role, provider, modelName, apiKey, baseHost } = req.body;
 
-  // Kiểm tra input cơ bản
   if (!userToken || !message) {
-    return res.status(400).json({ error: 'Missing userToken or message' });
+    return res.status(400).json({ success: false, error: 'Missing userToken or message' });
   }
 
-  // Header bảo mật để đảm bảo chỉ NestJS được gọi Agent này
-  // const agentSecret = req.headers['x-agent-secret'];
-  // if (agentSecret !== config.AGENT_SECRET_TOKEN) {
-  //   return res.status(403).json({ error: 'Unauthorized access' });
-  // }
-
-  // Lấy cấu hình tùy chọn từ request body
-  const providerName = req.body.provider || config.DEFAULT_MODEL_PROVIDER;
-  const modelName = req.body.modelName; // Tuỳ chọn
-  const providerConfig = {
-    apiKey: req.body.apiKey,
-    baseHost: req.body.baseHost // Dành cho Ollama
-  };
+  const llmConfig = (apiKey || baseHost) ? { apiKey, baseHost } : undefined;
 
   try {
-    // Khởi tạo Agent với cấu hình tùy chỉnh
-    const agent = new Agent(role, providerName, modelName, providerConfig);
-    const response = await agent.processQuery(userToken, message);
+    const agent = new Agent(role, provider, modelName, llmConfig);
+    const responseText = await agent.processQuery(userToken, message);
 
     return res.json({
       success: true,
-      data: response,
+      data: { message: responseText },
     });
   } catch (error: any) {
     console.error(`[Agent Error]: ${error.message}`);
     return res.status(500).json({
       success: false,
       error: 'Internal Agent Error',
-      details: error.message
+      details: error.message,
     });
   }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`[CodeRank Agent] Running on port ${PORT}`);
 });
-
-
-

@@ -9,15 +9,12 @@ export class Agent {
   private llm: ILLMProvider;
   private toolRegistry: ToolRegistry;
 
-  constructor(role: RolesEnum,providerName?: string, modelName?: string, providerConfig?: ILLMConfig) {
-    // Use factory to get the LLM provider
+  constructor(role: RolesEnum, providerName?: string, modelName?: string, providerConfig?: ILLMConfig) {
     this.llm = LLMFactory.createProvider(providerName, modelName, providerConfig);
     
-    // Initialize tool registry
     this.toolRegistry = new ToolRegistry();
     this.registerDefaultTools();
 
-    // Initialize the LLM with prompt and tools
     let systemPrompt = SYSTEM_PROMPT;
     switch (role) {
       case RolesEnum.Admin:

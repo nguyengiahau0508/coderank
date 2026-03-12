@@ -32,4 +32,8 @@ export class AppConfigService {
 	get agent_url(): string  {
 		return this.configurationService.get<string>('appConfig.agent_url', 'http://localhost:4000')
 	}
+
+	get agent_secret_token(): string {
+		return this.configurationService.get<string>('appConfig.agent_secret_token', '')
+	}
 }

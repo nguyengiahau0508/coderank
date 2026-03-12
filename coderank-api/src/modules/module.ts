@@ -4,10 +4,12 @@ import { RunnerModule } from "./runner/runner.module";
 import { ProblemsModule } from "./problems/problems.module";
 import { ContestsModule } from "./contests/contests.module";
 import { CoursesModule } from "./courses/courses.module";
+import { AgentModule } from "./agent/agent.module";
 
 
 @Module({
   imports: [
+    AgentModule,
     UsersModule,
     RunnerModule,
     ProblemsModule,
