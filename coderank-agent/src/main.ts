@@ -50,6 +50,48 @@ app.post('/agent/chat', verifyAgentSecret, async (req: Request, res: Response) =
   }
 });
 
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+app.post('/agent/chat/stream', verifyAgentSecret, async (req: Request, res: Response) => {
+  const { userToken, message, role, provider, modelName, apiKey, baseHost } = req.body;
+
+  if (!userToken || !message) {
+    return res.status(400).json({ success: false, error: 'Missing userToken or message' });
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+
+  const sendEvent = (event: { type: string; content?: string }) => {
+    res.write(`data: ${JSON.stringify(event)}\n\n`);
+  };
+
+  const llmConfig = (apiKey || baseHost) ? { apiKey, baseHost } : undefined;
+
+  try {
+    const agent = new Agent(role, provider, modelName, llmConfig);
+    const responseText = await agent.processQueryStream(userToken, message, sendEvent);
+
+    // Stream final text word-by-word
+    const words = responseText.split(/(?<=\s)/);
+    for (const word of words) {
+      sendEvent({ type: 'token', content: word });
+      await sleep(15);
+    }
+
+    sendEvent({ type: 'done' });
+    res.end();
+  } catch (error: any) {
+    console.error(`[Agent Stream Error]: ${error.message}`);
+    sendEvent({ type: 'error', content: error.message });
+    res.end();
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[CodeRank Agent] Running on port ${PORT}`);
 });

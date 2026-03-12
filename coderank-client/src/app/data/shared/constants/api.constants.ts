@@ -54,6 +54,13 @@ export const API_ENDPOINTS = {
     BASE: '/runner',
     RUN: '/runner/run',
   },
+
+  // Agent
+  AGENT: {
+    CHAT: '/agent/chat',
+    CONFIG: '/agent/config',
+    CONVERSATIONS: '/agent/conversations',
+  },
 } as const;
 
 /**

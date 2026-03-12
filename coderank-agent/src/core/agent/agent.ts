@@ -68,7 +68,6 @@ export class Agent {
               try {
                 const apiResult = await tool.execute(call.arguments, apiClient);
                 console.log(`[Agent:ToolResult] <- Tool: ${tool.name} returned successfully.`);
-                // console.log(`[Agent:ToolResult] Raw Data:`, JSON.stringify(apiResult).substring(0, 200) + '...');
                 
                 toolResponses.push({
                   functionResponse: {
@@ -111,5 +110,59 @@ export class Agent {
     }
 
     return "Xin lỗi, tôi không thể tìm ra giải pháp sau nhiều bước xử lý.";
+  }
+
+  async processQueryStream(
+    userToken: string,
+    userMessage: string,
+    onEvent: (event: { type: string; content?: string }) => void,
+  ): Promise<string> {
+    const apiClient = createInternalClient(userToken);
+    let currentMessage: any = userMessage;
+    const MAX_ITERATIONS = 10;
+
+    onEvent({ type: 'status', content: 'Thinking...' });
+
+    try {
+      for (let i = 0; i < MAX_ITERATIONS; i++) {
+        const response = await this.llm.sendMessage(currentMessage);
+
+        if (response.toolCalls && response.toolCalls.length > 0) {
+          const toolResponses: any[] = [];
+
+          for (const call of response.toolCalls) {
+            onEvent({ type: 'status', content: `Analyzing with ${call.name}...` });
+
+            const tool = this.toolRegistry.get(call.name);
+            if (tool) {
+              try {
+                const apiResult = await tool.execute(call.arguments, apiClient);
+                toolResponses.push({
+                  functionResponse: { name: tool.name, response: apiResult },
+                });
+              } catch (error: any) {
+                toolResponses.push({
+                  functionResponse: { name: tool.name, response: { error: error.message } },
+                });
+              }
+            } else {
+              toolResponses.push({
+                functionResponse: { name: call.name, response: { error: `Tool ${call.name} not found` } },
+              });
+            }
+          }
+
+          currentMessage = toolResponses;
+          onEvent({ type: 'status', content: 'Processing results...' });
+        } else if (response.text) {
+          return response.text;
+        }
+      }
+    } catch (error: any) {
+      console.error('[Agent Stream Error]:', error);
+      return 'Tôi gặp sự cố khi xử lý yêu cầu. Vui lòng thử lại!';
+    }
+
+    return 'Xin lỗi, tôi không thể tìm ra giải pháp sau nhiều bước xử lý.';
   }
 }

@@ -8,7 +8,7 @@ import {
 } from 'src/common/decorators';
 
 @Entity('user_ai_configs')
-@Index(['authorId'], { unique: true })
+@Index(['authorId', 'provider'], { unique: true })
 export class UserAiConfigEntity extends BaseEntity {
   @ApiEnumProperty(
     'AI provider',

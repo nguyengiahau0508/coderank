@@ -12,10 +12,11 @@ import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { HeaderComponent } from '../shared/header/header.component';
 import { SidebarComponent, MenuItem } from '../shared/sidebar/sidebar.component';
+import { AiChatComponent } from '../../shared/components/ai-chat/ai-chat.component';
 
 @Component({
   selector: 'app-base-layout',
-  imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent, AiChatComponent],
   template: `
     <div class="h-screen flex flex-col overflow-hidden" style="background-color: var(--cr-bg-primary);">
       <!-- Loading bar for route changes -->
@@ -57,6 +58,9 @@ import { SidebarComponent, MenuItem } from '../shared/sidebar/sidebar.component'
         </main>
       </div>
     </div>
+
+    <!-- AI Assistant Chat Widget (outside overflow-hidden container) -->
+    <app-ai-chat />
   `,
   styles: [`
     :host {

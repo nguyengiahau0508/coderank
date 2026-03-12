@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserAiConfigEntity } from './entities/user-ai-config.entity';
 import { UpsertAiConfigDto } from './dto/upsert-ai-config.dto';
+import { AiProviderEnum } from 'src/common/enums/enums';
 
 @Injectable()
 export class UserAiConfigService {
@@ -11,22 +12,31 @@ export class UserAiConfigService {
     private readonly repo: Repository<UserAiConfigEntity>,
   ) {}
 
-  async findByUserId(userId: string): Promise<UserAiConfigEntity | null> {
-    return this.repo.findOne({
-      where: { authorId: userId },
-    });
+  async findAllByUserId(userId: string): Promise<UserAiConfigEntity[]> {
+    return this.repo.find({ where: { authorId: userId } });
   }
 
-  async findByUserIdWithApiKey(userId: string): Promise<UserAiConfigEntity | null> {
+  async findByUserIdAndProvider(
+    userId: string,
+    provider: AiProviderEnum,
+  ): Promise<UserAiConfigEntity | null> {
+    return this.repo.findOne({ where: { authorId: userId, provider } });
+  }
+
+  async findByUserIdAndProviderWithApiKey(
+    userId: string,
+    provider: AiProviderEnum,
+  ): Promise<UserAiConfigEntity | null> {
     return this.repo
       .createQueryBuilder('config')
       .addSelect('config.apiKey')
       .where('config.authorId = :userId', { userId })
+      .andWhere('config.provider = :provider', { provider })
       .getOne();
   }
 
   async upsert(userId: string, dto: UpsertAiConfigDto): Promise<UserAiConfigEntity> {
-    const existing = await this.findByUserId(userId);
+    const existing = await this.findByUserIdAndProvider(userId, dto.provider);
 
     if (existing) {
       Object.assign(existing, dto);
@@ -40,7 +50,7 @@ export class UserAiConfigService {
     return this.repo.save(config);
   }
 
-  async remove(userId: string): Promise<void> {
-    await this.repo.delete({ authorId: userId });
+  async removeByProvider(userId: string, provider: AiProviderEnum): Promise<void> {
+    await this.repo.delete({ authorId: userId, provider });
   }
 }

@@ -1,0 +1,590 @@
+<!-- Floating toggle button -->
+@if (!isOpen()) {
+  <button
+    (click)="open()"
+    class="fixed bottom-6 right-6 z-[9998] w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 cursor-pointer group"
+    style="background: linear-gradient(135deg, var(--cr-accent-blue), var(--cr-accent-purple));"
+    title="Chat with AI Assistant"
+  >
+    <i class="pi pi-sparkles text-xl text-white"></i>
+    <span
+      class="absolute inset-0 rounded-full animate-ping opacity-20"
+      style="background: var(--cr-accent-blue);"
+    ></span>
+  </button>
+}
+
+<!-- Chat panel -->
+@if (isOpen()) {
+  <div
+    class="fixed z-[9998] flex overflow-hidden transition-all duration-300"
+    [class.inset-0]="chatSize() === 'maximum'"
+    [class.chat-mini]="chatSize() === 'mini'"
+    [class.chat-resizable]="chatSize() === 'resizable'"
+    [class.rounded-2xl]="chatSize() !== 'maximum'"
+    [class.shadow-2xl]="chatSize() !== 'maximum'"
+    [class.border]="chatSize() !== 'maximum'"
+    [class.animate-slide-up]="chatSize() !== 'maximum'"
+    [class.animate-fade-in]="chatSize() === 'maximum'"
+    [style.width.px]="chatSize() === 'resizable' ? resizeWidth() : null"
+    [style.height.px]="chatSize() === 'resizable' ? resizeHeight() : null"
+    style="background-color: var(--cr-bg-primary); border-color: var(--cr-border);"
+  >
+
+    <!-- Resize handles (resizable mode only) -->
+    @if (chatSize() === 'resizable') {
+      <div class="resize-handle resize-handle-top" (mousedown)="onResizeStart($event, 'top')"></div>
+      <div class="resize-handle resize-handle-left" (mousedown)="onResizeStart($event, 'left')"></div>
+      <div class="resize-handle resize-handle-corner" (mousedown)="onResizeStart($event, 'top-left')"></div>
+    }
+
+    <!-- ====== Sidebar (hidden in mini mode) ====== -->
+    @if (sidebarOpen() && chatSize() !== 'mini') {
+      <aside
+        class="flex flex-col border-r shrink-0"
+        [class.w-[280px]]="chatSize() === 'maximum'"
+        [class.w-[220px]]="chatSize() === 'resizable'"
+        style="background-color: var(--cr-bg-primary); border-color: var(--cr-border);"
+      >
+        <!-- Sidebar header -->
+        <div class="p-3 flex items-center gap-2 border-b" style="border-color: var(--cr-border);">
+          <button
+            (click)="newChat()"
+            class="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+            style="border: 1px solid var(--cr-border); color: var(--cr-text-primary);"
+          >
+            <i class="pi pi-plus text-xs"></i>
+            New Chat
+          </button>
+          <button
+            (click)="sidebarOpen.set(false)"
+            class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+            style="color: var(--cr-text-muted);"
+            title="Hide sidebar"
+          >
+            <i class="pi pi-angle-double-left text-sm"></i>
+          </button>
+        </div>
+
+        <!-- Conversation list -->
+        <div class="flex-1 overflow-y-auto p-2 space-y-0.5 thin-scrollbar">
+          @if (conversations().length === 0) {
+            <div class="px-3 py-8 text-center">
+              <p class="text-xs" style="color: var(--cr-text-muted);">No conversations yet</p>
+            </div>
+          }
+          @for (conv of conversations(); track conv.id) {
+            <div
+              class="sidebar-conv-item group relative px-3 py-2.5 rounded-lg cursor-pointer"
+              [class.active]="activeConversationId() === conv.id"
+              (click)="selectConversation(conv.id)"
+            >
+              @if (editingConvId() === conv.id) {
+                <input
+                  type="text"
+                  [(ngModel)]="editingConvTitle"
+                  (keydown.enter)="saveRename(conv.id)"
+                  (keydown.escape)="cancelRename()"
+                  (blur)="saveRename(conv.id)"
+                  class="w-full bg-transparent outline-none text-sm px-0"
+                  style="color: var(--cr-text-primary);"
+                  (click)="$event.stopPropagation()"
+                />
+              } @else {
+                <div class="text-sm truncate pr-12" style="color: var(--cr-text-primary);">
+                  {{ conv.title }}
+                </div>
+                <div class="absolute right-2 top-1.5 hidden group-hover:flex items-center gap-0.5">
+                  <button
+                    (click)="startRenaming(conv, $event)"
+                    class="w-7 h-7 rounded flex items-center justify-center cursor-pointer transition-colors"
+                    style="color: var(--cr-text-muted);"
+                    title="Rename"
+                  >
+                    <i class="pi pi-pencil text-[11px]"></i>
+                  </button>
+                  <button
+                    (click)="deleteConversation(conv.id, $event)"
+                    class="w-7 h-7 rounded flex items-center justify-center cursor-pointer transition-colors"
+                    style="color: var(--cr-text-muted);"
+                    title="Delete"
+                  >
+                    <i class="pi pi-trash text-[11px]"></i>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Sidebar footer -->
+        <div class="p-3 border-t" style="border-color: var(--cr-border);">
+          <button
+            (click)="showConfig.set(true)"
+            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer"
+            style="color: var(--cr-text-secondary);"
+          >
+            <i class="pi pi-cog text-sm"></i>
+            AI Settings
+            @if (!activeProviderConfigured()) {
+              <span class="ml-auto w-2 h-2 rounded-full" style="background: #f59e0b;"></span>
+            }
+          </button>
+        </div>
+      </aside>
+    }
+
+    <!-- ====== Main Chat Area ====== -->
+    <main class="flex-1 flex flex-col min-w-0" style="background-color: var(--cr-bg-secondary);">
+
+      <!-- Top bar -->
+      <header
+        class="flex items-center justify-between px-4 py-2 border-b shrink-0"
+        style="border-color: var(--cr-border); background-color: var(--cr-bg-secondary);"
+      >
+        <div class="flex items-center gap-2">
+          @if (!sidebarOpen() && chatSize() !== 'mini') {
+            <button
+              (click)="sidebarOpen.set(true)"
+              class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+              style="color: var(--cr-text-muted);"
+              title="Show sidebar"
+            >
+              <i class="pi pi-bars text-sm"></i>
+            </button>
+          }
+          @if (chatSize() === 'mini') {
+            <button
+              (click)="newChat()"
+              class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+              style="color: var(--cr-text-muted);"
+              title="New chat"
+            >
+              <i class="pi pi-plus text-sm"></i>
+            </button>
+          }
+          <!-- Provider badge -->
+          @if (activeProvider()) {
+            <div
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+              style="background-color: var(--cr-bg-tertiary);"
+            >
+              <i
+                [class]="getProviderMeta(activeProvider()!).icon + ' text-xs'"
+                [style.color]="getProviderMeta(activeProvider()!).color"
+              ></i>
+              <span class="text-sm" style="color: var(--cr-text-primary);">
+                {{ getProviderMeta(activeProvider()!).label }}
+              </span>
+              @if (getProviderModel(activeProvider()!) && chatSize() !== 'mini') {
+                <span class="text-xs" style="color: var(--cr-text-muted);">
+                  · {{ getProviderModel(activeProvider()!) }}
+                </span>
+              }
+            </div>
+          } @else {
+            <span class="text-sm" style="color: var(--cr-text-muted);">CodeRank AI</span>
+          }
+        </div>
+        <div class="flex items-center gap-0.5">
+          <button
+            (click)="showConfig.set(true)"
+            class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+            style="color: var(--cr-text-muted);"
+            title="AI Settings"
+          >
+            <i class="pi pi-cog text-sm"></i>
+          </button>
+          <!-- Size mode buttons -->
+          <button
+            (click)="setSize('mini')"
+            class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+            [style.color]="chatSize() === 'mini' ? 'var(--cr-accent-blue)' : 'var(--cr-text-muted)'"
+            title="Mini"
+          >
+            <i class="pi pi-minus text-sm"></i>
+          </button>
+          <button
+            (click)="setSize('resizable')"
+            class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+            [style.color]="chatSize() === 'resizable' ? 'var(--cr-accent-blue)' : 'var(--cr-text-muted)'"
+            title="Resizable"
+          >
+            <i class="pi pi-stop text-sm"></i>
+          </button>
+          <button
+            (click)="setSize('maximum')"
+            class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+            [style.color]="chatSize() === 'maximum' ? 'var(--cr-accent-blue)' : 'var(--cr-text-muted)'"
+            title="Maximum"
+          >
+            <i class="pi pi-window-maximize text-sm"></i>
+          </button>
+          <button
+            (click)="close()"
+            class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+            style="color: var(--cr-text-muted);"
+            title="Close"
+          >
+            <i class="pi pi-times text-sm"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Warning: no provider -->
+      @if (!activeProviderConfigured()) {
+        <div
+          class="px-4 py-2 border-b flex items-center gap-2 shrink-0 cursor-pointer"
+          style="background-color: #f59e0b15; border-color: var(--cr-border);"
+          (click)="showConfig.set(true)"
+        >
+          <i class="pi pi-exclamation-triangle text-sm" style="color: #f59e0b;"></i>
+          <span class="text-xs" style="color: #f59e0b;">
+            No AI provider configured. Click here to set up.
+          </span>
+        </div>
+      }
+
+      <!-- Messages area -->
+      <div
+        #messagesContainer
+        (click)="onMessagesClick($event)"
+        class="flex-1 overflow-y-auto thin-scrollbar"
+      >
+        <div [class]="chatSize() === 'maximum' ? 'max-w-3xl mx-auto px-4 py-6' : 'px-3 py-4'">
+
+          <!-- Welcome screen -->
+          @if (messages().length === 0 && !isStreaming()) {
+            <div
+              class="flex flex-col items-center justify-center text-center px-4"
+              [class.py-20]="chatSize() === 'maximum'"
+              [class.py-8]="chatSize() !== 'maximum'"
+            >
+              <div
+                class="rounded-2xl flex items-center justify-center mb-4"
+                [class]="chatSize() === 'mini' ? 'w-12 h-12' : 'w-20 h-20 mb-6'"
+                style="background: linear-gradient(135deg, var(--cr-accent-blue), var(--cr-accent-purple)); opacity: 0.9;"
+              >
+                <i
+                  class="pi pi-sparkles text-white"
+                  [class.text-xl]="chatSize() === 'mini'"
+                  [class.text-3xl]="chatSize() !== 'mini'"
+                ></i>
+              </div>
+              <h2
+                class="font-semibold mb-2"
+                [class.text-base]="chatSize() === 'mini'"
+                [class.text-xl]="chatSize() !== 'mini'"
+                style="color: var(--cr-text-primary);"
+              >
+                CodeRank AI
+              </h2>
+              @if (chatSize() !== 'mini') {
+                <p class="text-sm mb-8 max-w-md" style="color: var(--cr-text-muted);">
+                  I can help you solve algorithm problems, debug code, analyze complexity, and more. Ask me anything!
+                </p>
+              }
+              <div class="flex flex-wrap gap-2 justify-center max-w-lg">
+                @for (q of quickQuestions; track q) {
+                  <button
+                    (click)="sendQuick(q)"
+                    [disabled]="!activeProviderConfigured()"
+                    class="rounded-xl text-sm border transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    [class]="chatSize() === 'mini' ? 'px-2.5 py-1.5 text-xs' : 'px-4 py-2'"
+                    style="border-color: var(--cr-border); color: var(--cr-text-secondary); background: var(--cr-bg-tertiary);"
+                  >
+                    {{ q }}
+                  </button>
+                }
+              </div>
+            </div>
+          } @else {
+            <!-- Message list -->
+            <div [class]="chatSize() === 'maximum' ? 'space-y-6' : 'space-y-4'">
+              @for (msg of messages(); track msg.id) {
+                <div class="flex gap-2.5" [class.flex-row-reverse]="msg.role === 'user'">
+                  <!-- Avatar -->
+                  @if (chatSize() !== 'mini') {
+                    <div
+                      class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                      [style.background]="msg.role === 'assistant'
+                        ? 'linear-gradient(135deg, var(--cr-accent-blue), var(--cr-accent-purple))'
+                        : 'var(--cr-bg-elevated)'"
+                    >
+                      <i
+                        [class]="msg.role === 'assistant' ? 'pi pi-sparkles' : 'pi pi-user'"
+                        class="text-xs text-white"
+                      ></i>
+                    </div>
+                  }
+
+                  <!-- Content -->
+                  <div
+                    class="text-sm leading-relaxed"
+                    [class]="msg.role === 'user'
+                      ? 'px-3.5 py-2 rounded-2xl rounded-br-sm max-w-[85%]'
+                      : 'px-1 py-0.5 max-w-full'"
+                    [style.background]="msg.role === 'user' ? 'var(--cr-accent-blue)' : 'transparent'"
+                    [style.color]="msg.role === 'user' ? 'white' : 'var(--cr-text-primary)'"
+                  >
+                    @if (msg.role === 'assistant') {
+                      <div class="chat-markdown" [innerHTML]="renderMarkdown(msg.content)"></div>
+                    } @else {
+                      <span class="whitespace-pre-wrap">{{ msg.content }}</span>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Streaming assistant message -->
+              @if (isStreaming()) {
+                <div class="flex gap-2.5">
+                  @if (chatSize() !== 'mini') {
+                    <div
+                      class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                      style="background: linear-gradient(135deg, var(--cr-accent-blue), var(--cr-accent-purple));"
+                    >
+                      <i class="pi pi-sparkles text-xs text-white"></i>
+                    </div>
+                  }
+                  <div class="px-1 py-0.5 text-sm leading-relaxed" style="color: var(--cr-text-primary);">
+                    @if (streamingStatus() && !streamingContent()) {
+                      <div class="flex items-center gap-2" style="color: var(--cr-text-muted);">
+                        <i class="pi pi-spin pi-spinner text-xs"></i>
+                        <span class="text-sm">{{ streamingStatus() }}</span>
+                      </div>
+                    } @else if (streamingContent()) {
+                      <div class="chat-markdown" [innerHTML]="renderMarkdown(streamingContent())"></div>
+                      <span class="inline-block w-2 h-4 ml-0.5 animate-pulse" style="background: var(--cr-accent-blue);"></span>
+                    } @else {
+                      <div class="typing-indicator">
+                        <span></span><span></span><span></span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Input area -->
+      <div
+        class="px-3 shrink-0"
+        [class.py-4]="chatSize() === 'maximum'"
+        [class.py-2.5]="chatSize() !== 'maximum'"
+        style="background-color: var(--cr-bg-secondary);"
+      >
+        <div [class]="chatSize() === 'maximum' ? 'max-w-3xl mx-auto' : ''">
+          <div
+            class="flex items-end gap-2 rounded-2xl border px-3 py-2.5 transition-colors"
+            style="background-color: var(--cr-bg-tertiary); border-color: var(--cr-border);"
+          >
+            <textarea
+              #messageInput
+              [(ngModel)]="inputMessage"
+              (keydown.enter)="onEnterKey($event)"
+              [placeholder]="activeProviderConfigured() ? 'Message CodeRank AI...' : 'Configure a provider to start...'"
+              [disabled]="!activeProviderConfigured() || isStreaming()"
+              rows="1"
+              class="flex-1 bg-transparent outline-none resize-none text-sm disabled:opacity-50"
+              [style.max-height]="chatSize() === 'mini' ? '80px' : '200px'"
+              style="color: var(--cr-text-primary); scrollbar-width: thin;"
+              (input)="autoResize($event)"
+            ></textarea>
+            <button
+              (click)="sendMessage()"
+              [disabled]="isStreaming() || !inputMessage.trim() || !activeProviderConfigured()"
+              class="w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              style="background-color: var(--cr-accent-blue); color: white;"
+            >
+              @if (isStreaming()) {
+                <i class="pi pi-spin pi-spinner text-xs"></i>
+              } @else {
+                <i class="pi pi-send text-xs"></i>
+              }
+            </button>
+          </div>
+          @if (chatSize() === 'maximum') {
+            <p class="text-xs text-center mt-2" style="color: var(--cr-text-muted);">
+              CodeRank AI can make mistakes. Verify important information.
+            </p>
+          }
+        </div>
+      </div>
+    </main>
+  </div>
+}
+
+<!-- ====== Config Modal ====== -->
+@if (showConfig()) {
+  <div
+    class="fixed inset-0 z-[9999] flex items-center justify-center"
+    style="background: rgba(0,0,0,0.6);"
+    (click)="showConfig.set(false)"
+  >
+    <div
+      #configPanel
+      class="w-[480px] max-h-[80vh] rounded-2xl overflow-hidden border flex flex-col animate-slide-up"
+      style="background: var(--cr-bg-secondary); border-color: var(--cr-border);"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Modal header -->
+      <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color: var(--cr-border);">
+        <h3 class="text-base font-semibold" style="color: var(--cr-text-primary);">AI Provider Settings</h3>
+        <button
+          (click)="showConfig.set(false)"
+          class="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer"
+          style="color: var(--cr-text-muted);"
+        >
+          <i class="pi pi-times text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Provider list -->
+      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-3 thin-scrollbar">
+        @for (p of providers; track p) {
+          <div
+            class="rounded-xl border p-4 transition-all cursor-pointer"
+            [class.ring-2]="activeProvider() === p"
+            [style.border-color]="activeProvider() === p ? getProviderMeta(p).color : 'var(--cr-border)'"
+            [style.ring-color]="activeProvider() === p ? getProviderMeta(p).color + '40' : 'transparent'"
+            [style.background-color]="activeProvider() === p ? 'var(--cr-bg-elevated)' : 'var(--cr-bg-tertiary)'"
+            (click)="onProviderCardClick(p)"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 rounded-lg flex items-center justify-center"
+                  [style.background-color]="getProviderMeta(p).color + '20'"
+                >
+                  <i [class]="getProviderMeta(p).icon" class="text-base" [style.color]="getProviderMeta(p).color"></i>
+                </div>
+                <div>
+                  <div class="text-sm font-medium" style="color: var(--cr-text-primary);">
+                    {{ getProviderMeta(p).label }}
+                  </div>
+                  @if (isProviderConfigured(p)) {
+                    <div class="text-xs" style="color: var(--cr-accent-green);">
+                      ✓ {{ getProviderModel(p) || 'Configured' }}
+                    </div>
+                  } @else {
+                    <div class="text-xs" style="color: var(--cr-text-muted);">Not configured</div>
+                  }
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                @if (isProviderConfigured(p)) {
+                  @if (activeProvider() === p) {
+                    <span
+                      class="px-2.5 py-1 rounded-full text-xs font-medium"
+                      [style.background-color]="getProviderMeta(p).color + '20'"
+                      [style.color]="getProviderMeta(p).color"
+                    >Active</span>
+                  }
+                  <button
+                    (click)="openEditProvider(p, $event)"
+                    class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+                    style="color: var(--cr-text-muted);"
+                    title="Edit"
+                  >
+                    <i class="pi pi-pencil text-xs"></i>
+                  </button>
+                  <button
+                    (click)="deleteProviderConfig(p, $event)"
+                    class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+                    style="color: var(--cr-text-muted);"
+                    title="Remove"
+                  >
+                    <i class="pi pi-trash text-xs"></i>
+                  </button>
+                } @else {
+                  <button
+                    (click)="openEditProvider(p, $event)"
+                    class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                    style="background-color: var(--cr-accent-blue); color: white;"
+                  >
+                    Configure
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Inline edit form -->
+        @if (editingProvider()) {
+          <div
+            class="rounded-xl border p-4 space-y-3 mt-2"
+            style="border-color: var(--cr-border); background-color: var(--cr-bg-secondary);"
+          >
+            <div class="flex items-center justify-between">
+              <div class="text-sm font-semibold" [style.color]="getProviderMeta(editingProvider()!).color">
+                Configure {{ getProviderMeta(editingProvider()!).label }}
+              </div>
+              <button
+                (click)="editingProvider.set(null)"
+                class="w-7 h-7 rounded flex items-center justify-center cursor-pointer"
+                style="color: var(--cr-text-muted);"
+              >
+                <i class="pi pi-times text-xs"></i>
+              </button>
+            </div>
+
+            <div>
+              <label class="block text-xs mb-1.5" style="color: var(--cr-text-secondary);">Model</label>
+              <select
+                [ngModel]="editModel()"
+                (ngModelChange)="editModel.set($event)"
+                class="w-full px-3 py-2 rounded-lg text-sm border outline-none"
+                style="background-color: var(--cr-bg-elevated); border-color: var(--cr-border); color: var(--cr-text-primary);"
+              >
+                @for (m of getProviderModels(editingProvider()!); track m) {
+                  <option [value]="m">{{ m }}</option>
+                }
+              </select>
+            </div>
+
+            @if (editingProvider() !== 'ollama') {
+              <div>
+                <label class="block text-xs mb-1.5" style="color: var(--cr-text-secondary);">API Key</label>
+                <input
+                  type="password"
+                  [ngModel]="editApiKey()"
+                  (ngModelChange)="editApiKey.set($event)"
+                  placeholder="Enter your API key..."
+                  class="w-full px-3 py-2 rounded-lg text-sm border outline-none"
+                  style="background-color: var(--cr-bg-elevated); border-color: var(--cr-border); color: var(--cr-text-primary);"
+                />
+              </div>
+            }
+
+            @if (editingProvider() === 'ollama') {
+              <div>
+                <label class="block text-xs mb-1.5" style="color: var(--cr-text-secondary);">Host URL</label>
+                <input
+                  type="text"
+                  [ngModel]="editBaseHost()"
+                  (ngModelChange)="editBaseHost.set($event)"
+                  placeholder="http://localhost:11434"
+                  class="w-full px-3 py-2 rounded-lg text-sm border outline-none"
+                  style="background-color: var(--cr-bg-elevated); border-color: var(--cr-border); color: var(--cr-text-primary);"
+                />
+              </div>
+            }
+
+            <button
+              (click)="saveProviderConfig()"
+              [disabled]="isSavingConfig()"
+              class="w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-60"
+              style="background-color: var(--cr-accent-blue); color: white;"
+            >
+              {{ isSavingConfig() ? 'Saving...' : 'Save Configuration' }}
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

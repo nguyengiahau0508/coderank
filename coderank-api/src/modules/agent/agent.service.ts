@@ -1,6 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
+import type { Readable } from 'stream';
 import { AppConfigService } from 'src/config/app/app-config.service';
 import { RolesEnum } from 'src/common/enums/enums';
 import { UserAiConfigEntity } from './entities/user-ai-config.entity';
@@ -53,5 +54,47 @@ export class AgentService {
         `Agent service error: ${detail}`,
       );
     }
+  }
+
+  private buildBody(
+    message: string,
+    userToken: string,
+    role: RolesEnum,
+    aiConfig?: UserAiConfigEntity,
+  ): Record<string, unknown> {
+    const body: Record<string, unknown> = { message, userToken, role };
+    if (aiConfig) {
+      body.provider = aiConfig.provider;
+      if (aiConfig.modelName) body.modelName = aiConfig.modelName;
+      if (aiConfig.apiKey) body.apiKey = aiConfig.apiKey;
+      if (aiConfig.baseHost) body.baseHost = aiConfig.baseHost;
+    }
+    return body;
+  }
+
+  async chatStream(
+    message: string,
+    userToken: string,
+    role: RolesEnum,
+    aiConfig?: UserAiConfigEntity,
+  ): Promise<Readable> {
+    const agentUrl = this.appConfigService.agent_url;
+    const agentSecret = this.appConfigService.agent_secret_token;
+    const body = this.buildBody(message, userToken, role, aiConfig);
+
+    const response = await this.httpService.axiosRef.post(
+      `${agentUrl}/agent/chat/stream`,
+      body,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-agent-secret': agentSecret,
+        },
+        responseType: 'stream',
+        timeout: 120000,
+      },
+    );
+
+    return response.data as Readable;
   }
 }

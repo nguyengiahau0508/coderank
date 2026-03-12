@@ -119,3 +119,11 @@ export enum AssignmentSubmissionStatusEnum {
   Late = 'late',
 }
 
+// ===== AI ENUMS =====
+
+export enum AiProviderEnum {
+  Gemini = 'gemini',
+  Ollama = 'ollama',
+  Groq = 'groq',
+}
+
