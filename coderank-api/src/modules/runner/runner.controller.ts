@@ -12,7 +12,9 @@ export class RunnerController {
 
   @Post("run")
   @ApiRun()
-  run(@Body() dto: RunCodeDto) {
-    return this.runner.runCode(dto);
+  async run(@Body() dto: RunCodeDto) {
+    const result = await this.runner.runCode(dto);
+    console.log("Run code result:", result);
+    return result;
   }
 }

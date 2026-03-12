@@ -7,6 +7,7 @@ import {
   computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 // PrimeNG
@@ -26,6 +27,7 @@ import { TestcasesService } from '../services/testcases.service';
 import { HintsService } from '../services/hints.service';
 import { SubmissionsService } from '../services/submissions.service';
 import { SolutionsService } from '../services/solutions.service';
+import { RunnerApi, RunResult, RunStatusEnum } from '../../../../data/api/runner.api';
 import { ProblemsModel } from '../../../../data/models/problems.model';
 import { TestcasesModel } from '../../../../data/models/testcases.model';
 import { HintsModel } from '../../../../data/models/hints.model';
@@ -33,10 +35,17 @@ import { SubmissionsModel } from '../../../../data/models/submissions.model';
 import { SolutionsModel } from '../../../../data/models/solutions.model';
 import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../data/enums/enums';
 
+export interface CustomTestcase {
+  id: number;
+  input: string;
+  expectedOutput: string;
+}
+
 @Component({
   selector: 'app-admin-problem-detail',
   imports: [
     CommonModule,
+    FormsModule,
     Toast,
     CodeEditorComponent,
     AdminSubmissionResultComponent,
@@ -56,6 +65,7 @@ export class AdminProblemDetailComponent implements OnInit {
   private readonly hintsService = inject(HintsService);
   private readonly submissionsService = inject(SubmissionsService);
   private readonly solutionsService = inject(SolutionsService);
+  private readonly runnerApi = inject(RunnerApi);
   private readonly messageService = inject(MessageService);
 
   // State
@@ -81,6 +91,23 @@ export class AdminProblemDetailComponent implements OnInit {
   // Code editor state
   readonly currentCode = signal<string>('');
   readonly currentLanguage = signal<ProgrammingLanguageEnum>(ProgrammingLanguageEnum.Python);
+
+  // Run code state
+  readonly isRunning = signal<boolean>(false);
+  readonly runResults = signal<{ testcase: CustomTestcase; result: RunResult | null; running: boolean }[]>([]);
+  readonly runPassedCount = computed(() =>
+    this.runResults().filter(r => r.result?.status === RunStatusEnum.OK && r.result?.stdout?.trim() === r.testcase.expectedOutput.trim()).length
+  );
+  readonly runAllPassed = computed(() =>
+    this.runResults().length > 0 && this.runPassedCount() === this.runResults().length
+  );
+
+  // Custom testcases for run
+  readonly customTestcases = signal<CustomTestcase[]>([]);
+  private nextCustomId = 1;
+
+  // Editor panel tabs
+  readonly editorTabIndex = signal<number>(0); // 0 = Code Editor, 1 = Chạy thử
 
   // UI State
   readonly visibleHints = signal<Set<number>>(new Set());
@@ -426,6 +453,131 @@ export class AdminProblemDetailComponent implements OnInit {
   private pollSubmissionResult(submissionId: string): void {
     // TODO: Implement polling or WebSocket for real-time updates
     // For now, we'll just show the initial result
+  }
+
+  /**
+   * Run code against sample test cases
+   */
+  onRunCode(): void {
+    const problem = this.problem();
+    if (!problem) return;
+
+    const code = this.currentCode();
+    const language = this.currentLanguage();
+
+    if (!code.trim()) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Cảnh báo',
+        detail: 'Vui lòng nhập code trước khi chạy thử',
+      });
+      return;
+    }
+
+    // Merge sample testcases + custom testcases
+    const samples: CustomTestcase[] = this.sampleTestcases().map(tc => ({
+      id: tc.id,
+      input: tc.input,
+      expectedOutput: tc.expectedOutput,
+    }));
+    const custom = this.customTestcases();
+    const allTests = [...samples, ...custom];
+
+    if (allTests.length === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Cảnh báo',
+        detail: 'Không có test case nào để chạy thử',
+      });
+      return;
+    }
+
+    this.isRunning.set(true);
+    this.editorTabIndex.set(1);
+    this.runResults.set(
+      allTests.map(tc => ({ testcase: tc, result: null, running: true }))
+    );
+
+    let completed = 0;
+    for (let i = 0; i < allTests.length; i++) {
+      const tc = allTests[i];
+      this.runnerApi
+        .runCode({
+          code,
+          language,
+          input: tc.input,
+          timeLimit: problem.timeLimitMs,
+          memoryLimit: problem.memoryLimitMb,
+        })
+        .subscribe({
+          next: (response) => {
+            this.runResults.update(results => {
+              const updated = [...results];
+              updated[i] = { testcase: tc, result: response.data ?? null, running: false };
+              return updated;
+            });
+            completed++;
+            if (completed === allTests.length) {
+              this.isRunning.set(false);
+            }
+          },
+          error: () => {
+            this.runResults.update(results => {
+              const updated = [...results];
+              updated[i] = {
+                testcase: tc,
+                result: { status: RunStatusEnum.RE, stdout: '', stderr: 'Lỗi kết nối server', time: 0, memory: 0 },
+                running: false,
+              };
+              return updated;
+            });
+            completed++;
+            if (completed === allTests.length) {
+              this.isRunning.set(false);
+            }
+          },
+        });
+    }
+  }
+
+  /**
+   * Add a custom testcase
+   */
+  addCustomTestcase(): void {
+    this.customTestcases.update(list => [
+      ...list,
+      { id: this.nextCustomId++, input: '', expectedOutput: '' },
+    ]);
+  }
+
+  /**
+   * Remove a custom testcase
+   */
+  removeCustomTestcase(id: number): void {
+    this.customTestcases.update(list => list.filter(tc => tc.id !== id));
+  }
+
+  /**
+   * Update a custom testcase field
+   */
+  updateCustomTestcase(id: number, field: 'input' | 'expectedOutput', value: string): void {
+    this.customTestcases.update(list =>
+      list.map(tc => tc.id === id ? { ...tc, [field]: value } : tc)
+    );
+  }
+
+  /**
+   * Load sample testcases into custom testcases for editing
+   */
+  loadSampleTestcases(): void {
+    const samples = this.sampleTestcases();
+    this.customTestcases.set(
+      samples.map(tc => ({
+        id: this.nextCustomId++,
+        input: tc.input,
+        expectedOutput: tc.expectedOutput,
+      }))
+    );
   }
 
   /**

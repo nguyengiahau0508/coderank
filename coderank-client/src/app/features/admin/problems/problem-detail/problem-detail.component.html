@@ -158,21 +158,6 @@
             <i class="pi pi-pencil text-[10px]"></i>
             Chỉnh sửa
           </button>
-          <button
-            type="button"
-            (click)="onSubmit()"
-            [disabled]="isSubmitting()"
-            class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-lg disabled:opacity-50 transition-all hover:opacity-90"
-            style="background: var(--cr-accent-blue); color: #fff;"
-          >
-            @if (isSubmitting()) {
-              <i class="pi pi-spin pi-spinner text-[10px]"></i>
-              Đang nộp...
-            } @else {
-              <i class="pi pi-play-circle text-[10px]"></i>
-              Test & Nộp
-            }
-          </button>
         </div>
       </div>
     </div>
@@ -489,7 +474,7 @@
           @if (activeTabIndex() === 3) {
             @if (selectedSubmission(); as sub) {
               <!-- Submission Detail View -->
-              <div class="space-y-4">
+              <div class="space-y-4 max-h-[calc(100vh-500px)]">
                 <button
                   type="button"
                   (click)="backToSubmissionList()"
@@ -673,18 +658,282 @@
         </div>
       </div>
 
-      <!-- Right: Code Editor & Result -->
-      <div class="space-y-3 lg:sticky lg:top-4 lg:self-start">
-        <div class="rounded-xl overflow-hidden" style="border: 1px solid var(--cr-border);">
-          <app-code-editor
-            (codeChange)="onCodeChange($event)"
-            (languageChange)="onLanguageChange($event)"
-          />
+      <!-- Right: Code Editor & Run Panel -->
+      <div class="lg:sticky lg:top-4 lg:self-start rounded-xl overflow-hidden flex flex-col" style="border: 1px solid var(--cr-border); background: var(--cr-bg-secondary); height: calc(100vh - 420px);">
+
+        <!-- Top tab bar -->
+        <div class="flex items-center shrink-0" style="background: var(--cr-bg-tertiary); border-bottom: 1px solid var(--cr-border);">
+          <button
+            type="button"
+            class="px-4 py-2.5 text-[11px] font-medium transition-colors relative inline-flex items-center gap-1.5"
+            [style.color]="editorTabIndex() === 0 ? 'var(--cr-accent-blue)' : 'var(--cr-text-subtle)'"
+            (click)="editorTabIndex.set(0)"
+          >
+            <i class="pi pi-code text-[10px]"></i>
+            Code Editor
+            @if (editorTabIndex() === 0) {
+              <div class="absolute bottom-0 left-0 right-0 h-0.5" style="background: var(--cr-accent-blue);"></div>
+            }
+          </button>
+          <button
+            type="button"
+            class="px-4 py-2.5 text-[11px] font-medium transition-colors relative inline-flex items-center gap-1.5"
+            [style.color]="editorTabIndex() === 1 ? 'var(--cr-accent-green)' : 'var(--cr-text-subtle)'"
+            (click)="editorTabIndex.set(1)"
+          >
+            <i class="pi pi-play text-[10px]"></i>
+            Chạy thử
+            @if (runResults().length > 0 && !isRunning()) {
+              <span class="ml-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                [style]="runAllPassed()
+                  ? 'background: rgba(63, 185, 80, 0.15); color: var(--cr-accent-green);'
+                  : 'background: rgba(248, 81, 73, 0.15); color: var(--cr-accent-red);'">
+                {{ runPassedCount() }}/{{ runResults().length }}
+              </span>
+            }
+            @if (editorTabIndex() === 1) {
+              <div class="absolute bottom-0 left-0 right-0 h-0.5" style="background: var(--cr-accent-green);"></div>
+            }
+          </button>
+
+          <!-- Action buttons -->
+          <div class="ml-auto flex items-center gap-1.5 pr-2">
+            <button
+              type="button"
+              (click)="onRunCode()"
+              [disabled]="isRunning()"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium rounded-md disabled:opacity-50 transition-all hover:opacity-90"
+              style="background: var(--cr-bg-elevated); color: var(--cr-accent-green); border: 1px solid var(--cr-border);"
+            >
+              @if (isRunning()) {
+                <i class="pi pi-spin pi-spinner text-[9px]"></i>
+              } @else {
+                <i class="pi pi-play text-[9px]"></i>
+              }
+              Chạy
+            </button>
+            <button
+              type="button"
+              (click)="onSubmit()"
+              [disabled]="isSubmitting()"
+              class="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium rounded-md disabled:opacity-50 transition-all hover:opacity-90"
+              style="background: var(--cr-accent-blue); color: #fff;"
+            >
+              @if (isSubmitting()) {
+                <i class="pi pi-spin pi-spinner text-[9px]"></i>
+              } @else {
+                <i class="pi pi-send text-[9px]"></i>
+              }
+              Nộp bài
+            </button>
+          </div>
         </div>
 
-        @if (currentSubmission()) {
-          <app-admin-submission-result [submission]="currentSubmission()!" />
-        }
+        <!-- ===== Tab 0: Code Editor (use [hidden] to preserve Monaco state) ===== -->
+        <div [hidden]="editorTabIndex() !== 0" class="flex-1 min-h-0 flex flex-col overflow-hidden ">
+          <div class="flex-1 min-h-0 overflow-hidden">
+            <app-code-editor
+              (codeChange)="onCodeChange($event)"
+              (languageChange)="onLanguageChange($event)"
+            />
+          </div>
+
+          <!-- Submission result below editor -->
+          @if (currentSubmission()) {
+            <div class="shrink-0 overflow-y-auto" style="border-top: 1px solid var(--cr-border); max-height: 200px;">
+              <app-admin-submission-result [submission]="currentSubmission()!" />
+            </div>
+          }
+        </div>
+
+        <!-- ===== Tab 1: Chạy thử (use [hidden] to preserve custom testcases) ===== -->
+        <div [hidden]="editorTabIndex() !== 1" class="flex-1 min-h-0 overflow-y-auto">
+          <div class="p-3 space-y-3">
+
+            <!-- Test case input section -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold" style="color: var(--cr-text-secondary);">
+                  <i class="pi pi-list-check text-[10px] mr-1"></i>
+                  Test Cases
+                </span>
+                <div class="flex items-center gap-1.5">
+                  @if (sampleTestcases().length > 0 && customTestcases().length === 0) {
+                    <button
+                      type="button"
+                      (click)="loadSampleTestcases()"
+                      class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-md transition-colors hover:opacity-80"
+                      style="background: var(--cr-bg-elevated); color: var(--cr-accent-blue); border: 1px solid var(--cr-border);"
+                    >
+                      <i class="pi pi-download text-[9px]"></i>
+                      Tải mẫu
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    (click)="addCustomTestcase()"
+                    class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-md transition-colors hover:opacity-80"
+                    style="background: var(--cr-bg-elevated); color: var(--cr-accent-green); border: 1px solid var(--cr-border);"
+                  >
+                    <i class="pi pi-plus text-[9px]"></i>
+                    Thêm
+                  </button>
+                </div>
+              </div>
+
+              <!-- Sample testcases info -->
+              @if (sampleTestcases().length > 0) {
+                <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px]" style="background: var(--cr-bg-tertiary); color: var(--cr-text-subtle);">
+                  <i class="pi pi-info-circle text-[9px]"></i>
+                  {{ sampleTestcases().length }} test case mẫu sẽ được chạy tự động
+                  @if (customTestcases().length > 0) {
+                    <span>+ {{ customTestcases().length }} tùy chỉnh</span>
+                  }
+                </div>
+              }
+
+              <!-- Custom testcases -->
+              @for (tc of customTestcases(); track tc.id; let idx = $index) {
+                <div class="rounded-lg overflow-hidden" style="border: 1px solid var(--cr-border);">
+                  <div class="flex items-center justify-between px-3 py-1.5" style="background: var(--cr-bg-tertiary);">
+                    <span class="text-[10px] font-semibold" style="color: var(--cr-text-subtle);">
+                      <i class="pi pi-pencil text-[8px] mr-1"></i>
+                      Tùy chỉnh #{{ idx + 1 }}
+                    </span>
+                    <button
+                      type="button"
+                      (click)="removeCustomTestcase(tc.id)"
+                      class="text-[10px] p-0.5 rounded transition-colors hover:opacity-80"
+                      style="color: var(--cr-accent-red);"
+                    >
+                      <i class="pi pi-trash text-[9px]"></i>
+                    </button>
+                  </div>
+                  <div class="grid grid-cols-2 gap-0" style="background: var(--cr-bg-secondary);">
+                    <div class="p-2" style="border-right: 1px solid var(--cr-border);">
+                      <label class="text-[9px] font-semibold uppercase tracking-wider mb-1 block" style="color: var(--cr-text-subtle);">Input</label>
+                      <textarea
+                        [ngModel]="tc.input"
+                        (ngModelChange)="updateCustomTestcase(tc.id, 'input', $event)"
+                        class="w-full text-[11px] font-mono p-1.5 rounded resize-none min-h-[48px]"
+                        style="background: var(--cr-bg-tertiary); color: var(--cr-text-secondary); border: 1px solid var(--cr-border); outline: none;"
+                        placeholder="Nhập input..."
+                        rows="2"
+                      ></textarea>
+                    </div>
+                    <div class="p-2">
+                      <label class="text-[9px] font-semibold uppercase tracking-wider mb-1 block" style="color: var(--cr-text-subtle);">Expected Output</label>
+                      <textarea
+                        [ngModel]="tc.expectedOutput"
+                        (ngModelChange)="updateCustomTestcase(tc.id, 'expectedOutput', $event)"
+                        class="w-full text-[11px] font-mono p-1.5 rounded resize-none min-h-[48px]"
+                        style="background: var(--cr-bg-tertiary); color: var(--cr-text-secondary); border: 1px solid var(--cr-border); outline: none;"
+                        placeholder="Nhập expected output..."
+                        rows="2"
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- Empty state when no custom and no sample -->
+              @if (customTestcases().length === 0 && sampleTestcases().length === 0) {
+                <div class="flex flex-col items-center justify-center py-8 text-center">
+                  <div class="flex items-center justify-center w-10 h-10 rounded-full mb-2" style="background: var(--cr-bg-elevated);">
+                    <i class="pi pi-list-check text-sm" style="color: var(--cr-text-subtle);"></i>
+                  </div>
+                  <p class="text-[11px] font-medium" style="color: var(--cr-text-muted);">Chưa có test case</p>
+                  <p class="text-[10px] mt-0.5" style="color: var(--cr-text-subtle);">Thêm test case tùy chỉnh để chạy thử</p>
+                </div>
+              }
+            </div>
+
+            <!-- Divider + Results -->
+            @if (runResults().length > 0) {
+              <div class="pt-1" style="border-top: 1px solid var(--cr-border);">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[11px] font-semibold" style="color: var(--cr-text-secondary);">
+                    <i class="pi pi-chart-bar text-[10px] mr-1"></i>
+                    Kết quả
+                  </span>
+                  @if (!isRunning()) {
+                    <span class="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                      [style]="runAllPassed()
+                        ? 'background: rgba(63, 185, 80, 0.12); color: var(--cr-accent-green);'
+                        : 'background: rgba(248, 81, 73, 0.12); color: var(--cr-accent-red);'">
+                      {{ runPassedCount() }}/{{ runResults().length }} passed
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1 text-[10px] font-medium" style="color: var(--cr-accent-blue);">
+                      <i class="pi pi-spin pi-spinner text-[9px]"></i> Đang chạy...
+                    </span>
+                  }
+                </div>
+
+                <div class="space-y-2">
+                  @for (item of runResults(); track item.testcase.id; let idx = $index) {
+                    <div class="rounded-lg overflow-hidden" style="border: 1px solid var(--cr-border);">
+                      <!-- Test case header -->
+                      <div class="flex items-center justify-between px-3 py-1.5" style="background: var(--cr-bg-tertiary);">
+                        <span class="text-[10px] font-semibold" style="color: var(--cr-text-secondary);">Test #{{ idx + 1 }}</span>
+                        @if (item.running) {
+                          <span class="inline-flex items-center gap-1 text-[10px] font-medium" style="color: var(--cr-accent-blue);">
+                            <i class="pi pi-spin pi-spinner text-[8px]"></i> Đang chạy
+                          </span>
+                        } @else if (item.result; as res) {
+                          <div class="flex items-center gap-2">
+                            @if (res.time !== undefined) {
+                              <span class="text-[9px]" style="color: var(--cr-text-subtle);">{{ res.time }}ms</span>
+                            }
+                            @if (res.status === 'OK' && res.stdout.trim() === item.testcase.expectedOutput.trim()) {
+                              <span class="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                                style="background: rgba(63, 185, 80, 0.12); color: var(--cr-accent-green);">
+                                <i class="pi pi-check text-[8px]"></i> Passed
+                              </span>
+                            } @else {
+                              <span class="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                                style="background: rgba(248, 81, 73, 0.12); color: var(--cr-accent-red);">
+                                <i class="pi pi-times text-[8px]"></i>
+                                {{ res.status === 'TLE' ? 'TLE' : res.status === 'MLE' ? 'MLE' : res.status === 'CE' ? 'CE' : 'Failed' }}
+                              </span>
+                            }
+                          </div>
+                        }
+                      </div>
+
+                      @if (!item.running && item.result) {
+                        <div class="grid grid-cols-3 gap-0 text-[11px]" style="background: var(--cr-bg-secondary);">
+                          <!-- Input -->
+                          <div class="p-2 min-w-0 overflow-hidden" style="border-right: 1px solid var(--cr-border);">
+                            <span class="text-[9px] font-semibold uppercase tracking-wider block mb-1" style="color: var(--cr-text-subtle);">Input</span>
+                            <pre class="font-mono overflow-x-auto max-h-16 whitespace-pre-wrap break-all text-[10px]" style="color: var(--cr-text-secondary);">{{ item.testcase.input }}</pre>
+                          </div>
+                          <!-- Expected -->
+                          <div class="p-2 min-w-0 overflow-hidden" style="border-right: 1px solid var(--cr-border);">
+                            <span class="text-[9px] font-semibold uppercase tracking-wider block mb-1" style="color: var(--cr-text-subtle);">Expected</span>
+                            <pre class="font-mono overflow-x-auto max-h-16 whitespace-pre-wrap break-all text-[10px]" style="color: var(--cr-text-secondary);">{{ item.testcase.expectedOutput }}</pre>
+                          </div>
+                          <!-- Output -->
+                          <div class="p-2 min-w-0 overflow-hidden">
+                            <span class="text-[9px] font-semibold uppercase tracking-wider block mb-1" style="color: var(--cr-text-subtle);">Output</span>
+                            @if (item.result.stderr) {
+                              <pre class="font-mono overflow-x-auto max-h-16 whitespace-pre-wrap break-all text-[10px]" style="color: var(--cr-accent-red);">{{ item.result.stderr }}</pre>
+                            } @else {
+                              <pre class="font-mono overflow-x-auto max-h-16 whitespace-pre-wrap break-all text-[10px]"
+                                [style.color]="item.result.stdout.trim() === item.testcase.expectedOutput.trim()
+                                  ? 'var(--cr-accent-green)'
+                                  : 'var(--cr-accent-red)'">{{ item.result.stdout }}</pre>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
       </div>
     </div>
   </div>

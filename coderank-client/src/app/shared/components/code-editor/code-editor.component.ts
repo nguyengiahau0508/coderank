@@ -25,6 +25,7 @@ interface LanguageOption {
   imports: [FormsModule, MonacoEditorModule, Select],
   templateUrl: './code-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block h-full' },
 })
 export class CodeEditorComponent implements OnInit, OnDestroy {
   // Inputs

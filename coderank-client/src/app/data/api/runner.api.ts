@@ -6,18 +6,25 @@ import { ApiResponse } from '../interfaces';
 export interface RunCodeDto {
   code: string;
   language: string;
-  input?: string;
+  input: string;
   timeLimit?: number;
   memoryLimit?: number;
 }
 
+export enum RunStatusEnum {
+  OK = 'OK',
+  TLE = 'TLE',
+  MLE = 'MLE',
+  RE = 'RE',
+  CE = 'CE',
+}
+
 export interface RunResult {
-  success: boolean;
-  output?: string;
-  error?: string;
-  executionTime?: number;
-  memoryUsed?: number;
-  status: 'SUCCESS' | 'ERROR' | 'TIMEOUT' | 'MEMORY_EXCEEDED';
+  status: RunStatusEnum;
+  stdout: string;
+  stderr?: string;
+  time: number;
+  memory: number;
 }
 
 /**
