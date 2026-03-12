@@ -43,7 +43,6 @@ import { TagsService } from '../services/tags.service';
     Select,
     MultiSelect,
     Slider,
-    Tag,
     Paginator,
     IconField,
     InputIcon,

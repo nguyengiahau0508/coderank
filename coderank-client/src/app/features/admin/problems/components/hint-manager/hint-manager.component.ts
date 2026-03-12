@@ -40,7 +40,6 @@ import { HintsService } from '../../services/hints.service';
     ConfirmDialog,
     Toast,
     Tooltip,
-    Tag,
     FormsModule,
     ReactiveFormsModule,
   ],

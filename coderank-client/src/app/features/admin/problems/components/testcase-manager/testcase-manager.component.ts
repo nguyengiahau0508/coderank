@@ -46,7 +46,6 @@ interface CompareTypeOption {
     Select,
     ConfirmDialog,
     Toast,
-    Tag,
     FormsModule,
     ReactiveFormsModule,
   ],
