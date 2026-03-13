@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { CoursesApi } from '../../../../data';
-import { ProblemsApi } from '../../../../data';
-import { ApiResponse, PaginatedResponse } from '../../../../data';
+import { CoursesApi } from '../../../data';
+import { ProblemsApi } from '../../../data';
+import { ApiResponse, PaginatedResponse } from '../../../data';
 import {
   CoursesModel,
   CourseSectionsModel,
@@ -14,8 +14,8 @@ import {
   CourseQuizQuestionsModel,
   CourseAssignmentsModel,
   CourseAssignmentSubmissionsModel,
-} from '../../../../data';
-import { ProblemsModel } from '../../../../data';
+} from '../../../data';
+import { ProblemsModel } from '../../../data';
 import {
   CreateCourseDto,
   UpdateCourseDto,
@@ -35,7 +35,7 @@ import {
   UpdateAssignmentDto,
   CreateAssignmentSubmissionDto,
   GradeSubmissionDto,
-} from '../../../../data';
+} from '../../../data';
 
 @Injectable({ providedIn: 'root' })
 export class CoursesService {

@@ -16,11 +16,11 @@ import { Tooltip } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Services & Models
-import { ContestsService } from '../services/contests.service';
-import { ProblemsApi } from '../../../../data';
-import { ProblemsModel } from '../../../../data';
-import { ContestsModel, ContestProblemsModel, ContestParticipantsModel, ContestSubmissionsModel } from '../../../../data';
-import { ContestStatusEnum, DifficultyEnum, SubmissionStatusEnum } from '../../../../data';
+import { ProblemsApi } from '../../../../../data';
+import { ProblemsModel } from '../../../../../data';
+import { ContestsModel, ContestProblemsModel, ContestParticipantsModel, ContestSubmissionsModel } from '../../../../../data';
+import { ContestStatusEnum, DifficultyEnum, SubmissionStatusEnum } from '../../../../../data';
+import { ContestsService } from '../../../../../shared/services/contests/contests.service';
 
 @Component({
   selector: 'app-admin-contest-detail',

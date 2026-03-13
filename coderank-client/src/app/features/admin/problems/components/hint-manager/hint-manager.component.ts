@@ -27,7 +27,7 @@ import { Tag } from 'primeng/tag';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { HintsModel } from '../../../../../data';
 import { CreateHintDto } from '../../../../../data';
-import { HintsService } from '../../services/hints.service';
+import { HintsService } from '../../../../../shared/services/problems/hints.service';
 
 @Component({
   selector: 'app-admin-hint-manager',

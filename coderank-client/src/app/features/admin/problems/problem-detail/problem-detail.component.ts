@@ -23,11 +23,11 @@ import { AdminSolutionListComponent } from '../components/solution-list/solution
 import { AdminSolutionFormDialogComponent } from '../components/solution-form-dialog/solution-form-dialog.component';
 
 // Services & Models
-import { ProblemsService } from '../services/problems.service';
-import { TestcasesService } from '../services/testcases.service';
-import { HintsService } from '../services/hints.service';
-import { SubmissionsService } from '../services/submissions.service';
-import { SolutionsService } from '../services/solutions.service';
+import { ProblemsService } from '../../../../shared/services/problems/problems.service';
+import { TestcasesService } from '../../../../shared/services/problems/testcases.service';
+import { HintsService } from '../../../../shared/services/problems/hints.service';
+import { SubmissionsService } from '../../../../shared/services/problems/submissions.service';
+import { SolutionsService } from '../../../../shared/services/problems/solutions.service';
 import { RunnerApi, RunResult, RunStatusEnum } from '../../../../data';
 import { ProblemsModel } from '../../../../data';
 import { TestcasesModel } from '../../../../data';

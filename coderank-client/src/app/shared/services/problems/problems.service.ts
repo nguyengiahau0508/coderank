@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { PaginationQueryParams, ProblemsApi, PaginatedResponse, ProblemsModel, ApiResponse, CreateProblemDto, UpdateProblemDto} from '../../../../data';
+import { PaginationQueryParams, ProblemsApi, PaginatedResponse, ProblemsModel, ApiResponse, CreateProblemDto, UpdateProblemDto} from '../../../data';
 
 /**
  * Problems Service - CRUD operations for problems

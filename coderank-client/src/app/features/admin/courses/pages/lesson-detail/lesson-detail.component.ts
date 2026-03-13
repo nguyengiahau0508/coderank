@@ -19,12 +19,9 @@ import { Textarea } from 'primeng/textarea';
 import { Checkbox } from 'primeng/checkbox';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { FileUpload } from 'primeng/fileupload';
-
-import { TextEditorComponent } from '../../../../shared/components/text-editor/text-editor.component';
-import { CourseLessonsModel, CourseLessonProblemsModel, CourseQuizzesModel, CourseQuizQuestionsModel, CourseAssignmentsModel, CourseAssignmentSubmissionsModel } from '../../../../data';
-import { ProblemsModel } from '../../../../data';
-import { LessonTypeEnum, QuizQuestionTypeEnum, AssignmentTypeEnum, AssignmentSubmissionStatusEnum } from '../../../../data';
-import { CoursesService } from '../services/courses.service';
+import { TextEditorComponent } from '../../../../../shared/components/text-editor/text-editor.component';
+import { CoursesService } from '../../../../../shared/services/courses/courses.service';
+import { AssignmentSubmissionStatusEnum, AssignmentTypeEnum, CourseAssignmentsModel, CourseAssignmentSubmissionsModel, CourseLessonProblemsModel, CourseLessonsModel, CourseQuizQuestionsModel, CourseQuizzesModel, LessonTypeEnum, ProblemsModel, QuizQuestionTypeEnum } from '../../../../../data';
 
 @Component({
   selector: 'app-admin-lesson-detail',

@@ -1,0 +1,11 @@
+:host {
+    display: block;
+}
+
+a[href^="#"] {
+    scroll-behavior: smooth;
+}
+
+a:hover {
+    opacity: 0.85;
+}

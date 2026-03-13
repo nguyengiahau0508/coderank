@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResponse, CreateTestcaseDto, ProblemsApi, TestcasesModel, UpdateTestcaseDto } from '../../../../data';
+import { ApiResponse, CreateTestcaseDto, ProblemsApi, TestcasesModel, UpdateTestcaseDto } from '../../../data';
 
 /**
  * Testcases Service - CRUD operations for testcases

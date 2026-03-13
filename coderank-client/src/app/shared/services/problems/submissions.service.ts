@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResponse, CreateSubmissionDto, ProblemsApi, SubmissionsModel, SubmissionStatusEnum } from '../../../../data';
+import { ApiResponse, CreateSubmissionDto, ProblemsApi, SubmissionsModel, SubmissionStatusEnum } from '../../../data';
 
 
 /**

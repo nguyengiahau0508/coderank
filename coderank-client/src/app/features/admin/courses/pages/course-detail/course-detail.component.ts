@@ -9,7 +9,7 @@ import { Toast } from 'primeng/toast';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
-import { TextEditorComponent } from '../../../../shared/components/text-editor/text-editor.component';
+import { TextEditorComponent } from '../../../../../shared/components/text-editor/text-editor.component';
 import { InputNumber } from 'primeng/inputnumber';
 import { Select } from 'primeng/select';
 import { ToggleSwitch } from 'primeng/toggleswitch';
@@ -26,11 +26,11 @@ import { TabPanel } from 'primeng/tabs';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Models & Enums
-import { CoursesModel, CourseSectionsModel, CourseLessonsModel, CourseReviewsModel } from '../../../../data';
-import { CourseLevelEnum, CourseStatusEnum, LessonTypeEnum } from '../../../../data';
+import { CoursesModel, CourseSectionsModel, CourseLessonsModel, CourseReviewsModel } from '../../../../../data';
+import { CourseLevelEnum, CourseStatusEnum, LessonTypeEnum } from '../../../../../data';
 
 // Services
-import { CoursesService } from '../services/courses.service';
+import { CoursesService } from '../../../../../shared/services/courses/courses.service';
 
 @Component({
   selector: 'app-admin-course-detail',

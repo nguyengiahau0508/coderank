@@ -1,21 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ContestsApi } from '../../../../data';
-import { ApiResponse, PaginatedResponse } from '../../../../data';
-import {
-  ContestsModel,
-  ContestProblemsModel,
-  ContestParticipantsModel,
-  ContestSubmissionsModel,
-} from '../../../../data';
-import {
-  CreateContestDto,
-  UpdateContestDto,
-  PaginationQueryContestsDto,
-  AddProblemToContestDto,
-  UpdateContestProblemDto,
-} from '../../../../data';
-import { ContestStatusEnum, SubmissionStatusEnum } from '../../../../data';
+import { AddProblemToContestDto, ApiResponse, ContestParticipantsModel, ContestProblemsModel, ContestsApi, ContestsModel, ContestStatusEnum, ContestSubmissionsModel, CreateContestDto, PaginatedResponse, PaginationQueryContestsDto, SubmissionStatusEnum, UpdateContestDto, UpdateContestProblemDto } from '../../../data';
 
 @Injectable({
   providedIn: 'root',
@@ -25,7 +10,7 @@ export class ContestsService {
 
   // ==================== Contest CRUD ====================
 
-  getContests(params?: PaginationQueryContestsDto): Observable<PaginatedResponse<ContestsModel>> {
+  getContests(params?:PaginationQueryContestsDto): Observable<PaginatedResponse<ContestsModel>> {
     return this.contestsApi.getContests(params);
   }
 

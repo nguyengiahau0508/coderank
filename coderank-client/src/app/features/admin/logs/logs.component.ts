@@ -10,65 +10,7 @@ import { Tag } from 'primeng/tag';
 @Component({
   selector: 'app-admin-logs',
   imports: [FormsModule, InputText, Select, Button, IconField, InputIcon, Tag],
-  template: `
-    <div class="space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">Nhật ký hệ thống</h1>
-          <p class="mt-1 text-surface-500 dark:text-surface-400">Theo dõi hoạt động và sự kiện của hệ thống</p>
-        </div>
-        <p-button label="Xuất logs" icon="pi pi-download" severity="secondary" [outlined]="true" />
-      </div>
-
-      <!-- Filters -->
-      <div class="flex flex-col sm:flex-row gap-3">
-        <div class="flex-1">
-          <p-iconfield iconPosition="left">
-            <p-inputicon styleClass="pi pi-search" />
-            <input type="text" pInputText placeholder="Tìm trong logs..." class="w-full" [(ngModel)]="searchTerm" />
-          </p-iconfield>
-        </div>
-        <p-select
-          [options]="levelOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Mức độ"
-          [showClear]="true"
-          styleClass="w-full sm:w-36"
-        />
-        <p-select
-          [options]="sourceOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Nguồn"
-          [showClear]="true"
-          styleClass="w-full sm:w-40"
-        />
-      </div>
-
-      <!-- Log Entries -->
-      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 divide-y divide-surface-100 dark:divide-surface-800">
-        @for (log of logs; track log.time) {
-          <div class="px-5 py-3 flex items-start gap-3 hover:bg-surface-50 dark:hover:bg-surface-900 transition-colors">
-            <p-tag
-              [value]="log.level"
-              [severity]="log.level === 'ERROR' ? 'danger' : log.level === 'WARN' ? 'warn' : log.level === 'INFO' ? 'info' : 'secondary'"
-              styleClass="text-[10px] min-w-14 text-center"
-            />
-            <div class="flex-1 min-w-0">
-              <p class="text-sm text-surface-700 dark:text-surface-300 font-mono">{{ log.message }}</p>
-              <div class="flex gap-3 mt-1 text-xs text-surface-400">
-                <span>{{ log.time }}</span>
-                <span>{{ log.source }}</span>
-              </div>
-            </div>
-          </div>
-        }
-      </div>
-
-      <p class="text-center text-xs text-surface-400"><i class="pi pi-info-circle mr-1"></i>Dữ liệu mẫu — Tính năng đầy đủ sẽ sớm được cập nhật</p>
-    </div>
-  `,
+  templateUrl: './logs.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminLogsComponent {

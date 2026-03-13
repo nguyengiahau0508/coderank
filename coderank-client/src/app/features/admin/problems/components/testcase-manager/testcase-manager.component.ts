@@ -28,7 +28,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { TestcasesModel } from '../../../../../data';
 import { CreateTestcaseDto, UpdateTestcaseDto } from '../../../../../data';
 import { TestcaseCompareTypeEnum } from '../../../../../data';
-import { TestcasesService } from '../../services/testcases.service';
+import { TestcasesService } from '../../../../../shared/services/problems/testcases.service';
 
 interface CompareTypeOption {
   label: string;

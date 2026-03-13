@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SubmissionsModel } from '../../../../../data';
-import { SubmissionsService } from '../../services/submissions.service';
+import { SubmissionsService } from '../../../../../shared/services/problems/submissions.service';
 
 @Component({
   selector: 'app-admin-submission-result',

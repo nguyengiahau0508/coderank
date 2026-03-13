@@ -17,15 +17,15 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Models & Enums
-import { CoursesModel } from '../../../../data';
-import { CourseLevelEnum, CourseStatusEnum } from '../../../../data';
 
 // Services
-import { CoursesService } from '../services/courses.service';
 
 // Components
-import { AdminCourseFormDialogComponent } from '../components/course-form-dialog/course-form-dialog.component';
-import { AdminCourseDuplicateDialogComponent, DuplicateCourseEvent } from '../components/course-duplicate-dialog/course-duplicate-dialog.component';
+import { CoursesService } from '../../../../../shared/services/courses/courses.service';
+import { AdminCourseFormDialogComponent } from '../../components/course-form-dialog/course-form-dialog.component';
+import { AdminCourseDuplicateDialogComponent, DuplicateCourseEvent } from '../../components/course-duplicate-dialog/course-duplicate-dialog.component';
+import { CoursesModel } from '../../../../../data/domains/courses/models/courses.model';
+import { CourseLevelEnum, CourseStatusEnum } from '../../../../../data/shared/enums/enums';
 
 @Component({
   selector: 'app-admin-course-list',

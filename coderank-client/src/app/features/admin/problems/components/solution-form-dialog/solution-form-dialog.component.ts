@@ -14,7 +14,7 @@ import { Select } from 'primeng/select';
 import { InputText } from 'primeng/inputtext';
 import { Editor, EditorTextChangeEvent } from 'primeng/editor';
 import { MessageService } from 'primeng/api';
-import { SolutionsService } from '../../services/solutions.service';
+import { SolutionsService } from '../../../../../shared/services/problems/solutions.service';
 import { SolutionsModel } from '../../../../../data';
 import { ProgrammingLanguageEnum } from '../../../../../data';
 

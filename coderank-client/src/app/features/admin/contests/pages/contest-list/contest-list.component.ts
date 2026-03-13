@@ -18,10 +18,10 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Services & Models
-import { ContestsModel } from '../../../../data';
-import { ContestStatusEnum } from '../../../../data';
-import { ContestsService } from '../services/contests.service';
-import { AdminContestFormDialogComponent } from '../components/contest-form-dialog/contest-form-dialog.component';
+import { ContestsModel } from '../../../../../data';
+import { ContestStatusEnum } from '../../../../../data';
+import { AdminContestFormDialogComponent } from '../../components/contest-form-dialog/contest-form-dialog.component';
+import { ContestsService } from '../../../../../shared/services/contests/contests.service';
 
 @Component({
   selector: 'app-admin-contest-list',

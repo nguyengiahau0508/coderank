@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResponse, CreateHintDto, HintsModel, ProblemsApi, UpdateHintDto } from '../../../../data';
+import { ApiResponse, CreateHintDto, HintsModel, ProblemsApi, UpdateHintDto } from '../../../data';
 
 /**
  * Hints Service - CRUD operations for hints
