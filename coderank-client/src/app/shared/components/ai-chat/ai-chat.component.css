@@ -114,16 +114,27 @@
   background-color: var(--cr-bg-elevated);
 }
 
+/* ---- Isolate markdown from external CSS (Tailwind resets etc.) ---- */
+
+.chat-markdown ::ng-deep :not(pre *){
+  all: revert;
+}
+
+.chat-markdown ::ng-deep :not(pre *)::before,
+.chat-markdown ::ng-deep :not(pre *):after {
+  all: revert;
+}
+
 /* ---- Code block with header ---- */
 
-.chat-markdown :deep(.code-block-wrapper) {
+.chat-markdown ::ng-deep .code-block-wrapper {
   border-radius: 8px;
   overflow: hidden;
   margin: 12px 0;
   border: 1px solid var(--cr-border);
 }
 
-.chat-markdown :deep(.code-block-header) {
+.chat-markdown ::ng-deep .code-block-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -132,7 +143,7 @@
   border-bottom: 1px solid var(--cr-border);
 }
 
-.chat-markdown :deep(.code-lang) {
+.chat-markdown ::ng-deep .code-lang {
   color: var(--cr-text-muted);
   font-family: 'JetBrains Mono', monospace;
   text-transform: lowercase;
@@ -140,7 +151,7 @@
   letter-spacing: 0.3px;
 }
 
-.chat-markdown :deep(.code-copy-btn) {
+.chat-markdown ::ng-deep .code-copy-btn {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -154,12 +165,12 @@
   transition: all 0.15s;
 }
 
-.chat-markdown :deep(.code-copy-btn:hover) {
+.chat-markdown ::ng-deep .code-copy-btn:hover {
   background-color: var(--cr-bg-tertiary);
   color: var(--cr-text-primary);
 }
 
-.chat-markdown :deep(.code-block-wrapper pre) {
+.chat-markdown ::ng-deep .code-block-wrapper pre {
   margin: 0 !important;
   border: none !important;
   border-radius: 0 !important;
@@ -172,7 +183,7 @@
 
 /* ---- Standalone pre/code ---- */
 
-.chat-markdown :deep(pre) {
+.chat-markdown ::ng-deep pre {
   background-color: var(--cr-bg-elevated);
   border: 1px solid var(--cr-border);
   border-radius: 8px;
@@ -183,12 +194,12 @@
   line-height: 1.5;
 }
 
-.chat-markdown :deep(code) {
+.chat-markdown ::ng-deep code {
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
 }
 
-.chat-markdown :deep(:not(pre) > code) {
+.chat-markdown ::ng-deep :not(pre) > code {
   background-color: var(--cr-bg-elevated);
   padding: 2px 6px;
   border-radius: 4px;
@@ -199,44 +210,44 @@
 
 /* ---- Text ---- */
 
-.chat-markdown :deep(p) {
+.chat-markdown ::ng-deep p {
   margin: 6px 0;
   line-height: 1.7;
 }
 
-.chat-markdown :deep(p:first-child) { margin-top: 0; }
-.chat-markdown :deep(p:last-child) { margin-bottom: 0; }
+.chat-markdown ::ng-deep p:first-child { margin-top: 0; }
+.chat-markdown ::ng-deep p:last-child { margin-bottom: 0; }
 
-.chat-markdown :deep(ul),
-.chat-markdown :deep(ol) {
+.chat-markdown ::ng-deep ul,
+.chat-markdown ::ng-deep ol {
   padding-left: 20px;
   margin: 8px 0;
 }
 
-.chat-markdown :deep(li) {
+.chat-markdown ::ng-deep li {
   margin: 4px 0;
   line-height: 1.6;
 }
 
-.chat-markdown :deep(li > p) { margin: 2px 0; }
+.chat-markdown ::ng-deep li > p { margin: 2px 0; }
 
 /* ---- Headings ---- */
 
-.chat-markdown :deep(h1) {
+.chat-markdown ::ng-deep h1 {
   font-size: 1.4em;
   margin: 16px 0 8px;
   font-weight: 700;
   color: var(--cr-text-primary);
 }
 
-.chat-markdown :deep(h2) {
+.chat-markdown ::ng-deep h2 {
   font-size: 1.2em;
   margin: 14px 0 6px;
   font-weight: 600;
   color: var(--cr-text-primary);
 }
 
-.chat-markdown :deep(h3) {
+.chat-markdown ::ng-deep h3 {
   font-size: 1.05em;
   margin: 12px 0 4px;
   font-weight: 600;
@@ -245,18 +256,18 @@
 
 /* ---- Links ---- */
 
-.chat-markdown :deep(a) {
+.chat-markdown ::ng-deep a {
   color: var(--cr-accent-blue);
   text-decoration: none;
 }
 
-.chat-markdown :deep(a:hover) {
+.chat-markdown ::ng-deep a:hover {
   text-decoration: underline;
 }
 
 /* ---- Blockquote ---- */
 
-.chat-markdown :deep(blockquote) {
+.chat-markdown ::ng-deep blockquote {
   border-left: 3px solid var(--cr-accent-blue);
   padding: 4px 14px;
   margin: 10px 0;
@@ -265,11 +276,11 @@
   border-radius: 0 6px 6px 0;
 }
 
-.chat-markdown :deep(blockquote p) { margin: 2px 0; }
+.chat-markdown ::ng-deep blockquote p { margin: 2px 0; }
 
 /* ---- Tables ---- */
 
-.chat-markdown :deep(table) {
+.chat-markdown ::ng-deep table {
   width: 100%;
   border-collapse: collapse;
   margin: 10px 0;
@@ -279,14 +290,14 @@
   overflow: hidden;
 }
 
-.chat-markdown :deep(th),
-.chat-markdown :deep(td) {
+.chat-markdown ::ng-deep th,
+.chat-markdown ::ng-deep td {
   padding: 8px 12px;
   border: 1px solid var(--cr-border);
   text-align: left;
 }
 
-.chat-markdown :deep(th) {
+.chat-markdown ::ng-deep th {
   background-color: var(--cr-bg-elevated);
   font-weight: 600;
   font-size: 12px;
@@ -294,13 +305,13 @@
   letter-spacing: 0.3px;
 }
 
-.chat-markdown :deep(tr:nth-child(even)) {
+.chat-markdown ::ng-deep tr:nth-child(even) {
   background-color: var(--cr-bg-tertiary);
 }
 
 /* ---- Horizontal rule ---- */
 
-.chat-markdown :deep(hr) {
+.chat-markdown ::ng-deep hr {
   border: none;
   height: 1px;
   background-color: var(--cr-border);
@@ -309,12 +320,12 @@
 
 /* ---- Strong / images ---- */
 
-.chat-markdown :deep(strong) {
+.chat-markdown ::ng-deep strong {
   font-weight: 600;
   color: var(--cr-text-primary);
 }
 
-.chat-markdown :deep(img) {
+.chat-markdown ::ng-deep img {
   max-width: 100%;
   border-radius: 8px;
   margin: 8px 0;
