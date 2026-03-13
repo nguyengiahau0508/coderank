@@ -16,30 +16,30 @@ import { Toast } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
 // Components
-import { CodeEditorComponent } from '../../../../shared/components/code-editor/code-editor.component';
-import { AdminSubmissionResultComponent } from '../components/submission-result/submission-result.component';
-import { MarkdownViewComponent } from '../../../../shared/components/markdown-view/markdown-view.component';
-import { AdminSolutionListComponent } from '../components/solution-list/solution-list.component';
-import { AdminSolutionFormDialogComponent } from '../components/solution-form-dialog/solution-form-dialog.component';
+import { CodeEditorComponent } from '../../../../../shared/components/code-editor/code-editor.component';
+import { AdminSubmissionResultComponent } from '../../components/submission-result/submission-result.component';
+import { MarkdownViewComponent } from '../../../../../shared/components/markdown-view/markdown-view.component';
+import { AdminSolutionListComponent } from '../../components/solution-list/solution-list.component';
+import { AdminSolutionFormDialogComponent } from '../../components/solution-form-dialog/solution-form-dialog.component';
 
 // Services & Models
-import { ProblemsService } from '../../../../shared/services/problems/problems.service';
-import { TestcasesService } from '../../../../shared/services/problems/testcases.service';
-import { HintsService } from '../../../../shared/services/problems/hints.service';
-import { SubmissionsService } from '../../../../shared/services/problems/submissions.service';
-import { SolutionsService } from '../../../../shared/services/problems/solutions.service';
-import { RunnerApi, RunResult, RunStatusEnum } from '../../../../data';
-import { ProblemsModel } from '../../../../data';
-import { TestcasesModel } from '../../../../data';
-import { HintsModel } from '../../../../data';
-import { SubmissionsModel } from '../../../../data';
-import { SolutionsModel } from '../../../../data';
-import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../data';
+import { ProblemsService } from '../../../../../shared/services/problems/problems.service';
+import { TestcasesService } from '../../../../../shared/services/problems/testcases.service';
+import { HintsService } from '../../../../../shared/services/problems/hints.service';
+import { SubmissionsService } from '../../../../../shared/services/problems/submissions.service';
+import { SolutionsService } from '../../../../../shared/services/problems/solutions.service';
+import { RunnerApi, RunResult, RunStatusEnum } from '../../../../../data';
+import { ProblemsModel } from '../../../../../data';
+import { TestcasesModel } from '../../../../../data';
+import { HintsModel } from '../../../../../data';
+import { SubmissionsModel } from '../../../../../data';
+import { SolutionsModel } from '../../../../../data';
+import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../../data';
 import { Subscription } from 'rxjs';
 import {
   SubmissionCompletedSocketPayload,
   SubmissionSocket,
-} from '../../../../data';
+} from '../../../../../data';
 
 export interface CustomTestcase {
   id: number;

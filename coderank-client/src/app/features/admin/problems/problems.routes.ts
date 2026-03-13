@@ -4,11 +4,11 @@ export const adminProblemsRoutes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./problem-list/problem-list.component').then(m => m.AdminProblemListComponent),
+      import('./pages/problem-list/problem-list.component').then(m => m.AdminProblemListComponent),
   },
   {
     path: ':id',
     loadComponent: () =>
-      import('./problem-detail/problem-detail.component').then(m => m.AdminProblemDetailComponent),
+      import('./pages/problem-detail/problem-detail.component').then(m => m.AdminProblemDetailComponent),
   },
 ];

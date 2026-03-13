@@ -21,12 +21,12 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // Services & Models
-import { DifficultyEnum, ProblemsModel, TagsModel } from '../../../../data';
-import { AdminProblemFormDialogComponent } from '../components/problem-form-dialog/problem-form-dialog.component';
-import { AdminTestcaseManagerComponent } from '../components/testcase-manager/testcase-manager.component';
-import { AdminHintManagerComponent } from '../components/hint-manager/hint-manager.component';
-import { ProblemsService } from '../../../../shared/services/problems/problems.service';
-import { TagsService } from '../../../../shared/services/problems/tags.service';
+import { DifficultyEnum, ProblemsModel, TagsModel } from '../../../../../data';
+import { AdminProblemFormDialogComponent } from '../../components/problem-form-dialog/problem-form-dialog.component';
+import { AdminTestcaseManagerComponent } from '../../components/testcase-manager/testcase-manager.component';
+import { AdminHintManagerComponent } from '../../components/hint-manager/hint-manager.component';
+import { ProblemsService } from '../../../../../shared/services/problems/problems.service';
+import { TagsService } from '../../../../../shared/services/problems/tags.service';
 
 @Component({
   selector: 'app-admin-problem-list',
