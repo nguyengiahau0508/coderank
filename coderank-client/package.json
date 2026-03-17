@@ -4,6 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:static": "if [ -d dist/coderank-client/browser ]; then npx serve -s dist/coderank-client/browser -l 4200; else npx serve -s dist/coderank-client -l 4200; fi",
+    "start:prod": "npm run build && npm run start:static",
+    "pm2:start": "if [ \"$NODE_ENV\" = \"production\" ]; then npm run start:prod; else npm run start; fi",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
@@ -50,6 +53,7 @@
     "@tailwindcss/postcss": "^4.1.12",
     "jsdom": "^27.1.0",
     "postcss": "^8.5.3",
+    "serve": "^14.2.5",
     "tailwindcss": "^4.1.12",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"

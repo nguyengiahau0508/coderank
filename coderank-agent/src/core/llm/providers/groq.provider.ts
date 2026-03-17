@@ -1,14 +1,16 @@
 import Groq from 'groq-sdk';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { ILLMProvider, LLMResponse, ILLMConfig } from '../llm.interface';
+import { ILLMProvider, LLMResponse, ILLMConfig, ConversationHistoryMessage } from '../llm.interface';
 import { ITool } from '../../tools/tool.interface';
 import { config } from '../../../config';
+import { ContextWindowPolicy, trimHistoryToBudget } from '../../context-window';
 
 export class GroqProvider implements ILLMProvider {
   private client: Groq;
   private modelName: string;
   private tools: Groq.Chat.Completions.ChatCompletionTool[] = [];
   private history: Groq.Chat.Completions.ChatCompletionMessageParam[] = [];
+  private readonly contextPolicy: ContextWindowPolicy;
   // Maps tool name -> tool_call_id so tool results can reference the right call
   private lastToolCallIds: Map<string, string> = new Map();
 
@@ -19,15 +21,35 @@ export class GroqProvider implements ILLMProvider {
     }
     this.client = new Groq({ apiKey });
     this.modelName = modelName || config.DEFAULT_GROQ_MODEL;
+    this.contextPolicy = {
+      maxInputTokens: config.CONTEXT_WINDOW_MAX_INPUT_TOKENS,
+      outputReserveTokens: config.CONTEXT_WINDOW_OUTPUT_RESERVE_TOKENS,
+      historyRetentionRatio: config.CONTEXT_WINDOW_HISTORY_RETENTION_RATIO,
+      maxToolResponseChars: config.CONTEXT_WINDOW_TOOL_RESULT_MAX_CHARS,
+      maxToolResponsesTotalChars: config.CONTEXT_WINDOW_TOOL_RESULTS_MAX_TOTAL_CHARS,
+      summaryMaxChars: config.CONTEXT_WINDOW_SUMMARY_MAX_CHARS,
+      ...(providerConfig?.contextPolicy || {}),
+    };
   }
 
-  init(systemPrompt: string, tools: ITool[]): void {
+  init(systemPrompt: string, tools: ITool[], initialHistory: ConversationHistoryMessage[] = []): void {
     this.tools = this.formatToolsForGroq(tools);
     this.history = [];
     this.lastToolCallIds = new Map();
 
     if (systemPrompt) {
       this.history.push({ role: 'system', content: systemPrompt });
+    }
+
+    for (const msg of initialHistory) {
+      if (!msg?.content || (msg.role !== 'user' && msg.role !== 'assistant')) {
+        continue;
+      }
+
+      this.history.push({
+        role: msg.role,
+        content: msg.content,
+      });
     }
   }
 
@@ -49,6 +71,20 @@ export class GroqProvider implements ILLMProvider {
           this.history.push({ role: 'user', content: JSON.stringify(msg) });
         }
       });
+    }
+
+    const trimResult = trimHistoryToBudget(this.history, {
+      maxInputTokens: this.contextPolicy.maxInputTokens,
+      outputReserveTokens: this.contextPolicy.outputReserveTokens,
+      historyRetentionRatio: this.contextPolicy.historyRetentionRatio,
+      isPinned: msg => msg.role === 'system',
+    });
+
+    if (trimResult.droppedCount > 0) {
+      console.warn(
+        `[Groq Context] Trimmed ${trimResult.droppedCount} message(s), estimated input tokens ${trimResult.estimatedTokens}/${trimResult.budgetTokens}.`,
+      );
+      this.history = trimResult.messages;
     }
 
     try {

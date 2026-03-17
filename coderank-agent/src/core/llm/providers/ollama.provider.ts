@@ -1,8 +1,9 @@
 import { Ollama, Message, Tool } from 'ollama';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { ILLMProvider, LLMResponse, ChatMessage, ILLMConfig } from '../llm.interface';
+import { ILLMProvider, LLMResponse, ChatMessage, ILLMConfig, ConversationHistoryMessage } from '../llm.interface';
 import { ITool } from '../../tools/tool.interface';
 import { config } from '../../../config';
+import { ContextWindowPolicy, trimHistoryToBudget } from '../../context-window';
 
 export class OllamaProvider implements ILLMProvider {
   private client: Ollama;
@@ -10,14 +11,24 @@ export class OllamaProvider implements ILLMProvider {
   private systemPrompt?: string;
   private tools: Tool[] = [];
   private history: Message[] = [];
+  private readonly contextPolicy: ContextWindowPolicy;
 
   constructor(modelName?: string, providerConfig?: ILLMConfig) {
     const host = providerConfig?.baseHost || config.OLLAMA_HOST;
     this.client = new Ollama({ host });
     this.modelName = modelName || config.DEFAULT_OLLAMA_MODEL;
+    this.contextPolicy = {
+      maxInputTokens: config.CONTEXT_WINDOW_MAX_INPUT_TOKENS,
+      outputReserveTokens: config.CONTEXT_WINDOW_OUTPUT_RESERVE_TOKENS,
+      historyRetentionRatio: config.CONTEXT_WINDOW_HISTORY_RETENTION_RATIO,
+      maxToolResponseChars: config.CONTEXT_WINDOW_TOOL_RESULT_MAX_CHARS,
+      maxToolResponsesTotalChars: config.CONTEXT_WINDOW_TOOL_RESULTS_MAX_TOTAL_CHARS,
+      summaryMaxChars: config.CONTEXT_WINDOW_SUMMARY_MAX_CHARS,
+      ...(providerConfig?.contextPolicy || {}),
+    };
   }
 
-  init(systemPrompt: string, tools: ITool[]): void {
+  init(systemPrompt: string, tools: ITool[], initialHistory: ConversationHistoryMessage[] = []): void {
     this.systemPrompt = systemPrompt;
     this.tools = this.formatToolsForOllama(tools);
     this.history = [];
@@ -27,6 +38,17 @@ export class OllamaProvider implements ILLMProvider {
       role: 'system',
       content: this.systemPrompt,
     });
+
+    for (const msg of initialHistory) {
+      if (!msg?.content || (msg.role !== 'user' && msg.role !== 'assistant')) {
+        continue;
+      }
+
+      this.history.push({
+        role: msg.role,
+        content: msg.content,
+      });
+    }
   }
 
   async sendMessage(message: any): Promise<LLMResponse> {
@@ -46,6 +68,20 @@ export class OllamaProvider implements ILLMProvider {
            this.history.push({ role: 'user', content: JSON.stringify(msg) });
         }
       });
+    }
+
+    const trimResult = trimHistoryToBudget(this.history, {
+      maxInputTokens: this.contextPolicy.maxInputTokens,
+      outputReserveTokens: this.contextPolicy.outputReserveTokens,
+      historyRetentionRatio: this.contextPolicy.historyRetentionRatio,
+      isPinned: msg => msg.role === 'system',
+    });
+
+    if (trimResult.droppedCount > 0) {
+      console.warn(
+        `[Ollama Context] Trimmed ${trimResult.droppedCount} message(s), estimated input tokens ${trimResult.estimatedTokens}/${trimResult.budgetTokens}.`,
+      );
+      this.history = trimResult.messages;
     }
 
     try {

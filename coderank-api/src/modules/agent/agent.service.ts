@@ -6,6 +6,11 @@ import { AppConfigService } from 'src/config/app/app-config.service';
 import { RolesEnum } from 'src/common/enums/enums';
 import { UserAiConfigEntity } from './entities/user-ai-config.entity';
 
+type AgentHistoryMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
 @Injectable()
 export class AgentService {
   constructor(
@@ -18,6 +23,7 @@ export class AgentService {
     userToken: string,
     role: RolesEnum,
     aiConfig?: UserAiConfigEntity,
+    history?: AgentHistoryMessage[],
   ): Promise<string> {
     const agentUrl = this.appConfigService.agent_url;
     const agentSecret = this.appConfigService.agent_secret_token;
@@ -29,6 +35,9 @@ export class AgentService {
       if (aiConfig.modelName) body.modelName = aiConfig.modelName;
       if (aiConfig.apiKey) body.apiKey = aiConfig.apiKey;
       if (aiConfig.baseHost) body.baseHost = aiConfig.baseHost;
+    }
+    if (history && history.length > 0) {
+      body.history = history;
     }
 
     try {
@@ -61,6 +70,7 @@ export class AgentService {
     userToken: string,
     role: RolesEnum,
     aiConfig?: UserAiConfigEntity,
+    history?: AgentHistoryMessage[],
   ): Record<string, unknown> {
     const body: Record<string, unknown> = { message, userToken, role };
     if (aiConfig) {
@@ -68,6 +78,9 @@ export class AgentService {
       if (aiConfig.modelName) body.modelName = aiConfig.modelName;
       if (aiConfig.apiKey) body.apiKey = aiConfig.apiKey;
       if (aiConfig.baseHost) body.baseHost = aiConfig.baseHost;
+    }
+    if (history && history.length > 0) {
+      body.history = history;
     }
     return body;
   }
@@ -77,10 +90,11 @@ export class AgentService {
     userToken: string,
     role: RolesEnum,
     aiConfig?: UserAiConfigEntity,
+    history?: AgentHistoryMessage[],
   ): Promise<Readable> {
     const agentUrl = this.appConfigService.agent_url;
     const agentSecret = this.appConfigService.agent_secret_token;
-    const body = this.buildBody(message, userToken, role, aiConfig);
+    const body = this.buildBody(message, userToken, role, aiConfig, history);
 
     const response = await this.httpService.axiosRef.post(
       `${agentUrl}/agent/chat/stream`,

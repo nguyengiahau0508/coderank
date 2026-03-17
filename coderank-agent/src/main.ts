@@ -24,13 +24,15 @@ app.get('/health', (_req, res) => {
 });
 
 app.post('/agent/chat', verifyAgentSecret, async (req: Request, res: Response) => {
-  const { userToken, message, role, provider, modelName, apiKey, baseHost } = req.body;
+  const { userToken, message, role, provider, modelName, apiKey, baseHost, contextPolicy, history } = req.body;
 
   if (!userToken || !message) {
     return res.status(400).json({ success: false, error: 'Missing userToken or message' });
   }
 
-  const llmConfig = (apiKey || baseHost) ? { apiKey, baseHost } : undefined;
+  const llmConfig = (apiKey || baseHost || contextPolicy || history)
+    ? { apiKey, baseHost, contextPolicy, initialHistory: history }
+    : undefined;
 
   try {
     const agent = new Agent(role, provider, modelName, llmConfig);
@@ -55,7 +57,7 @@ function sleep(ms: number) {
 }
 
 app.post('/agent/chat/stream', verifyAgentSecret, async (req: Request, res: Response) => {
-  const { userToken, message, role, provider, modelName, apiKey, baseHost } = req.body;
+  const { userToken, message, role, provider, modelName, apiKey, baseHost, contextPolicy, history } = req.body;
 
   if (!userToken || !message) {
     return res.status(400).json({ success: false, error: 'Missing userToken or message' });
@@ -70,7 +72,9 @@ app.post('/agent/chat/stream', verifyAgentSecret, async (req: Request, res: Resp
     res.write(`data: ${JSON.stringify(event)}\n\n`);
   };
 
-  const llmConfig = (apiKey || baseHost) ? { apiKey, baseHost } : undefined;
+  const llmConfig = (apiKey || baseHost || contextPolicy || history)
+    ? { apiKey, baseHost, contextPolicy, initialHistory: history }
+    : undefined;
 
   try {
     const agent = new Agent(role, provider, modelName, llmConfig);

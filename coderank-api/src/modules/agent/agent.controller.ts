@@ -142,7 +142,13 @@ export class AgentController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const conv = await this.conversationService.findOneByUser(id, currentUser.userId);
+    const conv = await this.conversationService.findOneWithMessages(id, currentUser.userId);
+    const history = (conv.messages || [])
+      .filter(msg => msg.role === 'user' || msg.role === 'assistant')
+      .map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+      }));
 
     await this.conversationService.addMessage(id, 'user', dto.message);
 
@@ -170,7 +176,7 @@ export class AgentController {
 
     try {
       const stream = await this.agentService.chatStream(
-        dto.message, userToken, role, aiConfig ?? undefined,
+        dto.message, userToken, role, aiConfig ?? undefined, history,
       );
 
       stream.on('data', (chunk: Buffer) => {

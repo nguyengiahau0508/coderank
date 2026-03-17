@@ -69,6 +69,8 @@ export const AI_PROVIDER_MODELS: Record<AiProviderEnum, string[]> = {
     'codellama',
     'mistral',
     'deepseek-coder',
+    'qwen3.5:latest',
+    'qwen3.5:397b-cloud'
   ],
 };
 

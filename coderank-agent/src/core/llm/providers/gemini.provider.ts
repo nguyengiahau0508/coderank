@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI, ChatSession } from '@google/generative-ai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { ILLMProvider, LLMResponse, ILLMConfig } from '../llm.interface';
+import { ILLMProvider, LLMResponse, ILLMConfig, ConversationHistoryMessage } from '../llm.interface';
 import { ITool } from '../../tools/tool.interface';
 import { config } from '../../../config';
 
@@ -18,7 +18,7 @@ export class GeminiProvider implements ILLMProvider {
     this.modelName = modelName || config.DEFAULT_GEMINI_MODEL;
   }
 
-  init(systemPrompt: string, tools: ITool[]): void {
+  init(systemPrompt: string, tools: ITool[], initialHistory: ConversationHistoryMessage[] = []): void {
     const geminiTools = this.formatToolsForGemini(tools);
     
     const model = this.genAI.getGenerativeModel({
@@ -28,7 +28,7 @@ export class GeminiProvider implements ILLMProvider {
     });
 
     this.chatSession = model.startChat({
-      history: [],
+      history: this.formatHistoryForGemini(initialHistory),
       generationConfig: {
         maxOutputTokens: 2000,
       },
@@ -79,5 +79,18 @@ export class GeminiProvider implements ILLMProvider {
         },
       };
     });
+  }
+
+  private formatHistoryForGemini(initialHistory: ConversationHistoryMessage[]) {
+    if (!Array.isArray(initialHistory) || initialHistory.length === 0) {
+      return [];
+    }
+
+    return initialHistory
+      .filter(msg => msg?.content && (msg.role === 'user' || msg.role === 'assistant'))
+      .map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }],
+      }));
   }
 }
