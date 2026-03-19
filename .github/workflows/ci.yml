@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  checks:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: API checks
+            working_directory: coderank-api
+            lockfile: coderank-api/package-lock.json
+            verify_cmd: npm run build && npm run lint
+          - name: Client checks
+            working_directory: coderank-client
+            lockfile: coderank-client/package-lock.json
+            verify_cmd: npm run build
+          - name: Agent checks
+            working_directory: coderank-agent
+            lockfile: coderank-agent/package-lock.json
+            verify_cmd: npx tsc -p tsconfig.json --noEmit
+    defaults:
+      run:
+        working-directory: ${{ matrix.working_directory }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ matrix.lockfile }}
+      - run: npm ci --no-audit --no-fund
+      - run: ${{ matrix.verify_cmd }}
