@@ -214,10 +214,8 @@ http://localhost:3000/api-docs
 
 ```
 coderank/
-├── CLAUDE.md                    # Hướng dẫn cho Claude Code
 ├── README.md                    # File này
 ├── coderank-api/                # Backend API
-│   ├── CLAUDE.md
 │   ├── .env.example
 │   ├── src/
 │   │   ├── main.ts              # Entry point
@@ -236,7 +234,6 @@ coderank/
 │   │   └── providers/           # Provider modules
 │   └── test/                    # E2E tests
 ├── coderank-client/             # Frontend
-│   ├── CLAUDE.md
 │   ├── src/
 │   │   ├── main.ts              # Bootstrap
 │   │   ├── app/
@@ -248,7 +245,6 @@ coderank/
 │   │   └── environments/        # Cấu hình môi trường
 │   └── public/                  # Static assets (Monaco Editor)
 └── coderank-agent/              # AI Agent
-    ├── CLAUDE.md
     ├── .env.example
     └── src/
         ├── main.ts              # Express server
@@ -296,34 +292,14 @@ cd coderank-api && npm run test:e2e
 cd coderank-client && npm test
 ```
 
-## Làm việc với Claude Code
+## Làm việc với GitHub Copilot
 
-Dự án đã được cấu hình để làm việc tối ưu với Claude Code:
+Dự án được cấu hình để làm việc thống nhất với GitHub Copilot:
 
-- **`CLAUDE.md`** — File hướng dẫn ở root và mỗi subproject giúp Claude Code hiểu ngữ cảnh dự án
+- **`.github/copilot-instructions.md`** — Quy tắc chung toàn monorepo
+- **`.github/instructions/*.instructions.md`** — Quy tắc theo từng subproject (`api`, `client`, `agent`)
+- **`.github/skills/`** — Các skill chuyên biệt theo stack để hỗ trợ triển khai chuẩn kiến trúc
 - **`.env.example`** — Mẫu biến môi trường cho API và Agent
-- Cấu trúc thư mục rõ ràng, convention nhất quán giúp Claude Code navigate hiệu quả
-
-### Hướng dẫn AI xây dựng UI
-
-> **Prompt mẫu cho AI khi xây dựng giao diện:**
->
-> Build a minimal developer tools landing page with dark mode, code snippet previews, feature comparison table, integration logos, and documentation link. Use syntax highlighting colors.
-
-**Chi tiết yêu cầu thiết kế:**
-
-- **Dark mode** — Giao diện tối làm chủ đạo, phù hợp với developer tools. Nền tối (`#0d1117`, `#161b22`), text sáng (`#c9d1d9`, `#f0f6fc`)
-- **Code snippet previews** — Hiển thị đoạn code mẫu với syntax highlighting, sử dụng Monaco Editor hoặc block code có màu sắc (keyword: `#ff7b72`, string: `#a5d6ff`, function: `#d2a8ff`, comment: `#8b949e`)
-- **Feature comparison table** — Bảng so sánh tính năng giữa các plan/tier hoặc giữa CodeRank với các nền tảng khác, sử dụng PrimeNG Table component
-- **Integration logos** — Grid hiển thị logo các công nghệ/ngôn ngữ được hỗ trợ (Python, C++, Java, JavaScript, TypeScript, Go, Rust, C)
-- **Documentation link** — CTA button/link dẫn tới tài liệu API (`/api-docs`) và hướng dẫn sử dụng
-- **Syntax highlighting colors** — Áp dụng bảng màu syntax highlighting xuyên suốt UI cho headings, badges, accents để tạo cảm giác "code editor"
-
-**Tech stack cho UI:**
-- Angular 21 standalone components
-- PrimeNG 21 (Aura dark preset)
-- Tailwind CSS 4 utility classes
-- Responsive design (mobile-first)
 
 ## License
 
