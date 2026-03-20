@@ -1,5 +1,12 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { Column, Entity, Index, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { CoursesEntity } from './courses.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CourseLessonsEntity } from './course-lessons.entity';
@@ -12,7 +19,10 @@ export class CourseSectionsEntity extends BaseEntity {
   @Column({ type: 'uuid' })
   courseId: string;
 
-  @ApiProperty({ description: 'Section title', example: 'Chương 1: Mảng và Chuỗi' })
+  @ApiProperty({
+    description: 'Section title',
+    example: 'Chương 1: Mảng và Chuỗi',
+  })
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
@@ -24,7 +34,10 @@ export class CourseSectionsEntity extends BaseEntity {
   @Column({ type: 'int', default: 0, unsigned: true })
   sectionOrder: number;
 
-  @ApiProperty({ description: 'Whether this section is published', example: true })
+  @ApiProperty({
+    description: 'Whether this section is published',
+    example: true,
+  })
   @Column({ type: 'boolean', default: false })
   isPublished: boolean;
 

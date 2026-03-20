@@ -1,4 +1,12 @@
-import { IsOptional, IsString, IsEnum, IsBoolean, IsInt, Min, MaxLength } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsBoolean,
+  IsInt,
+  Min,
+  MaxLength,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { CourseLevelEnum, CourseStatusEnum } from 'src/common/enums/enums';
 
@@ -76,7 +84,9 @@ export class UpdateCourseDto {
   @MaxLength(100)
   category?: string;
 
-  @ApiPropertyOptional({ description: 'Learning objectives (JSON array string)' })
+  @ApiPropertyOptional({
+    description: 'Learning objectives (JSON array string)',
+  })
   @IsOptional()
   @IsString()
   learningObjectives?: string;

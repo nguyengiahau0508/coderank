@@ -1,4 +1,4 @@
-import { RolesEnum } from "../enums/enums";
+import { RolesEnum } from '../enums/enums';
 
 export interface IJwtPayload {
   userId: string;

@@ -1,4 +1,13 @@
-import { IsNotEmpty, IsOptional, IsString, IsBoolean, IsInt, Min, MaxLength, IsUUID } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsInt,
+  Min,
+  MaxLength,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateLessonProblemDto {
@@ -18,7 +27,11 @@ export class CreateLessonProblemDto {
   @IsBoolean()
   isRequired?: boolean;
 
-  @ApiPropertyOptional({ description: 'Custom label', example: 'Bài tập 1', maxLength: 100 })
+  @ApiPropertyOptional({
+    description: 'Custom label',
+    example: 'Bài tập 1',
+    maxLength: 100,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(100)

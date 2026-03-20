@@ -26,4 +26,3 @@ export class UpdateTestcaseDto {
   @IsEnum(TestcaseCompareTypeEnum)
   compareType?: TestcaseCompareTypeEnum;
 }
-

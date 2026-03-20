@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsBoolean, IsEnum, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TestcaseCompareTypeEnum } from 'src/common/enums/enums';
 export class CreateTestcaseDto {
@@ -35,4 +41,3 @@ export class CreateTestcaseDto {
   @IsEnum(TestcaseCompareTypeEnum)
   compareType?: TestcaseCompareTypeEnum;
 }
-

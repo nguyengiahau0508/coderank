@@ -1,8 +1,5 @@
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
-import {
-  ApiEnumProperty,
-  ApiStringOptional,
-} from 'src/common/decorators';
+import { ApiEnumProperty, ApiStringOptional } from 'src/common/decorators';
 import { AiProviderEnum } from 'src/common/enums/enums';
 
 export class UpsertAiConfigDto {
@@ -28,7 +25,11 @@ export class UpsertAiConfigDto {
   @MaxLength(500)
   apiKey?: string;
 
-  @ApiStringOptional('Base host URL (for Ollama)', 'http://localhost:11434', 255)
+  @ApiStringOptional(
+    'Base host URL (for Ollama)',
+    'http://localhost:11434',
+    255,
+  )
   @IsOptional()
   @IsString()
   @MaxLength(255)

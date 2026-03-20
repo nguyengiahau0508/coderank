@@ -17,7 +17,10 @@ export class CourseLessonProgressEntity extends BaseEntity {
   @Column({ type: 'uuid' })
   userId: string;
 
-  @ApiProperty({ description: 'Whether the lesson is completed', example: false })
+  @ApiProperty({
+    description: 'Whether the lesson is completed',
+    example: false,
+  })
   @Column({ type: 'boolean', default: false })
   isCompleted: boolean;
 
@@ -25,7 +28,9 @@ export class CourseLessonProgressEntity extends BaseEntity {
   @Column({ type: 'timestamp', nullable: true })
   completedAt?: Date;
 
-  @ApiPropertyOptional({ description: 'Last time the user accessed this lesson' })
+  @ApiPropertyOptional({
+    description: 'Last time the user accessed this lesson',
+  })
   @Column({ type: 'timestamp', nullable: true })
   lastAccessedAt?: Date;
 
@@ -39,7 +44,9 @@ export class CourseLessonProgressEntity extends BaseEntity {
 
   // ===== RELATIONS =====
 
-  @ManyToOne(() => CourseLessonsEntity, (l) => l.progress, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CourseLessonsEntity, (l) => l.progress, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'lessonId' })
   lesson: CourseLessonsEntity;
 

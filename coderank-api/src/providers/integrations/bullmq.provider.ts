@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
@@ -16,8 +15,6 @@ import { ExpressAdapter } from '@bull-board/express';
       route: '/queues',
       adapter: ExpressAdapter,
     }),
-    
   ],
 })
-export class BullmqProviderModule { }
-
+export class BullmqProviderModule {}

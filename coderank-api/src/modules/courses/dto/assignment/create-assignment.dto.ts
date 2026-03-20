@@ -1,20 +1,39 @@
-import { IsNotEmpty, IsOptional, IsString, IsBoolean, IsInt, Min, Max, MaxLength, IsEnum, IsDateString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsInt,
+  Min,
+  Max,
+  MaxLength,
+  IsEnum,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AssignmentTypeEnum } from '../../entities/course-assignments.entity';
 
 export class CreateAssignmentDto {
-  @ApiProperty({ description: 'Assignment title', example: 'Bài tập 1: Xử lý mảng' })
+  @ApiProperty({
+    description: 'Assignment title',
+    example: 'Bài tập 1: Xử lý mảng',
+  })
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
   title: string;
 
-  @ApiPropertyOptional({ description: 'Assignment description/instructions (HTML)' })
+  @ApiPropertyOptional({
+    description: 'Assignment description/instructions (HTML)',
+  })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Assignment type', enum: AssignmentTypeEnum })
+  @ApiPropertyOptional({
+    description: 'Assignment type',
+    enum: AssignmentTypeEnum,
+  })
   @IsOptional()
   @IsEnum(AssignmentTypeEnum)
   type?: AssignmentTypeEnum;
@@ -41,7 +60,10 @@ export class CreateAssignmentDto {
   @IsBoolean()
   isPublished?: boolean;
 
-  @ApiPropertyOptional({ description: 'Allowed file extensions (comma-separated)', example: '.pdf,.docx,.zip' })
+  @ApiPropertyOptional({
+    description: 'Allowed file extensions (comma-separated)',
+    example: '.pdf,.docx,.zip',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(500)

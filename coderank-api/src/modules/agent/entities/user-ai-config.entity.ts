@@ -24,7 +24,11 @@ export class UserAiConfigEntity extends BaseEntity {
   })
   provider: AiProviderEnum;
 
-  @ApiStringOptional('Model name (e.g. gemini-2.5-flash, llama-3.3-70b-versatile)', 'gemini-2.5-flash', 100)
+  @ApiStringOptional(
+    'Model name (e.g. gemini-2.5-flash, llama-3.3-70b-versatile)',
+    'gemini-2.5-flash',
+    100,
+  )
   @Column({ type: 'varchar', length: 100, nullable: true })
   modelName: string;
 
@@ -32,7 +36,11 @@ export class UserAiConfigEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 500, nullable: true, select: false })
   apiKey: string;
 
-  @ApiStringOptional('Base host URL (for Ollama)', 'http://localhost:11434', 255)
+  @ApiStringOptional(
+    'Base host URL (for Ollama)',
+    'http://localhost:11434',
+    255,
+  )
   @Column({ type: 'varchar', length: 255, nullable: true })
   baseHost: string;
 }

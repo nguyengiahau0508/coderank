@@ -1,5 +1,4 @@
-
-import { registerAs } from "@nestjs/config";
+import { registerAs } from '@nestjs/config';
 
 export default registerAs('mariadbConfig', () => ({
   host: process.env.DB_MARIADB_HOST,

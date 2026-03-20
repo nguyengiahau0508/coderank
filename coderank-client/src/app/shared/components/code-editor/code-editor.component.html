@@ -1,7 +1,7 @@
 <!-- Code Editor -->
-<div class="flex flex-col h-full rounded-xl overflow-hidden">
+<div class="flex h-full flex-col overflow-hidden">
   <!-- Header -->
-  <div class="flex items-center justify-between px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border-b border-surface-200 dark:border-surface-700 shrink-0">
+  <div class="flex shrink-0 items-center justify-between border-b px-3 py-2" style="background: var(--cr-bg-tertiary); border-color: var(--cr-border);">
     <p-select
       [(ngModel)]="selectedLanguage"
       [options]="languageOptions"
@@ -17,16 +17,17 @@
       <button
         type="button"
         (click)="clearEditor()"
-        class="text-xs text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-colors"
+        class="text-[11px] transition-colors hover:text-blue-400"
+        style="color: var(--cr-text-muted);"
       >
         <i class="pi pi-refresh mr-1 text-[10px]"></i>
-        Đặt lại
+        Reset
       </button>
     }
   </div>
 
   <!-- Editor -->
-  <div class="flex-1 min-h-[300px]">
+  <div class="flex-1">
     <ngx-monaco-editor
       [options]="editorOptions"
       [model]="editorModel"

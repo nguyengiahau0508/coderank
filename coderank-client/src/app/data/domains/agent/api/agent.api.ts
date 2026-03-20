@@ -3,10 +3,12 @@ import { Observable } from 'rxjs';
 import { ApiResponse, BaseApi } from '../../../shared';
 import { API_ENDPOINTS } from '../../../shared/constants/api.constants';
 import { AiProviderEnum } from '../../../shared/enums/enums';
+import { ChatContext } from '../../../../core/models/chat-context.model';
 
 export interface ChatMessageDto {
   message: string;
   provider?: AiProviderEnum;
+  context?: ChatContext;
 }
 
 export interface ChatResponse {

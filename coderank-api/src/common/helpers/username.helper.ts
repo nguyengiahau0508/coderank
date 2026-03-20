@@ -14,7 +14,7 @@ export function generateUsernameFromEmail(
     maxLength?: number;
     addRandomSuffix?: boolean;
     randomSuffixLength?: number;
-  }
+  },
 ): string {
   const maxLength = options?.maxLength || 20;
   const addRandomSuffix = options?.addRandomSuffix !== false;
@@ -87,9 +87,9 @@ export function generateUniqueUsername(
   options?: {
     maxLength?: number;
     randomSuffixLength?: number;
-  }
+  },
 ): string {
-  let username = generateUsernameFromEmail(email, {
+  const username = generateUsernameFromEmail(email, {
     ...options,
     addRandomSuffix: false,
   });

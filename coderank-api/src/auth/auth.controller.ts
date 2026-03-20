@@ -1,25 +1,40 @@
-import { Controller, Get, Post, Req, Res, UseGuards, BadRequestException, UnauthorizedException } from "@nestjs/common";
-import { AuthGuard } from "@nestjs/passport/dist/auth.guard";
-import { AuthProvidersEnum, RolesEnum } from "src/common/enums/enums";
-import express from "express";
-import { AuthService } from "./auth.service";
-import { ApiTags } from "@nestjs/swagger";
-import { ApiGoogleAuth, ApiGoogleCallback, ApiLogout, ApiProtectedResource, ApiRefreshToken, Public, Roles } from "./decorators";
-import { ResponseMessage, SkipTransform } from "src/common/decorators";
-import { Throttle } from "@nestjs/throttler";
-import { RolesGuard } from "./guards/roles.guard";
+import {
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
+import { AuthProvidersEnum, RolesEnum } from 'src/common/enums/enums';
+import express from 'express';
+import { AuthService } from './auth.service';
+import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiGoogleAuth,
+  ApiGoogleCallback,
+  ApiLogout,
+  ApiProtectedResource,
+  ApiRefreshToken,
+  Public,
+  Roles,
+} from './decorators';
+import { ResponseMessage, SkipTransform } from 'src/common/decorators';
+import { Throttle } from '@nestjs/throttler';
+import { RolesGuard } from './guards/roles.guard';
 /**
  * Authentication Controller
- * 
+ *
  * Handles all authentication-related endpoints including OAuth2 flows
  * for Google, GitHub, and local authentication.
  */
 @ApiTags('Authentication')
-@Controller("auth")
+@Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-  ) { }
+  constructor(private readonly authService: AuthService) {}
 
   /**
    * Initiate Google OAuth2 authentication flow
@@ -40,9 +55,13 @@ export class AuthController {
   @UseGuards(AuthGuard(AuthProvidersEnum.Google))
   @ResponseMessage('Google authentication successful')
   @ApiGoogleCallback()
-  async googleCallback(@Req() req: express.Request, @Res() res: express.Response) {
+  async googleCallback(
+    @Req() req: express.Request,
+    @Res() res: express.Response,
+  ) {
     const userAgent = req.headers['user-agent'] || '';
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || '';
+    const ipAddress =
+      req.ip || (req.headers['x-forwarded-for'] as string) || '';
 
     const userData = {
       ...req.user,
@@ -50,11 +69,11 @@ export class AuthController {
       ipAddress,
     };
 
-    const {
-      accessToken,
-      refreshToken,
-      user
-    } = await this.authService.validateOrCreateUser(userData as any, AuthProvidersEnum.Google);
+    const { accessToken, refreshToken, user } =
+      await this.authService.validateOrCreateUser(
+        userData as any,
+        AuthProvidersEnum.Google,
+      );
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
@@ -64,12 +83,17 @@ export class AuthController {
     });
 
     const userJson = encodeURIComponent(JSON.stringify(user));
-    return res.redirect(`${process.env.CLIENT_URL}/auth/callback?accessToken=${accessToken}&user=${userJson}`);
+    return res.redirect(
+      `${process.env.CLIENT_URL}/auth/callback?accessToken=${accessToken}&user=${userJson}`,
+    );
   }
 
   @Get('logout')
   @ApiLogout()
-  async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
+  async logout(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res: express.Response,
+  ) {
     const userId = req.user?.['userId'];
     if (!userId) {
       throw new UnauthorizedException('User not authenticated');
@@ -87,21 +111,32 @@ export class AuthController {
       sameSite: 'lax',
     });
 
-    const logoutSuccess = await this.authService.logout(userId, accessToken, refreshToken);
+    const logoutSuccess = await this.authService.logout(
+      userId,
+      accessToken,
+      refreshToken,
+    );
     return { loggedOut: logoutSuccess };
   }
 
   @Post('refresh-tokens')
   @Public()
   @ApiRefreshToken()
-  async refreshAccessTokens(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
+  async refreshAccessTokens(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res: express.Response,
+  ) {
     const refreshToken = req.cookies?.['refreshToken'];
     if (!refreshToken) {
       throw new BadRequestException('Missing refresh token');
     }
 
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || '';
-    const { accessToken } = await this.authService.refreshTokens(ipAddress, refreshToken);
+    const ipAddress =
+      req.ip || (req.headers['x-forwarded-for'] as string) || '';
+    const { accessToken } = await this.authService.refreshTokens(
+      ipAddress,
+      refreshToken,
+    );
 
     return { accessToken };
   }

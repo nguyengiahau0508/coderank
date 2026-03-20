@@ -1,0 +1,87 @@
+<div class="student-layout">
+  @if (isNavigating()) {
+    <div class="route-progress" aria-hidden="true"></div>
+  }
+
+  <header class="topbar border-b">
+    <div class="topbar-left">
+      <button
+        type="button"
+        class="brand-btn"
+        (click)="navigateHome()"
+        aria-label="Back to student home"
+      >
+        <span class="brand-icon"><i class="pi pi-code"></i></span>
+        <span class="brand-label">CodeRank Student</span>
+      </button>
+
+      <span class="section-pill">{{ currentSectionLabel() }}</span>
+    </div>
+
+    <div class="topbar-right">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-bell"
+        class="p-button-text p-button-rounded"
+        pBadge="2"
+        severity="danger"
+        aria-label="Notifications"
+      ></button>
+
+      @if (user(); as currentUser) {
+        <button
+          type="button"
+          class="profile-btn"
+          (click)="userMenu.toggle($event)"
+          aria-label="Open profile menu"
+        >
+          @if (currentUser.avatar) {
+            <p-avatar [image]="currentUser.avatar" shape="circle" />
+          } @else {
+            <p-avatar
+              [label]="currentUser.username.charAt(0).toUpperCase()"
+              shape="circle"
+              styleClass="avatar-fallback"
+            />
+          }
+
+          <span class="profile-meta">
+            <span class="profile-name">{{ currentUser.username }}</span>
+            <span class="profile-role">Student</span>
+          </span>
+        </button>
+      }
+
+      <p-menu #userMenu [model]="userMenuItems" [popup]="true" styleClass="student-user-menu" />
+    </div>
+  </header>
+
+  <nav class="horizontal-menu border-b" aria-label="Student navigation">
+    @for (item of menuItems; track item.route) {
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="menu-link-active"
+        [routerLinkActiveOptions]="{ exact: false }"
+        class="menu-link"
+      >
+        <span class="menu-link-main">
+          <i [class]="item.icon"></i>
+          <span>{{ item.label }}</span>
+        </span>
+
+        @if (item.badge) {
+          <span class="menu-badge">{{ item.badge }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <main class="content">
+    <div class="content-inner">
+      <router-outlet />
+    </div>
+  </main>
+</div>
+
+<app-ai-chat />

@@ -1,4 +1,9 @@
-import { ApiStringProperty, ApiStringOptional, ApiIntProperty, ApiEnumProperty } from 'src/common/decorators/api-property.decorator';
+import {
+  ApiStringProperty,
+  ApiStringOptional,
+  ApiIntProperty,
+  ApiEnumProperty,
+} from 'src/common/decorators/api-property.decorator';
 
 export enum RunStatusEnum {
   OK = 'OK',
@@ -9,7 +14,13 @@ export enum RunStatusEnum {
 }
 
 export class RunResultDto {
-  @ApiEnumProperty('Execution status', RunStatusEnum, 'RunStatusEnum', RunStatusEnum.OK, RunStatusEnum.OK)
+  @ApiEnumProperty(
+    'Execution status',
+    RunStatusEnum,
+    'RunStatusEnum',
+    RunStatusEnum.OK,
+    RunStatusEnum.OK,
+  )
   status: RunStatusEnum;
 
   @ApiStringProperty('Standard output', '')

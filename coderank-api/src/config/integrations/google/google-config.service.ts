@@ -1,31 +1,46 @@
-import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class GoogleConfigService {
-  constructor(private configurationService: ConfigService) { }
+  constructor(private configurationService: ConfigService) {}
 
-  get clientId(): string  {
-    return this.configurationService.get<string>('googleConfig.clientId', '')
+  get clientId(): string {
+    return this.configurationService.get<string>('googleConfig.clientId', '');
   }
 
   get clientSecret(): string {
-    return this.configurationService.get<string>('googleConfig.clientSecret', '')
+    return this.configurationService.get<string>(
+      'googleConfig.clientSecret',
+      '',
+    );
   }
 
-  get oauth2ClientEmail(): string  {
-    return this.configurationService.get<string>('googleConfig.oauth2ClientEmail', '')
+  get oauth2ClientEmail(): string {
+    return this.configurationService.get<string>(
+      'googleConfig.oauth2ClientEmail',
+      '',
+    );
   }
 
-  get oauth2PrivateKey(): string  {
-    return this.configurationService.get<string>('googleConfig.oauth2PrivateKey', '')
+  get oauth2PrivateKey(): string {
+    return this.configurationService.get<string>(
+      'googleConfig.oauth2PrivateKey',
+      '',
+    );
   }
 
-  get driveFolderId(): string  {
-    return this.configurationService.get<string>('googleConfig.driveFolderId', '')
+  get driveFolderId(): string {
+    return this.configurationService.get<string>(
+      'googleConfig.driveFolderId',
+      '',
+    );
   }
 
   get oauth2RedirectUri(): string {
-    return this.configurationService.get<string>('googleConfig.oauth2RedirectUri', '')
+    return this.configurationService.get<string>(
+      'googleConfig.oauth2RedirectUri',
+      '',
+    );
   }
 }

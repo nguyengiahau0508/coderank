@@ -21,17 +21,25 @@ export class CourseLessonProblemsEntity extends BaseEntity {
   @Column({ type: 'int', default: 0, unsigned: true })
   problemOrder: number;
 
-  @ApiProperty({ description: 'Whether this problem is required to complete the lesson', example: false })
+  @ApiProperty({
+    description: 'Whether this problem is required to complete the lesson',
+    example: false,
+  })
   @Column({ type: 'boolean', default: false })
   isRequired: boolean;
 
-  @ApiPropertyOptional({ description: 'Custom label for the problem in this lesson', example: 'Bài tập 1' })
+  @ApiPropertyOptional({
+    description: 'Custom label for the problem in this lesson',
+    example: 'Bài tập 1',
+  })
   @Column({ type: 'varchar', length: 100, nullable: true })
   label?: string;
 
   // ===== RELATIONS =====
 
-  @ManyToOne(() => CourseLessonsEntity, (l) => l.problems, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CourseLessonsEntity, (l) => l.problems, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'lessonId' })
   lesson: CourseLessonsEntity;
 

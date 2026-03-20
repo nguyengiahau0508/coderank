@@ -44,7 +44,7 @@ export class ProblemsController {
     private readonly submissionsService: SubmissionsService,
     private readonly tagsService: TagsService,
     private readonly solutionsService: SolutionsService,
-  ) { }
+  ) {}
 
   @Post()
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
@@ -65,7 +65,10 @@ export class ProblemsController {
     @Query() dto: PaginationQueryProblemsDto,
     @CurrentUser() currentUser: IJwtPayload,
   ): Promise<PaginatedResponseDto<ProblemsEntity>> {
-    const result = await this.problemsService.getProblem(dto, currentUser.userId);
+    const result = await this.problemsService.getProblem(
+      dto,
+      currentUser.userId,
+    );
 
     return {
       success: true,
@@ -96,7 +99,20 @@ export class ProblemsController {
   async getProblem(@Param('problemId') problemId: string) {
     return this.problemsService.findOne({
       where: { id: problemId },
-      select: ['id', 'title', 'slug', 'description', 'inputDescription', 'outputDescription', 'notes', 'timeLimitMs', 'memoryLimitMb', 'difficulty', 'isPublished', 'points'],
+      select: [
+        'id',
+        'title',
+        'slug',
+        'description',
+        'inputDescription',
+        'outputDescription',
+        'notes',
+        'timeLimitMs',
+        'memoryLimitMb',
+        'difficulty',
+        'isPublished',
+        'points',
+      ],
       relations: { tags: true, hints: true },
     });
   }
@@ -124,8 +140,6 @@ export class ProblemsController {
       path: '/problems',
     };
   }
-
-
 
   @Patch(':problemId')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
@@ -191,11 +205,21 @@ export class ProblemsController {
   @ApiBearerAuth('JWT-auth')
   @Roles(RolesEnum.Admin, RolesEnum.ProblemSetter)
   @Owner(ProblemsEntity, 'authorId', 'problemId')
-  async getTestcasesByProblemId(@CurrentUser() currentUser: IJwtPayload, @Param('problemId') problemId: string) {
+  async getTestcasesByProblemId(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('problemId') problemId: string,
+  ) {
     return this.testcasesService.find({
       where: { problemId: problemId },
       order: { testcaseOrder: 'ASC' },
-      select: ['id', 'isSample', 'testcaseOrder', 'input', 'expectedOutput', 'compareType'],
+      select: [
+        'id',
+        'isSample',
+        'testcaseOrder',
+        'input',
+        'expectedOutput',
+        'compareType',
+      ],
     });
   }
 
@@ -217,7 +241,8 @@ export class ProblemsController {
     @Param('problemId') problemId: string,
     @Param('testcaseId') testcaseId: string,
   ) {
-    return this.testcasesService.getRepository()
+    return this.testcasesService
+      .getRepository()
       .createQueryBuilder('tc')
       .addSelect(['tc.input', 'tc.expectedOutput'])
       .where('tc.id = :testcaseId', { testcaseId })
@@ -343,13 +368,9 @@ export class ProblemsController {
   async submitProblem(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('problemId') problemId: string,
-    @Body() dto: CreateSubmissionDto
+    @Body() dto: CreateSubmissionDto,
   ) {
-    return this.submissionsService.submit(
-      currentUser.userId,
-      problemId,
-      dto
-    );
+    return this.submissionsService.submit(currentUser.userId, problemId, dto);
   }
 
   @Get(':problemId/submissions')
@@ -357,12 +378,12 @@ export class ProblemsController {
   @ApiBearerAuth('JWT-auth')
   async getSubmissionsByProblemId(
     @CurrentUser() currentUser: IJwtPayload,
-    @Param('problemId') problemId: string
+    @Param('problemId') problemId: string,
   ) {
     return this.submissionsService.find({
       where: {
         problemId: problemId,
-        authorId: currentUser.userId
+        authorId: currentUser.userId,
       },
       order: { createdAt: 'DESC' },
     });
@@ -374,13 +395,13 @@ export class ProblemsController {
   async getSubmissionById(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('problemId') problemId: string,
-    @Param('submissionId') submissionId: string
+    @Param('submissionId') submissionId: string,
   ) {
     return this.submissionsService.findOne({
       where: {
         id: submissionId,
         problemId: problemId,
-        authorId: currentUser.userId
+        authorId: currentUser.userId,
       },
     });
   }
@@ -403,9 +424,7 @@ export class ProblemsController {
 
   @Get(':problemId/solutions')
   @ApiBearerAuth('JWT-auth')
-  async getSolutionsByProblemId(
-    @Param('problemId') problemId: string,
-  ) {
+  async getSolutionsByProblemId(@Param('problemId') problemId: string) {
     return this.solutionsService.getSolutionsByProblemId(problemId);
   }
 

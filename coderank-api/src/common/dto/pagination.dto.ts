@@ -11,7 +11,7 @@ export class PaginationQueryDto {
     description: 'Page number (1-indexed)',
     minimum: 1,
     default: 1,
-    example: 1
+    example: 1,
   })
   @IsOptional()
   @Type(() => Number)
@@ -24,7 +24,7 @@ export class PaginationQueryDto {
     minimum: 1,
     maximum: 1000,
     default: 10,
-    example: 10
+    example: 10,
   })
   @IsOptional()
   @Type(() => Number)
@@ -35,7 +35,7 @@ export class PaginationQueryDto {
 
   @ApiPropertyOptional({
     description: 'Field to sort by',
-    example: 'createdAt'
+    example: 'createdAt',
   })
   @IsOptional()
   @IsString()
@@ -45,7 +45,7 @@ export class PaginationQueryDto {
     description: 'Sort direction',
     enum: ['ASC', 'DESC'],
     default: 'DESC',
-    example: 'DESC'
+    example: 'DESC',
   })
   @IsOptional()
   @IsString()
@@ -53,7 +53,7 @@ export class PaginationQueryDto {
 
   @ApiPropertyOptional({
     description: 'Search keyword',
-    example: 'john'
+    example: 'john',
   })
   @IsOptional()
   @IsString()

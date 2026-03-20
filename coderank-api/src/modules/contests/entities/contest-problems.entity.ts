@@ -1,8 +1,7 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { ContestsEntity } from './contests.entity';
-import { ProblemsEntity } from
-  'src/modules/problems/entities/problems.entity';
+import { ProblemsEntity } from 'src/modules/problems/entities/problems.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity('contest_problems')
@@ -25,14 +24,16 @@ export class ContestProblemsEntity extends BaseEntity {
   @Column({ type: 'int', default: 100, unsigned: true })
   points: number; // Điểm của bài trong contest này
 
-  @ApiPropertyOptional({ description: 'Problem label (A, B, C, etc.)', example: 'A' })
+  @ApiPropertyOptional({
+    description: 'Problem label (A, B, C, etc.)',
+    example: 'A',
+  })
   @Column({ type: 'varchar', length: 10, nullable: true })
   label?: string; // Nhãn: A, B, C, D...
 
   @ApiPropertyOptional({ description: 'Contest', type: () => ContestsEntity })
   @ManyToOne(() => ContestsEntity, (c) => c.contestProblems, {
-    onDelete:
-      'CASCADE'
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'contestId' })
   contest: ContestsEntity;

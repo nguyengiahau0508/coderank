@@ -1,4 +1,3 @@
-
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { ContestsEntity } from './contests.entity';
@@ -7,8 +6,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity('contest_participants')
 @Index('IDX_contest_participant_unique', ['contestId', 'userId'], {
-  unique:
-    true
+  unique: true,
 })
 @Index('IDX_contest_participant_contest', ['contestId'])
 @Index('IDX_contest_participant_user', ['userId'])
@@ -38,18 +36,23 @@ export class ContestParticipantsEntity extends BaseEntity {
   @Column({ type: 'int', default: 0 })
   solvedProblems: number; // Số bài đã giải
 
-  @ApiPropertyOptional({ description: 'Penalty time in minutes (ACM format)', example: 0 })
+  @ApiPropertyOptional({
+    description: 'Penalty time in minutes (ACM format)',
+    example: 0,
+  })
   @Column({ type: 'int', nullable: true })
   penaltyMinutes?: number; // Penalty time (for ACM format)
 
-  @ApiProperty({ description: 'Whether submission is finalized', example: false })
+  @ApiProperty({
+    description: 'Whether submission is finalized',
+    example: false,
+  })
   @Column({ type: 'boolean', default: false })
   isFinalized: boolean; // Đã hoàn thành/nộp bài cuối
 
   @ApiPropertyOptional({ description: 'Contest', type: () => ContestsEntity })
   @ManyToOne(() => ContestsEntity, (c) => c.participants, {
-    onDelete:
-      'CASCADE'
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'contestId' })
   contest: ContestsEntity;
@@ -59,4 +62,3 @@ export class ContestParticipantsEntity extends BaseEntity {
   @JoinColumn({ name: 'userId' })
   user: UsersEntity;
 }
-

@@ -32,29 +32,25 @@ async function bootstrap() {
   app.use(cookieParser());
   app.use(helmet());
   app.enableCors({
-    origin: [
-      appConfig.client_url,
-      appConfig.agent_url,
-    ],
-    credentials: true
+    origin: [appConfig.client_url, appConfig.agent_url],
+    credentials: true,
   });
 
   app.useWebSocketAdapter(new SocketIoAdapter(app));
 
-
   app.setGlobalPrefix('api');
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor(reflector));
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, // Strip properties not in DTO
-    transform: true, // Auto-transform payloads
-    forbidNonWhitelisted: true, // Throw error for unknown properties
-    transformOptions: {
-      enableImplicitConversion: true,
-    },
-  }));
-
-
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Strip properties not in DTO
+      transform: true, // Auto-transform payloads
+      forbidNonWhitelisted: true, // Throw error for unknown properties
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
 
   // Setup Swagger Documentation
   const document = SwaggerModule.createDocument(app, swaggerConfig, {
@@ -65,21 +61,44 @@ async function bootstrap() {
   await app.listen(appConfig.port, appConfig.host, () => {
     const border = `${COLORS.cyan}-----------------------------------${COLORS.reset}`;
     console.log(border);
-    console.log(`${COLORS.bright}${COLORS.cyan}Application Info:${COLORS.reset}`);
-    console.log(`${COLORS.bright}${COLORS.green}Application Name:${COLORS.reset} ${COLORS.yellow}${appConfig.name}${COLORS.reset}`);
-    console.log(`${COLORS.bright}${COLORS.green}Environment:${COLORS.reset} ${COLORS.magenta}${appConfig.env}${COLORS.reset}`);
-    console.log(`${COLORS.bright}${COLORS.green}Server running at:${COLORS.reset} ${COLORS.blue}http://${appConfig.host}:${appConfig.port}/api${COLORS.reset}`);
+    console.log(
+      `${COLORS.bright}${COLORS.cyan}Application Info:${COLORS.reset}`,
+    );
+    console.log(
+      `${COLORS.bright}${COLORS.green}Application Name:${COLORS.reset} ${COLORS.yellow}${appConfig.name}${COLORS.reset}`,
+    );
+    console.log(
+      `${COLORS.bright}${COLORS.green}Environment:${COLORS.reset} ${COLORS.magenta}${appConfig.env}${COLORS.reset}`,
+    );
+    console.log(
+      `${COLORS.bright}${COLORS.green}Server running at:${COLORS.reset} ${COLORS.blue}http://${appConfig.host}:${appConfig.port}/api${COLORS.reset}`,
+    );
     console.log(border);
-    console.log(`${COLORS.bright}${COLORS.cyan}API Documentation:${COLORS.reset}`);
-    console.log(`${COLORS.green}Swagger UI:${COLORS.reset} ${COLORS.blue}http://${appConfig.host}:${appConfig.port}/api-docs${COLORS.reset}`);
+    console.log(
+      `${COLORS.bright}${COLORS.cyan}API Documentation:${COLORS.reset}`,
+    );
+    console.log(
+      `${COLORS.green}Swagger UI:${COLORS.reset} ${COLORS.blue}http://${appConfig.host}:${appConfig.port}/api-docs${COLORS.reset}`,
+    );
     console.log(border);
-    console.log(`${COLORS.bright}${COLORS.cyan}Database Connection:${COLORS.reset}`);
-    console.log(`${COLORS.green}Type:${COLORS.reset} ${COLORS.yellow}MariaDB${COLORS.reset}`);
-    console.log(`${COLORS.green}Host:${COLORS.reset} ${COLORS.yellow}${mariadbConfig.host}${COLORS.reset}`);
-    console.log(`${COLORS.green}Port:${COLORS.reset} ${COLORS.yellow}${mariadbConfig.port}${COLORS.reset}`);
-    console.log(`${COLORS.green}Database:${COLORS.reset} ${COLORS.yellow}${mariadbConfig.dbName}${COLORS.reset}`);
-    console.log(`${COLORS.green}Username:${COLORS.reset} ${COLORS.yellow}${mariadbConfig.username}${COLORS.reset}`);
-
+    console.log(
+      `${COLORS.bright}${COLORS.cyan}Database Connection:${COLORS.reset}`,
+    );
+    console.log(
+      `${COLORS.green}Type:${COLORS.reset} ${COLORS.yellow}MariaDB${COLORS.reset}`,
+    );
+    console.log(
+      `${COLORS.green}Host:${COLORS.reset} ${COLORS.yellow}${mariadbConfig.host}${COLORS.reset}`,
+    );
+    console.log(
+      `${COLORS.green}Port:${COLORS.reset} ${COLORS.yellow}${mariadbConfig.port}${COLORS.reset}`,
+    );
+    console.log(
+      `${COLORS.green}Database:${COLORS.reset} ${COLORS.yellow}${mariadbConfig.dbName}${COLORS.reset}`,
+    );
+    console.log(
+      `${COLORS.green}Username:${COLORS.reset} ${COLORS.yellow}${mariadbConfig.username}${COLORS.reset}`,
+    );
   });
 }
 bootstrap();

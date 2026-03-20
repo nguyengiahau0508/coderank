@@ -5,6 +5,7 @@ import type { Readable } from 'stream';
 import { AppConfigService } from 'src/config/app/app-config.service';
 import { RolesEnum } from 'src/common/enums/enums';
 import { UserAiConfigEntity } from './entities/user-ai-config.entity';
+import { ChatContextDto } from './dto/chat-message.dto';
 
 type AgentHistoryMessage = {
   role: 'user' | 'assistant';
@@ -24,6 +25,7 @@ export class AgentService {
     role: RolesEnum,
     aiConfig?: UserAiConfigEntity,
     history?: AgentHistoryMessage[],
+    context?: ChatContextDto,
   ): Promise<string> {
     const agentUrl = this.appConfigService.agent_url;
     const agentSecret = this.appConfigService.agent_secret_token;
@@ -39,29 +41,26 @@ export class AgentService {
     if (history && history.length > 0) {
       body.history = history;
     }
+    if (context) {
+      body.context = context;
+    }
 
     try {
       const response = await firstValueFrom(
-        this.httpService.post(
-          `${agentUrl}/agent/chat`,
-          body,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'x-agent-secret': agentSecret,
-            },
-            timeout: 120000,
+        this.httpService.post(`${agentUrl}/agent/chat`, body, {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-agent-secret': agentSecret,
           },
-        ),
+          timeout: 120000,
+        }),
       );
 
       return response.data?.data?.message ?? response.data?.data;
     } catch (error: any) {
       const detail =
         error.response?.data?.error ?? error.message ?? 'Unknown error';
-      throw new InternalServerErrorException(
-        `Agent service error: ${detail}`,
-      );
+      throw new InternalServerErrorException(`Agent service error: ${detail}`);
     }
   }
 
@@ -71,6 +70,7 @@ export class AgentService {
     role: RolesEnum,
     aiConfig?: UserAiConfigEntity,
     history?: AgentHistoryMessage[],
+    context?: ChatContextDto,
   ): Record<string, unknown> {
     const body: Record<string, unknown> = { message, userToken, role };
     if (aiConfig) {
@@ -82,6 +82,9 @@ export class AgentService {
     if (history && history.length > 0) {
       body.history = history;
     }
+    if (context) {
+      body.context = context;
+    }
     return body;
   }
 
@@ -91,10 +94,18 @@ export class AgentService {
     role: RolesEnum,
     aiConfig?: UserAiConfigEntity,
     history?: AgentHistoryMessage[],
+    context?: ChatContextDto,
   ): Promise<Readable> {
     const agentUrl = this.appConfigService.agent_url;
     const agentSecret = this.appConfigService.agent_secret_token;
-    const body = this.buildBody(message, userToken, role, aiConfig, history);
+    const body = this.buildBody(
+      message,
+      userToken,
+      role,
+      aiConfig,
+      history,
+      context,
+    );
 
     const response = await this.httpService.axiosRef.post(
       `${agentUrl}/agent/chat/stream`,

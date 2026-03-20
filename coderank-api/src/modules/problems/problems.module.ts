@@ -37,7 +37,16 @@ import { SubmissionGateway } from './gateways/submission.gateway';
     }),
   ],
   controllers: [ProblemsController],
-  providers: [ProblemsService, TestcasesService, TagsService, HintsService, SubmissionsService, SubmissionCompletedListener, SolutionsService, SubmissionGateway],
+  providers: [
+    ProblemsService,
+    TestcasesService,
+    TagsService,
+    HintsService,
+    SubmissionsService,
+    SubmissionCompletedListener,
+    SolutionsService,
+    SubmissionGateway,
+  ],
   exports: [],
 })
-export class ProblemsModule { }
+export class ProblemsModule {}

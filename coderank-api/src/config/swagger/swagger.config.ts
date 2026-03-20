@@ -2,13 +2,14 @@ import { DocumentBuilder } from '@nestjs/swagger';
 
 /**
  * Swagger API Documentation Configuration
- * 
+ *
  * This configuration provides a comprehensive setup for the CodeRank API documentation.
  * It includes authentication schemes, API metadata, and server information.
  */
 export const swaggerConfig = new DocumentBuilder()
   .setTitle('CodeRank API')
-  .setDescription(`
+  .setDescription(
+    `
 ## 🚀 CodeRank API Documentation
 
 CodeRank là một nền tảng học lập trình và thi đấu trực tuyến.
@@ -38,13 +39,10 @@ Tất cả responses đều tuân theo format:
   "data": {}
 }
 \`\`\`
-  `)
-  .setVersion('1.0.0')
-  .setContact(
-    'CodeRank Team',
-    'https://coderank.vn',
-    'support@coderank.vn'
+  `,
   )
+  .setVersion('1.0.0')
+  .setContact('CodeRank Team', 'https://coderank.vn', 'support@coderank.vn')
   .setLicense('MIT', 'https://opensource.org/licenses/MIT')
   .addServer('http://localhost:3000', 'Development Server')
   .addServer('https://api.coderank.vn', 'Production Server')
@@ -70,8 +68,8 @@ Tất cả responses đều tuân theo format:
           authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
           tokenUrl: 'https://oauth2.googleapis.com/token',
           scopes: {
-            'email': 'Access email address',
-            'profile': 'Access profile information',
+            email: 'Access email address',
+            profile: 'Access profile information',
           },
         },
       },

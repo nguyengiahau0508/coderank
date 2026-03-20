@@ -8,7 +8,11 @@ import { ProgrammingLanguageEnum } from 'src/common/enums/enums';
 @Index('IDX_solution_problem', ['problemId'])
 @Index('IDX_solution_author', ['authorId'])
 // Mỗi user chỉ được chia sẻ 1 solution cho mỗi bài theo mỗi ngôn ngữ
-@Index('IDX_solution_unique_author_problem_lang', ['authorId', 'problemId', 'language'], { unique: true })
+@Index(
+  'IDX_solution_unique_author_problem_lang',
+  ['authorId', 'problemId', 'language'],
+  { unique: true },
+)
 export class SolutionsEntity extends BaseEntity {
   @Column({ type: 'uuid' })
   problemId: string;

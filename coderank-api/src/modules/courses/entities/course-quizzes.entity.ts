@@ -1,5 +1,12 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { Column, Entity, Index, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { CourseLessonsEntity } from './course-lessons.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CourseQuizQuestionsEntity } from './course-quiz-questions.entity';
@@ -13,7 +20,10 @@ export class CourseQuizzesEntity extends BaseEntity {
   @Column({ type: 'uuid' })
   lessonId: string;
 
-  @ApiProperty({ description: 'Quiz title', example: 'Kiểm tra: Mảng một chiều' })
+  @ApiProperty({
+    description: 'Quiz title',
+    example: 'Kiểm tra: Mảng một chiều',
+  })
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
@@ -21,15 +31,24 @@ export class CourseQuizzesEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Time limit in minutes (null = unlimited)', example: 30 })
+  @ApiPropertyOptional({
+    description: 'Time limit in minutes (null = unlimited)',
+    example: 30,
+  })
   @Column({ type: 'int', nullable: true, unsigned: true })
   timeLimitMinutes?: number;
 
-  @ApiProperty({ description: 'Minimum passing score percentage (0-100)', example: 70 })
+  @ApiProperty({
+    description: 'Minimum passing score percentage (0-100)',
+    example: 70,
+  })
   @Column({ type: 'smallint', default: 70, unsigned: true })
   passingScore: number;
 
-  @ApiProperty({ description: 'Maximum attempts allowed (0 = unlimited)', example: 3 })
+  @ApiProperty({
+    description: 'Maximum attempts allowed (0 = unlimited)',
+    example: 3,
+  })
   @Column({ type: 'smallint', default: 0, unsigned: true })
   maxAttempts: number;
 
@@ -41,17 +60,25 @@ export class CourseQuizzesEntity extends BaseEntity {
   @Column({ type: 'boolean', default: false })
   shuffleQuestions: boolean;
 
-  @ApiProperty({ description: 'Whether to show correct answers after submission', example: true })
+  @ApiProperty({
+    description: 'Whether to show correct answers after submission',
+    example: true,
+  })
   @Column({ type: 'boolean', default: true })
   showCorrectAnswers: boolean;
 
-  @ApiProperty({ description: 'Whether this quiz is published', example: false })
+  @ApiProperty({
+    description: 'Whether this quiz is published',
+    example: false,
+  })
   @Column({ type: 'boolean', default: false })
   isPublished: boolean;
 
   // ===== RELATIONS =====
 
-  @ManyToOne(() => CourseLessonsEntity, (l) => l.quizzes, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CourseLessonsEntity, (l) => l.quizzes, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'lessonId' })
   lesson: CourseLessonsEntity;
 

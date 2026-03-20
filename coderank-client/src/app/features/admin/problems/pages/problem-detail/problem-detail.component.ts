@@ -40,6 +40,8 @@ import {
   SubmissionCompletedSocketPayload,
   SubmissionSocket,
 } from '../../../../../data';
+import { ChatContextService } from '../../../../../core/services/chat-context.service';
+import { ProblemChatContext } from '../../../../../core/models/chat-context.model';
 
 export interface CustomTestcase {
   id: number;
@@ -74,6 +76,7 @@ export class AdminProblemDetailComponent implements OnInit, OnDestroy {
   private readonly runnerApi = inject(RunnerApi);
   private readonly messageService = inject(MessageService);
   private readonly submissionSocketApi = inject(SubmissionSocket);
+  private readonly chatContextService = inject(ChatContextService);
   private submissionCompletedSubscription?: Subscription;
 
   // State
@@ -155,6 +158,8 @@ export class AdminProblemDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.disconnectSubmissionSocket();
+    // Clear chat context when leaving the problem
+    this.chatContextService.popContext();
   }
 
   private setupSubmissionSocket(): void {
@@ -207,7 +212,11 @@ export class AdminProblemDetailComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.problemsService.getProblem(problemId).subscribe({
       next: (response) => {
-        this.problem.set(response.data || null);
+        const problem = response.data || null;
+        this.problem.set(problem);
+        if (problem) {
+          this.updateChatContext(problem);
+        }
         this.loading.set(false);
       },
       error: () => {
@@ -219,6 +228,24 @@ export class AdminProblemDetailComponent implements OnInit, OnDestroy {
         this.loading.set(false);
       },
     });
+  }
+
+  /**
+   * Update chat context with current problem info
+   */
+  private updateChatContext(problem: ProblemsModel): void {
+    const lastSubmission = this.submissionHistory()[0];
+    const context: ProblemChatContext = {
+      type: 'problem',
+      problemId: problem.id,
+      title: problem.title,
+      difficulty: problem.difficulty,
+      description: problem.description ?? undefined,
+      tags: problem.tags?.map(t => t.name),
+      userCode: this.currentCode() || undefined,
+      lastSubmissionStatus: lastSubmission?.status,
+    };
+    this.chatContextService.pushContext(context);
   }
 
   /**

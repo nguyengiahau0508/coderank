@@ -3,10 +3,10 @@ import { IJwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 
 /**
  * Current User Decorator
- * 
+ *
  * Extracts the current user from the request object.
  * Can optionally extract a specific property from the user.
- * 
+ *
  * @example
  * ```typescript
  * // Get entire user object
@@ -14,7 +14,7 @@ import { IJwtPayload } from 'src/common/interfaces/jwt-payload.interface';
  * getProfile(@CurrentUser() user: UserPayload) {
  *   return user;
  * }
- * 
+ *
  * // Get specific property
  * @Get('my-submissions')
  * getMySubmissions(@CurrentUser('userId') userId: string) {

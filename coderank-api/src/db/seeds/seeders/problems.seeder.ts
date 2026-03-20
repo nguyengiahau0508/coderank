@@ -1,9 +1,9 @@
-import { ProblemsEntity } from "src/modules/problems/entities/problems.entity";
-import { AppDataSource } from "../../data-source";
-import { createProblemFactory } from "../factories/problem.factory";
-import { TagsEntity } from "src/modules/problems/entities/tags.entity";
-import { CP_TAGS } from "../constants/constants";
-import { faker } from "@faker-js/faker/locale/zu_ZA";
+import { ProblemsEntity } from 'src/modules/problems/entities/problems.entity';
+import { AppDataSource } from '../../data-source';
+import { createProblemFactory } from '../factories/problem.factory';
+import { TagsEntity } from 'src/modules/problems/entities/tags.entity';
+import { CP_TAGS } from '../constants/constants';
+import { faker } from '@faker-js/faker/locale/zu_ZA';
 
 export class ProblemSeeder {
   async run() {
@@ -24,7 +24,7 @@ export class ProblemSeeder {
       }
     }
 
-    console.log("Seeded tags");
+    console.log('Seeded tags');
 
     // // fetch existing tag entities and use them when creating problems
     // const existingTags = await repoTags.find();

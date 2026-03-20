@@ -1,5 +1,23 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Req, Res } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Req,
+  Res,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AgentService } from './agent.service';
 import { UserAiConfigService } from './user-ai-config.service';
 import { ConversationService } from './conversation.service';
@@ -30,15 +48,19 @@ export class AgentController {
     @CurrentUser() currentUser: IJwtPayload,
     @Req() req: Request,
   ) {
-    const userToken = (req.headers.authorization as string)?.replace('Bearer ', '');
+    const userToken = (req.headers.authorization as string)?.replace(
+      'Bearer ',
+      '',
+    );
     const role = currentUser.roles?.[0];
 
     let aiConfig;
     if (dto.provider) {
-      aiConfig = await this.userAiConfigService.findByUserIdAndProviderWithApiKey(
-        currentUser.userId,
-        dto.provider,
-      );
+      aiConfig =
+        await this.userAiConfigService.findByUserIdAndProviderWithApiKey(
+          currentUser.userId,
+          dto.provider,
+        );
     }
 
     const message = await this.agentService.chat(
@@ -46,6 +68,8 @@ export class AgentController {
       userToken,
       role,
       aiConfig ?? undefined,
+      undefined,
+      dto.context,
     );
 
     return { message };
@@ -78,7 +102,10 @@ export class AgentController {
     @CurrentUser() currentUser: IJwtPayload,
     @Param('provider') provider: AiProviderEnum,
   ) {
-    await this.userAiConfigService.removeByProvider(currentUser.userId, provider);
+    await this.userAiConfigService.removeByProvider(
+      currentUser.userId,
+      provider,
+    );
   }
 
   // ==================== Conversations ====================
@@ -118,7 +145,11 @@ export class AgentController {
     @CurrentUser() currentUser: IJwtPayload,
     @Body() body: { title: string },
   ) {
-    return this.conversationService.updateTitle(id, currentUser.userId, body.title);
+    return this.conversationService.updateTitle(
+      id,
+      currentUser.userId,
+      body.title,
+    );
   }
 
   @Delete('conversations/:id')
@@ -142,10 +173,13 @@ export class AgentController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const conv = await this.conversationService.findOneWithMessages(id, currentUser.userId);
+    const conv = await this.conversationService.findOneWithMessages(
+      id,
+      currentUser.userId,
+    );
     const history = (conv.messages || [])
-      .filter(msg => msg.role === 'user' || msg.role === 'assistant')
-      .map(msg => ({
+      .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+      .map((msg) => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content,
       }));
@@ -153,18 +187,26 @@ export class AgentController {
     await this.conversationService.addMessage(id, 'user', dto.message);
 
     if (conv.title === 'New Chat') {
-      const title = dto.message.length > 80 ? dto.message.substring(0, 77) + '...' : dto.message;
+      const title =
+        dto.message.length > 80
+          ? dto.message.substring(0, 77) + '...'
+          : dto.message;
       await this.conversationService.updateTitle(id, currentUser.userId, title);
     }
 
     let aiConfig;
     if (dto.provider) {
-      aiConfig = await this.userAiConfigService.findByUserIdAndProviderWithApiKey(
-        currentUser.userId, dto.provider,
-      );
+      aiConfig =
+        await this.userAiConfigService.findByUserIdAndProviderWithApiKey(
+          currentUser.userId,
+          dto.provider,
+        );
     }
 
-    const userToken = (req.headers.authorization as string)?.replace('Bearer ', '');
+    const userToken = (req.headers.authorization as string)?.replace(
+      'Bearer ',
+      '',
+    );
     const role = currentUser.roles?.[0];
 
     res.setHeader('Content-Type', 'text/event-stream');
@@ -176,7 +218,12 @@ export class AgentController {
 
     try {
       const stream = await this.agentService.chatStream(
-        dto.message, userToken, role, aiConfig ?? undefined, history,
+        dto.message,
+        userToken,
+        role,
+        aiConfig ?? undefined,
+        history,
+        dto.context,
       );
 
       stream.on('data', (chunk: Buffer) => {
@@ -198,17 +245,25 @@ export class AgentController {
 
       stream.on('end', async () => {
         if (fullContent) {
-          await this.conversationService.addMessage(id, 'assistant', fullContent);
+          await this.conversationService.addMessage(
+            id,
+            'assistant',
+            fullContent,
+          );
         }
         res.end();
       });
 
       stream.on('error', (err) => {
-        res.write(`data: ${JSON.stringify({ type: 'error', content: (err as Error).message })}\n\n`);
+        res.write(
+          `data: ${JSON.stringify({ type: 'error', content: err.message })}\n\n`,
+        );
         res.end();
       });
     } catch (error: any) {
-      res.write(`data: ${JSON.stringify({ type: 'error', content: error.message })}\n\n`);
+      res.write(
+        `data: ${JSON.stringify({ type: 'error', content: error.message })}\n\n`,
+      );
       res.end();
     }
   }

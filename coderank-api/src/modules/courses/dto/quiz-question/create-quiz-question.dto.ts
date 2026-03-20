@@ -1,14 +1,28 @@
-import { IsNotEmpty, IsOptional, IsString, IsEnum, IsInt, Min, IsArray } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsInt,
+  Min,
+  IsArray,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { QuizQuestionTypeEnum } from 'src/common/enums/enums';
 
 export class CreateQuizQuestionDto {
-  @ApiProperty({ description: 'Question text (Markdown)', example: 'Độ phức tạp thời gian của Binary Search là gì?' })
+  @ApiProperty({
+    description: 'Question text (Markdown)',
+    example: 'Độ phức tạp thời gian của Binary Search là gì?',
+  })
   @IsNotEmpty()
   @IsString()
   questionText: string;
 
-  @ApiPropertyOptional({ description: 'Question type', enum: QuizQuestionTypeEnum })
+  @ApiPropertyOptional({
+    description: 'Question type',
+    enum: QuizQuestionTypeEnum,
+  })
   @IsOptional()
   @IsEnum(QuizQuestionTypeEnum)
   questionType?: QuizQuestionTypeEnum;

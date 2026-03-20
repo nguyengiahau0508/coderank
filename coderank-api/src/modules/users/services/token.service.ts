@@ -15,8 +15,9 @@ export class TokensService extends BaseService<TokensEntity> {
   constructor(
     private readonly jwtService: JwtService,
     private readonly jwtConfigService: JwtConfigService,
-    @InjectRepository(TokensEntity) private readonly tokenRepository: Repository<TokensEntity>
-  ) { 
+    @InjectRepository(TokensEntity)
+    private readonly tokenRepository: Repository<TokensEntity>,
+  ) {
     super(tokenRepository);
   }
 
@@ -25,43 +26,31 @@ export class TokensService extends BaseService<TokensEntity> {
     const payload = dto.payload;
     switch (dto.type) {
       case TokenTypeEnum.ACCESS: {
-        tokenString = await this.jwtService.signAsync(
-          payload,
-          {
-            secret: this.jwtConfigService.accessSecret,
-            expiresIn: this.jwtConfigService.accessExpiresIn as any,
-          }
-        );
+        tokenString = await this.jwtService.signAsync(payload, {
+          secret: this.jwtConfigService.accessSecret,
+          expiresIn: this.jwtConfigService.accessExpiresIn as any,
+        });
         break;
       }
       case TokenTypeEnum.REFRESH: {
-        tokenString = await this.jwtService.signAsync(
-          payload,
-          {
-            secret: this.jwtConfigService.refreshSecret,
-            expiresIn: this.jwtConfigService.refreshExpiresIn as any,
-          }
-        );
+        tokenString = await this.jwtService.signAsync(payload, {
+          secret: this.jwtConfigService.refreshSecret,
+          expiresIn: this.jwtConfigService.refreshExpiresIn as any,
+        });
         break;
       }
       case TokenTypeEnum.EMAIL_VERIFICATION: {
-        tokenString = await this.jwtService.signAsync(
-          payload,
-          {
-            secret: this.jwtConfigService.emailVerificationSecret,
-            expiresIn: this.jwtConfigService.emailVerificationExpiresIn as any,
-          }
-        );
+        tokenString = await this.jwtService.signAsync(payload, {
+          secret: this.jwtConfigService.emailVerificationSecret,
+          expiresIn: this.jwtConfigService.emailVerificationExpiresIn as any,
+        });
         break;
       }
       case TokenTypeEnum.RESET_PASSWORD: {
-        tokenString = await this.jwtService.signAsync(
-          payload,
-          {
-            secret: this.jwtConfigService.passwordResetSecret,
-            expiresIn: this.jwtConfigService.passwordResetExpiresIn as any,
-          }
-        );
+        tokenString = await this.jwtService.signAsync(payload, {
+          secret: this.jwtConfigService.passwordResetSecret,
+          expiresIn: this.jwtConfigService.passwordResetExpiresIn as any,
+        });
         break;
       }
       default:
@@ -107,7 +96,9 @@ export class TokensService extends BaseService<TokensEntity> {
 
     try {
       // Verify JWT signature and expiration
-      const payload: IJwtPayload = await this.jwtService.verifyAsync(token, { secret });
+      const payload: IJwtPayload = await this.jwtService.verifyAsync(token, {
+        secret,
+      });
 
       // Check if token is revoked in database
       const tokenHash = this.hashToken(token);
@@ -132,10 +123,10 @@ export class TokensService extends BaseService<TokensEntity> {
   async revokeToken(token: string, type: TokenTypeEnum): Promise<boolean> {
     try {
       const tokenHash = this.hashToken(token);
-      
+
       const result = await this.tokenRepository.update(
         { tokenHash, type },
-        { isRevoked: true }
+        { isRevoked: true },
       );
 
       return (result.affected ?? 0) > 0;
@@ -148,7 +139,7 @@ export class TokensService extends BaseService<TokensEntity> {
     try {
       const result = await this.tokenRepository.update(
         { userId, isRevoked: false },
-        { isRevoked: true }
+        { isRevoked: true },
       );
 
       return result.affected || 0;

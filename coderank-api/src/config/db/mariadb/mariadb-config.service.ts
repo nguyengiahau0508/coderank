@@ -1,10 +1,9 @@
-import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MariadbConfigService {
-  constructor(private configService: ConfigService) { }
+  constructor(private configService: ConfigService) {}
 
   get host(): string | undefined {
     return this.configService.get<string>('mariadbConfig.host');
@@ -23,6 +22,6 @@ export class MariadbConfigService {
   }
 
   get dbName(): string | undefined {
-    return this.configService.get<string>('mariadbConfig.name')
+    return this.configService.get<string>('mariadbConfig.name');
   }
 }

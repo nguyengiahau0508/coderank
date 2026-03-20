@@ -47,7 +47,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   /**
    * Build standardized error response based on exception type
    */
-  private buildErrorResponse(exception: unknown, request: Request): IErrorResponse {
+  private buildErrorResponse(
+    exception: unknown,
+    request: Request,
+  ): IErrorResponse {
     const timestamp = new Date().toISOString();
     const path = request.url;
     const method = request.method;
@@ -55,21 +58,45 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     // Handle HttpException (NestJS built-in exceptions)
     if (exception instanceof HttpException) {
-      return this.handleHttpException(exception, timestamp, path, method, correlationId);
+      return this.handleHttpException(
+        exception,
+        timestamp,
+        path,
+        method,
+        correlationId,
+      );
     }
 
     // Handle TypeORM QueryFailedError
     if (exception instanceof QueryFailedError) {
-      return this.handleQueryFailedError(exception, timestamp, path, method, correlationId);
+      return this.handleQueryFailedError(
+        exception,
+        timestamp,
+        path,
+        method,
+        correlationId,
+      );
     }
 
     // Handle TypeORM EntityNotFoundError
     if (exception instanceof EntityNotFoundError) {
-      return this.handleEntityNotFoundError(exception, timestamp, path, method, correlationId);
+      return this.handleEntityNotFoundError(
+        exception,
+        timestamp,
+        path,
+        method,
+        correlationId,
+      );
     }
 
     // Handle generic errors
-    return this.handleUnknownError(exception, timestamp, path, method, correlationId);
+    return this.handleUnknownError(
+      exception,
+      timestamp,
+      path,
+      method,
+      correlationId,
+    );
   }
 
   /**
@@ -145,7 +172,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     // Handle foreign key constraint error (MySQL/MariaDB error code 1452)
-    if (driverError?.errno === 1452 || driverError?.code === 'ER_NO_REFERENCED_ROW_2') {
+    if (
+      driverError?.errno === 1452 ||
+      driverError?.code === 'ER_NO_REFERENCED_ROW_2'
+    ) {
       return {
         success: false,
         statusCode: HttpStatus.BAD_REQUEST,
@@ -159,7 +189,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     // Handle cannot delete parent row (MySQL/MariaDB error code 1451)
-    if (driverError?.errno === 1451 || driverError?.code === 'ER_ROW_IS_REFERENCED_2') {
+    if (
+      driverError?.errno === 1451 ||
+      driverError?.code === 'ER_ROW_IS_REFERENCED_2'
+    ) {
       return {
         success: false,
         statusCode: HttpStatus.CONFLICT,
@@ -268,7 +301,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (statusCode >= 500) {
       this.logger.error(
         `[${method}] ${url} - ${statusCode}`,
-        exception instanceof Error ? exception.stack : JSON.stringify(exception),
+        exception instanceof Error
+          ? exception.stack
+          : JSON.stringify(exception),
         JSON.stringify(logContext),
       );
     } else if (statusCode >= 400) {
@@ -287,7 +322,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       return body;
     }
 
-    const sensitiveFields = ['password', 'token', 'accessToken', 'refreshToken', 'secret', 'apiKey'];
+    const sensitiveFields = [
+      'password',
+      'token',
+      'accessToken',
+      'refreshToken',
+      'secret',
+      'apiKey',
+    ];
     const sanitized = { ...body };
 
     for (const field of sensitiveFields) {

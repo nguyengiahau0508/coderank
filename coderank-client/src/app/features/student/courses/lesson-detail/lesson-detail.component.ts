@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
@@ -39,6 +39,7 @@ import { environment } from '../../../../../environments/environment';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     Button,
     Tag,
     Toast,
@@ -73,8 +74,21 @@ export class StudentLessonDetailComponent implements OnInit {
   readonly activeTab = signal<string>('content');
   readonly markingComplete = signal<boolean>(false);
 
+  // Course and section info for breadcrumb
+  readonly courseName = signal<string>('');
+  readonly sectionName = signal<string>('');
+
   // Sidebar navigation
   readonly sectionLessons = signal<CourseLessonsModel[]>([]);
+  readonly showSidebar = signal<boolean>(true);
+
+  // Computed current lesson index
+  readonly currentLessonIndex = computed(() => {
+    const lessons = this.sectionLessons();
+    const current = this.lesson();
+    if (!current || lessons.length === 0) return -1;
+    return lessons.findIndex(l => l.id === current.id);
+  });
 
   // Computed prev/next
   readonly prevLesson = computed(() => {
@@ -140,12 +154,24 @@ export class StudentLessonDetailComponent implements OnInit {
       this.courseId.set(courseId);
       this.sectionId.set(sectionId);
       this.lessonId.set(lessonId);
+      this.loadCourseInfo();
       this.loadLesson();
       this.loadSectionLessons();
       this.loadProblems();
       this.loadQuizzes();
       this.loadAssignments();
     }
+  }
+
+  loadCourseInfo(): void {
+    this.coursesService.getCourse(this.courseId()).subscribe({
+      next: (response) => {
+        const course = response.data ?? (response as any);
+        this.courseName.set(course?.title || '');
+        const section = course?.sections?.find((s: any) => s.id === this.sectionId() || s.id.toString() === this.sectionId());
+        this.sectionName.set(section?.title || '');
+      },
+    });
   }
 
   loadLesson(): void {
@@ -175,6 +201,24 @@ export class StudentLessonDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['../../..'], { relativeTo: this.route });
+  }
+
+  toggleSidebar(): void {
+    this.showSidebar.update(v => !v);
+  }
+
+  goToPrevLesson(): void {
+    const prev = this.prevLesson();
+    if (prev) {
+      this.navigateToLesson(prev.id);
+    }
+  }
+
+  goToNextLesson(): void {
+    const next = this.nextLesson();
+    if (next) {
+      this.navigateToLesson(next.id);
+    }
   }
 
   // ==================== MARK COMPLETE ====================

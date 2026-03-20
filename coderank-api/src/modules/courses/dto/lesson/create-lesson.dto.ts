@@ -1,9 +1,22 @@
-import { IsNotEmpty, IsOptional, IsString, IsEnum, IsBoolean, IsInt, Min, MaxLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsBoolean,
+  IsInt,
+  Min,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LessonTypeEnum } from 'src/common/enums/enums';
 
 export class CreateLessonDto {
-  @ApiProperty({ description: 'Lesson title', example: 'Bài 1: Mảng một chiều', maxLength: 255 })
+  @ApiProperty({
+    description: 'Lesson title',
+    example: 'Bài 1: Mảng một chiều',
+    maxLength: 255,
+  })
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
@@ -36,7 +49,10 @@ export class CreateLessonDto {
   @Min(0)
   lessonOrder?: number;
 
-  @ApiPropertyOptional({ description: 'Estimated time in minutes', example: 15 })
+  @ApiPropertyOptional({
+    description: 'Estimated time in minutes',
+    example: 15,
+  })
   @IsOptional()
   @IsInt()
   @Min(0)

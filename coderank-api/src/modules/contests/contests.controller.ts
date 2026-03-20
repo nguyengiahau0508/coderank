@@ -39,11 +39,14 @@ export class ContestsController {
   ) {}
 
   // ==================== Contest Management ====================
-  
+
   @Post()
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Create a new contest', description: 'Admin and Instructor can create contests' })
+  @ApiOperation({
+    summary: 'Create a new contest',
+    description: 'Admin and Instructor can create contests',
+  })
   async createContest(
     @CurrentUser() currentUser: IJwtPayload,
     @Body() createContestDto: CreateContestDto,
@@ -58,7 +61,10 @@ export class ContestsController {
 
   @Get(':contestId')
   @Public()
-  @ApiOperation({ summary: 'Get contest by ID', description: 'Get detailed information about a specific contest' })
+  @ApiOperation({
+    summary: 'Get contest by ID',
+    description: 'Get detailed information about a specific contest',
+  })
   async getContest(@Param('contestId') contestId: string) {
     return this.contestsService.findOne({
       where: { id: contestId },
@@ -68,7 +74,10 @@ export class ContestsController {
 
   @Get()
   @Public()
-  @ApiOperation({ summary: 'Get all contests', description: 'Get paginated list of contests with filters' })
+  @ApiOperation({
+    summary: 'Get all contests',
+    description: 'Get paginated list of contests with filters',
+  })
   async getContests(
     @Query() dto: PaginationQueryContestsDto,
   ): Promise<PaginatedResponseDto<ContestsEntity>> {
@@ -95,7 +104,10 @@ export class ContestsController {
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(ContestsEntity, 'authorId', 'contestId')
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Update contest', description: 'Update contest details (owner only)' })
+  @ApiOperation({
+    summary: 'Update contest',
+    description: 'Update contest details (owner only)',
+  })
   async updateContest(
     @CurrentUser() currentUser: IJwtPayload,
     @Body() updateContestDto: UpdateContestDto,
@@ -114,7 +126,10 @@ export class ContestsController {
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(ContestsEntity, 'authorId', 'contestId')
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Delete contest', description: 'Delete a contest (owner only)' })
+  @ApiOperation({
+    summary: 'Delete contest',
+    description: 'Delete a contest (owner only)',
+  })
   async deleteContest(@Param('contestId') contestId: string) {
     return this.contestsService.delete(contestId);
   }
@@ -125,7 +140,10 @@ export class ContestsController {
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(ContestsEntity, 'authorId', 'contestId')
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Add problem to contest', description: 'Add a problem to the contest (owner only)' })
+  @ApiOperation({
+    summary: 'Add problem to contest',
+    description: 'Add a problem to the contest (owner only)',
+  })
   async addProblemToContest(
     @Param('contestId') contestId: string,
     @Body() dto: AddProblemToContestDto,
@@ -141,7 +159,10 @@ export class ContestsController {
 
   @Get(':contestId/problems')
   @Public()
-  @ApiOperation({ summary: 'Get contest problems', description: 'Get all problems in a contest' })
+  @ApiOperation({
+    summary: 'Get contest problems',
+    description: 'Get all problems in a contest',
+  })
   async getContestProblems(@Param('contestId') contestId: string) {
     return this.contestProblemsService.find({
       where: { contestId: contestId },
@@ -152,7 +173,10 @@ export class ContestsController {
 
   @Get(':contestId/problems/:problemId')
   @Public()
-  @ApiOperation({ summary: 'Get contest problem', description: 'Get a specific problem in a contest' })
+  @ApiOperation({
+    summary: 'Get contest problem',
+    description: 'Get a specific problem in a contest',
+  })
   async getContestProblem(
     @Param('contestId') contestId: string,
     @Param('problemId') problemId: string,
@@ -167,7 +191,10 @@ export class ContestsController {
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(ContestsEntity, 'authorId', 'contestId')
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Update contest problem', description: 'Update problem settings in contest (owner only)' })
+  @ApiOperation({
+    summary: 'Update contest problem',
+    description: 'Update problem settings in contest (owner only)',
+  })
   async updateContestProblem(
     @Body() dto: UpdateContestProblemDto,
     @Param('contestId') contestId: string,
@@ -176,11 +203,11 @@ export class ContestsController {
     const contestProblem = await this.contestProblemsService.findOne({
       where: { contestId: contestId, problemId: problemId },
     });
-    
+
     if (!contestProblem) {
       throw new BadRequestException('Contest problem not found');
     }
-    
+
     return this.contestProblemsService.update(contestProblem.id, dto);
   }
 
@@ -188,7 +215,10 @@ export class ContestsController {
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(ContestsEntity, 'authorId', 'contestId')
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Remove problem from contest', description: 'Remove a problem from contest (owner only)' })
+  @ApiOperation({
+    summary: 'Remove problem from contest',
+    description: 'Remove a problem from contest (owner only)',
+  })
   async removeProblemFromContest(
     @Param('contestId') contestId: string,
     @Param('problemId') problemId: string,
@@ -196,11 +226,11 @@ export class ContestsController {
     const contestProblem = await this.contestProblemsService.findOne({
       where: { contestId: contestId, problemId: problemId },
     });
-    
+
     if (!contestProblem) {
       throw new BadRequestException('Contest problem not found');
     }
-    
+
     return this.contestProblemsService.delete(contestProblem.id);
   }
 
@@ -209,7 +239,10 @@ export class ContestsController {
   @Post(':contestId/join')
   @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Join contest', description: 'Join a contest (requires password for private contests)' })
+  @ApiOperation({
+    summary: 'Join contest',
+    description: 'Join a contest (requires password for private contests)',
+  })
   async joinContest(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('contestId') contestId: string,
@@ -224,7 +257,10 @@ export class ContestsController {
 
   @Get(':contestId/participants')
   @Public()
-  @ApiOperation({ summary: 'Get contest participants', description: 'Get all participants of a contest' })
+  @ApiOperation({
+    summary: 'Get contest participants',
+    description: 'Get all participants of a contest',
+  })
   async getContestParticipants(@Param('contestId') contestId: string) {
     return this.contestParticipantsService.find({
       where: { contestId: contestId },
@@ -235,7 +271,10 @@ export class ContestsController {
 
   @Get(':contestId/leaderboard')
   @Public()
-  @ApiOperation({ summary: 'Get contest leaderboard', description: 'Get contest rankings sorted by score' })
+  @ApiOperation({
+    summary: 'Get contest leaderboard',
+    description: 'Get contest rankings sorted by score',
+  })
   async getContestLeaderboard(@Param('contestId') contestId: string) {
     return this.contestParticipantsService.getLeaderboard(contestId);
   }
@@ -244,7 +283,10 @@ export class ContestsController {
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(ContestsEntity, 'authorId', 'contestId')
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Remove participant', description: 'Remove a participant from contest (owner only)' })
+  @ApiOperation({
+    summary: 'Remove participant',
+    description: 'Remove a participant from contest (owner only)',
+  })
   async removeParticipant(
     @Param('contestId') contestId: string,
     @Param('userId') userId: string,
@@ -252,17 +294,20 @@ export class ContestsController {
     const participant = await this.contestParticipantsService.findOne({
       where: { contestId: contestId, userId: userId },
     });
-    
+
     if (!participant) {
       throw new BadRequestException('Participant not found');
     }
-    
+
     return this.contestParticipantsService.delete(participant.id);
   }
 
   @Post(':contestId/leave')
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Leave contest', description: 'Student can leave a contest before it starts' })
+  @ApiOperation({
+    summary: 'Leave contest',
+    description: 'Student can leave a contest before it starts',
+  })
   async leaveContest(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('contestId') contestId: string,
@@ -278,7 +323,10 @@ export class ContestsController {
   @Post(':contestId/problems/:problemId/submit')
   @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Submit solution', description: 'Submit a solution for a problem in contest' })
+  @ApiOperation({
+    summary: 'Submit solution',
+    description: 'Submit a solution for a problem in contest',
+  })
   async submitSolution(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('contestId') contestId: string,
@@ -296,7 +344,10 @@ export class ContestsController {
   @Get(':contestId/submissions')
   @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get my contest submissions', description: 'Get all submissions by current user in contest' })
+  @ApiOperation({
+    summary: 'Get my contest submissions',
+    description: 'Get all submissions by current user in contest',
+  })
   async getContestSubmissions(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('contestId') contestId: string,
@@ -314,7 +365,10 @@ export class ContestsController {
   @Get(':contestId/problems/:problemId/submissions')
   @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get my problem submissions', description: 'Get all submissions by current user for a specific problem' })
+  @ApiOperation({
+    summary: 'Get my problem submissions',
+    description: 'Get all submissions by current user for a specific problem',
+  })
   async getContestProblemSubmissions(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('contestId') contestId: string,
@@ -333,7 +387,10 @@ export class ContestsController {
   @Get(':contestId/submissions/:submissionId')
   @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get submission details', description: 'Get detailed information about a submission' })
+  @ApiOperation({
+    summary: 'Get submission details',
+    description: 'Get detailed information about a submission',
+  })
   async getContestSubmission(
     @CurrentUser() currentUser: IJwtPayload,
     @Param('contestId') contestId: string,
@@ -353,7 +410,10 @@ export class ContestsController {
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(ContestsEntity, 'authorId', 'contestId')
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get all contest submissions', description: 'Get all submissions in contest (owner only)' })
+  @ApiOperation({
+    summary: 'Get all contest submissions',
+    description: 'Get all submissions in contest (owner only)',
+  })
   async getAllContestSubmissions(@Param('contestId') contestId: string) {
     return this.contestSubmissionsService.find({
       where: { contestId: contestId },

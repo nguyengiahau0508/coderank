@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import * as Joi from 'joi'
+import * as Joi from 'joi';
 import { GoogleConfigService } from './google-config.service';
 import googleConfig from './google-config';
 
@@ -15,10 +15,10 @@ import googleConfig from './google-config';
         INTEGRATIONS_GOOGLE_OAUTH2_PRIVATE_KEY: Joi.string().required(),
         INTEGRATIONS_GOOGLE_DRIVE_FOLDER_ID: Joi.string().required(),
         INTEGRATIONS_GOOGLE_OAUTH2_REDIRECT_URI: Joi.string().required(),
-      })
-    })
+      }),
+    }),
   ],
   providers: [GoogleConfigService],
-  exports: [GoogleConfigService]
+  exports: [GoogleConfigService],
 })
-export class GoogleConfigModule { }
+export class GoogleConfigModule {}

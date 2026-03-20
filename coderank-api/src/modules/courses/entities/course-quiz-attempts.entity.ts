@@ -17,7 +17,10 @@ export class CourseQuizAttemptsEntity extends BaseEntity {
   @Column({ type: 'uuid' })
   userId: string;
 
-  @ApiProperty({ description: 'Score achieved (percentage 0-100)', example: 85 })
+  @ApiProperty({
+    description: 'Score achieved (percentage 0-100)',
+    example: 85,
+  })
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
   score: number;
 
@@ -62,7 +65,9 @@ export class CourseQuizAttemptsEntity extends BaseEntity {
 
   // ===== RELATIONS =====
 
-  @ManyToOne(() => CourseQuizzesEntity, (q) => q.attempts, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CourseQuizzesEntity, (q) => q.attempts, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'quizId' })
   quiz: CourseQuizzesEntity;
 

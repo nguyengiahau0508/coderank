@@ -35,7 +35,10 @@ export class UserAiConfigService {
       .getOne();
   }
 
-  async upsert(userId: string, dto: UpsertAiConfigDto): Promise<UserAiConfigEntity> {
+  async upsert(
+    userId: string,
+    dto: UpsertAiConfigDto,
+  ): Promise<UserAiConfigEntity> {
     const existing = await this.findByUserIdAndProvider(userId, dto.provider);
 
     if (existing) {
@@ -50,7 +53,10 @@ export class UserAiConfigService {
     return this.repo.save(config);
   }
 
-  async removeByProvider(userId: string, provider: AiProviderEnum): Promise<void> {
+  async removeByProvider(
+    userId: string,
+    provider: AiProviderEnum,
+  ): Promise<void> {
     await this.repo.delete({ authorId: userId, provider });
   }
 }

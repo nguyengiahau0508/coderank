@@ -1,4 +1,4 @@
-import { SubmissionStatusEnum } from "src/common/enums/enums";
+import { SubmissionStatusEnum } from 'src/common/enums/enums';
 
 export class SubmissionCompletedEvent {
   constructor(

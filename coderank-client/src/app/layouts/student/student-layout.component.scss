@@ -1,0 +1,218 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.student-layout {
+  min-height: 100vh;
+  background: var(--cr-bg-primary);
+  color: var(--cr-text-secondary);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.route-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 2px;
+  z-index: 1000;
+  background: linear-gradient(90deg, var(--cr-accent-yellow), var(--cr-accent-blue));
+  animation: pulse 0.8s ease-in-out infinite alternate;
+}
+
+.topbar {
+  height: 3.5rem;
+  background: rgba(22, 27, 34, 0.92);
+  border-color: var(--cr-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  backdrop-filter: blur(8px);
+}
+
+.topbar-left,
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--cr-text-primary);
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.625rem;
+  cursor: pointer;
+}
+
+.brand-btn:hover {
+  border-color: var(--cr-border);
+  background: var(--cr-bg-tertiary);
+}
+
+.brand-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  color: var(--cr-bg-primary);
+  background: var(--cr-accent-yellow);
+}
+
+.brand-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.section-pill {
+  display: none;
+  font-size: 0.75rem;
+  color: var(--cr-accent-yellow);
+  border: 1px solid rgba(210, 153, 34, 0.35);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  background: rgba(210, 153, 34, 0.12);
+}
+
+.profile-btn {
+  border: 1px solid var(--cr-border);
+  background: var(--cr-bg-secondary);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem 0.15rem 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.profile-btn:hover {
+  background: var(--cr-bg-tertiary);
+}
+
+.profile-meta {
+  display: none;
+  line-height: 1.1;
+}
+
+.profile-name {
+  font-size: 0.8rem;
+  color: var(--cr-text-primary);
+}
+
+.profile-role {
+  font-size: 0.7rem;
+  color: var(--cr-text-muted);
+}
+
+.avatar-fallback {
+  background: linear-gradient(135deg, var(--cr-accent-yellow), var(--cr-accent-blue));
+  color: var(--cr-bg-primary);
+  font-weight: 700;
+}
+
+.horizontal-menu {
+  height: 3.1rem;
+  border-color: var(--cr-border);
+  background: var(--cr-bg-secondary);
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding: 0.45rem 0.75rem;
+}
+
+.menu-link {
+  text-decoration: none;
+  color: var(--cr-text-secondary);
+  border: 1px solid transparent;
+  border-radius: 0.6rem;
+  min-width: max-content;
+  padding: 0.45rem 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menu-link:hover {
+  border-color: var(--cr-border);
+  background: var(--cr-bg-tertiary);
+}
+
+.menu-link-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.87rem;
+  color: var(--cr-text-primary);
+}
+
+.menu-badge {
+  font-size: 0.68rem;
+  border-radius: 999px;
+  padding: 0.12rem 0.38rem;
+  background: rgba(210, 153, 34, 0.18);
+  color: var(--cr-accent-yellow);
+  border: 1px solid rgba(210, 153, 34, 0.35);
+}
+
+.menu-link-active {
+  background: rgba(88, 166, 255, 0.12);
+  border-color: rgba(88, 166, 255, 0.4);
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.content-inner {
+  padding: 1rem;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top right, rgba(88, 166, 255, 0.06), transparent 35%),
+    var(--cr-bg-primary);
+}
+
+:host ::ng-deep .student-user-menu {
+  min-width: 12rem;
+  border: 1px solid var(--cr-border);
+  background: var(--cr-bg-elevated);
+  border-radius: 0.55rem;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(1, 4, 9, 0.5);
+}
+
+@media (min-width: 768px) {
+  .section-pill {
+    display: inline-flex;
+  }
+
+  .profile-meta {
+    display: inline-flex;
+    flex-direction: column;
+  }
+}
+
+@keyframes pulse {
+  from {
+    opacity: 0.45;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

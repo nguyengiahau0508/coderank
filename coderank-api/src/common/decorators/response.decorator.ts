@@ -13,7 +13,7 @@ export const SKIP_TRANSFORM_KEY = 'skip_transform';
 /**
  * Decorator to set custom response message
  * @param message - Custom message to include in response
- * 
+ *
  * @example
  * ```typescript
  * @Post()
@@ -23,12 +23,13 @@ export const SKIP_TRANSFORM_KEY = 'skip_transform';
  * }
  * ```
  */
-export const ResponseMessage = (message: string) => SetMetadata(RESPONSE_MESSAGE_KEY, message);
+export const ResponseMessage = (message: string) =>
+  SetMetadata(RESPONSE_MESSAGE_KEY, message);
 
 /**
  * Decorator to skip response transformation
  * Use this for endpoints that need raw response (e.g., file downloads, SSE)
- * 
+ *
  * @example
  * ```typescript
  * @Get('download/:id')

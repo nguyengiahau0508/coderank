@@ -23,4 +23,3 @@ export class HintsEntity extends BaseEntity {
   @Column({ type: 'boolean', default: false })
   isPublic: boolean;
 }
-

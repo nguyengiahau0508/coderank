@@ -1,17 +1,20 @@
-import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
-import { BaseService } from "src/common/services/base.service";
-import { ContestSubmissionsEntity } from "../entities/contest-submissions.entity";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { CreateContestSubmissionDto } from "../dto/contest-submissions/create-contest-submission.dto";
-import { SubmissionStatusEnum } from "src/common/enums/enums";
-import { ContestParticipantsEntity } from "../entities/contest-participants.entity";
-
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { BaseService } from 'src/common/services/base.service';
+import { ContestSubmissionsEntity } from '../entities/contest-submissions.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CreateContestSubmissionDto } from '../dto/contest-submissions/create-contest-submission.dto';
+import { SubmissionStatusEnum } from 'src/common/enums/enums';
+import { ContestParticipantsEntity } from '../entities/contest-participants.entity';
 
 @Injectable()
 export class ContestSubmissionsService extends BaseService<ContestSubmissionsEntity> {
   constructor(
-    @InjectRepository(ContestSubmissionsEntity) 
+    @InjectRepository(ContestSubmissionsEntity)
     protected readonly repository: Repository<ContestSubmissionsEntity>,
     @InjectRepository(ContestParticipantsEntity)
     private readonly participantsRepository: Repository<ContestParticipantsEntity>,

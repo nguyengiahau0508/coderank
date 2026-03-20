@@ -21,7 +21,9 @@ export interface SubmissionFileInfo {
 @Entity('course_assignment_submissions')
 @Index('IDX_submission_assignment', ['assignmentId'])
 @Index('IDX_submission_user', ['authorId'])
-@Index('IDX_submission_unique', ['assignmentId', 'authorId', 'attemptNumber'], { unique: true })
+@Index('IDX_submission_unique', ['assignmentId', 'authorId', 'attemptNumber'], {
+  unique: true,
+})
 export class CourseAssignmentSubmissionsEntity extends BaseEntity {
   @ApiProperty({ description: 'Assignment UUID' })
   @Column({ type: 'uuid' })
@@ -65,7 +67,9 @@ export class CourseAssignmentSubmissionsEntity extends BaseEntity {
 
   // ===== RELATIONS =====
 
-  @ManyToOne(() => CourseAssignmentsEntity, (a) => a.submissions, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CourseAssignmentsEntity, (a) => a.submissions, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'assignmentId' })
   assignment: CourseAssignmentsEntity;
 }

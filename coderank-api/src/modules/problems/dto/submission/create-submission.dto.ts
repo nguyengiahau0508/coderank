@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsString} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 import { ProgrammingLanguageEnum } from 'src/common/enums/enums';
 
 export class CreateSubmissionDto {

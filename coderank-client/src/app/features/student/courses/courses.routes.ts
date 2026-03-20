@@ -3,6 +3,16 @@ import { Routes } from '@angular/router';
 export const studentCoursesRoutes: Routes = [
   {
     path: '',
+    redirectTo: 'explore',
+    pathMatch: 'full',
+  },
+  {
+    path: 'my-courses',
+    loadComponent: () =>
+      import('./my-courses/my-courses.component').then(m => m.StudentMyCoursesComponent),
+  },
+  {
+    path: 'explore',
     loadComponent: () =>
       import('./course-list/course-list.component').then(m => m.StudentCourseListComponent),
   },

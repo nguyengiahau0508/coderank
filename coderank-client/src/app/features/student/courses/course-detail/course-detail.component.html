@@ -1,411 +1,507 @@
 <p-toast position="top-right" />
 
 @if (loading()) {
-  <div class="space-y-4 animate-pulse">
-    <div class="h-8 bg-surface-200 dark:bg-surface-700 rounded w-1/3"></div>
-    <div class="h-4 bg-surface-200 dark:bg-surface-700 rounded w-2/3"></div>
-    <div class="h-48 bg-surface-200 dark:bg-surface-700 rounded"></div>
+  <!-- Loading Skeleton -->
+  <div class="space-y-4">
+    <!-- Hero Skeleton -->
+    <div class="rounded-xl p-6" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <div class="flex flex-col lg:flex-row gap-6">
+        <p-skeleton height="16rem" width="28rem" styleClass="rounded-xl" />
+        <div class="flex-1 space-y-4">
+          <p-skeleton height="2rem" width="60%" />
+          <p-skeleton height="1rem" width="100%" />
+          <p-skeleton height="1rem" width="80%" />
+          <div class="flex gap-2">
+            <p-skeleton height="1.5rem" width="5rem" />
+            <p-skeleton height="1.5rem" width="5rem" />
+          </div>
+          <p-skeleton height="3rem" width="12rem" />
+        </div>
+      </div>
+    </div>
   </div>
 } @else if (course(); as c) {
   <div class="space-y-4">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <button
-          type="button"
-          (click)="goBack()"
-          class="flex items-center justify-center w-9 h-9 rounded-lg border border-surface-200 dark:border-surface-700 text-surface-500 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors"
-        >
-          <i class="pi pi-arrow-left text-sm"></i>
-        </button>
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">{{ c.title }}</h1>
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-sm" style="color: var(--cr-text-muted);">
+      <button type="button" (click)="goBack()" class="hover:text-primary transition-colors">
+        <i class="pi pi-arrow-left mr-1"></i>Khóa học
+      </button>
+      <i class="pi pi-chevron-right text-xs"></i>
+      <span class="font-medium truncate" style="color: var(--cr-text-primary);">{{ c.title }}</span>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="rounded-2xl overflow-hidden" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <div class="flex flex-col lg:flex-row">
+        <!-- Thumbnail -->
+        <div class="lg:w-[400px] lg:flex-shrink-0">
+          @if (c.thumbnailUrl) {
+            <div class="aspect-video lg:aspect-auto lg:h-full w-full overflow-hidden" style="background: var(--cr-bg-tertiary);">
+              <img
+                [src]="c.thumbnailUrl"
+                [alt]="c.title"
+                class="w-full h-full object-cover"
+              />
+            </div>
+          } @else {
+            <div class="aspect-video lg:aspect-auto lg:h-full w-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <i class="pi pi-book text-6xl text-primary/30"></i>
+            </div>
+          }
+        </div>
+
+        <!-- Course Info -->
+        <div class="flex-1 p-6">
+          <!-- Title & Tags -->
+          <div class="flex items-start gap-3 flex-wrap mb-3">
             <p-tag [value]="getLevelLabel(c.level)" [severity]="getLevelSeverity(c.level)" [rounded]="true" />
             @if (!c.isPublic) {
               <p-tag value="Riêng tư" severity="warn" [rounded]="true" icon="pi pi-lock" />
             }
-          </div>
-          @if (c.summary) {
-            <div class="mt-1 text-sm text-surface-500 dark:text-surface-400 ql-editor p-0 line-clamp-2" [innerHTML]="c.summary"></div>
-          }
-        </div>
-      </div>
-
-      <!-- Enroll / Unenroll -->
-      <div class="flex items-center gap-2 flex-shrink-0">
-        @if (isEnrolled()) {
-          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-xs font-medium rounded-full">
-            <i class="pi pi-check-circle text-[10px]"></i>
-            Đã đăng ký
-          </span>
-          <button
-            type="button"
-            (click)="unenroll()"
-            class="text-xs text-surface-400 hover:text-red-500 transition-colors"
-            pTooltip="Hủy đăng ký"
-          >
-            <i class="pi pi-times"></i>
-          </button>
-        } @else {
-          <button
-            type="button"
-            (click)="enroll()"
-            [disabled]="enrolling()"
-            class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-contrast text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
-          >
-            @if (enrolling()) {
-              <i class="pi pi-spin pi-spinner text-xs"></i>
-              Đang đăng ký...
-            } @else {
-              <i class="pi pi-user-plus text-xs"></i>
-              Đăng ký khóa học
+            @if (c.category) {
+              <span class="text-xs px-2 py-1 rounded" style="background: var(--cr-bg-tertiary); color: var(--cr-text-muted);">{{ c.category }}</span>
             }
-          </button>
-        }
-      </div>
-    </div>
-
-    <!-- Quick Stats -->
-    <div class="flex items-center gap-4 text-sm text-surface-500 dark:text-surface-400">
-      <span><i class="pi pi-users mr-1"></i>{{ c.enrollmentCount }} SV</span>
-      <span><i class="pi pi-star-fill mr-1 text-yellow-400"></i>{{ c.averageRating | number:'1.1-1' }} ({{ c.reviewCount }})</span>
-      <span><i class="pi pi-list mr-1"></i>{{ c.sections?.length || 0 }} chương</span>
-      <span><i class="pi pi-book mr-1"></i>{{ getTotalLessons() }} bài</span>
-      @if (c.estimatedDurationMinutes) {
-        <span><i class="pi pi-clock mr-1"></i>{{ c.estimatedDurationMinutes }} phút</span>
-      }
-    </div>
-
-    <!-- Progress bar (if enrolled) -->
-    @if (isEnrolled() && progress(); as p) {
-      <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium text-surface-700 dark:text-surface-200">Tiến độ học tập</span>
-          <span class="text-sm font-bold text-primary">{{ p.progressPercent }}%</span>
-        </div>
-        <div class="h-2.5 bg-surface-100 dark:bg-surface-700 rounded-full overflow-hidden">
-          <div
-            class="h-full bg-primary rounded-full transition-all duration-500"
-            [style.width.%]="p.progressPercent"
-          ></div>
-        </div>
-        <p class="text-xs text-surface-400 mt-1.5">{{ p.completedLessons }}/{{ p.totalLessons }} bài học hoàn thành</p>
-      </div>
-    }
-
-    <!-- Tabs -->
-    <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
-      <p-tablist>
-        <p-tab value="intro"><i class="pi pi-info-circle mr-2"></i>Giới thiệu</p-tab>
-        <p-tab value="curriculum"><i class="pi pi-book mr-2"></i>Giáo trình</p-tab>
-        <p-tab value="reviews"><i class="pi pi-star mr-2"></i>Đánh giá ({{ c.reviewCount }})</p-tab>
-      </p-tablist>
-
-      <p-tabpanels>
-        <!-- ==================== TAB: GIỚI THIỆU ==================== -->
-        <p-tabpanel value="intro">
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-4">
-            <!-- Main -->
-            <div class="lg:col-span-2 space-y-4">
-              <!-- Thumbnail -->
-              @if (c.thumbnailUrl) {
-                <div class="rounded-xl overflow-hidden border border-surface-200 dark:border-surface-700">
-                  <img [src]="c.thumbnailUrl" [alt]="c.title" class="w-full h-auto max-h-80 object-cover" />
-                </div>
-              }
-
-              <!-- Description -->
-              @if (c.description) {
-                <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
-                  <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0 mb-3">
-                    <i class="pi pi-file-edit mr-2"></i>Mô tả chi tiết
-                  </h3>
-                  <div class="text-sm text-surface-700 dark:text-surface-300 ql-editor p-0" [innerHTML]="c.description"></div>
-                </div>
-              }
-
-              <!-- Learning Objectives -->
-              @if (parsedLearningObjectives().length > 0) {
-                <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
-                  <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0 mb-3">
-                    <i class="pi pi-check-circle mr-2 text-green-500"></i>Mục tiêu học tập
-                  </h3>
-                  <ul class="space-y-2">
-                    @for (obj of parsedLearningObjectives(); track $index) {
-                      <li class="flex items-start gap-2 text-sm text-surface-700 dark:text-surface-300">
-                        <i class="pi pi-check text-green-500 mt-0.5 flex-shrink-0"></i>
-                        <span>{{ obj }}</span>
-                      </li>
-                    }
-                  </ul>
-                </div>
-              }
-
-              <!-- Prerequisites -->
-              @if (parsedPrerequisites().length > 0) {
-                <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
-                  <h3 class="text-base font-semibold text-surface-900 dark:text-surface-0 mb-3">
-                    <i class="pi pi-exclamation-circle mr-2 text-amber-500"></i>Yêu cầu tiên quyết
-                  </h3>
-                  <ul class="space-y-2">
-                    @for (pre of parsedPrerequisites(); track $index) {
-                      <li class="flex items-start gap-2 text-sm text-surface-700 dark:text-surface-300">
-                        <i class="pi pi-arrow-right text-amber-500 mt-0.5 flex-shrink-0"></i>
-                        <span>{{ pre }}</span>
-                      </li>
-                    }
-                  </ul>
-                </div>
-              }
-            </div>
-
-            <!-- Sidebar -->
-            <div class="space-y-4">
-              <!-- Course Metadata -->
-              <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 space-y-3">
-                <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Thông tin khóa học</h3>
-
-                @if (c.author) {
-                  <div>
-                    <p class="text-xs text-surface-400">Giảng viên</p>
-                    <div class="flex items-center gap-2 mt-1">
-                      @if (c.author.avatarUrl) {
-                        <img [src]="c.author.avatarUrl" class="w-8 h-8 rounded-full" />
-                      } @else {
-                        <div class="w-8 h-8 rounded-full bg-surface-200 dark:bg-surface-700 flex items-center justify-center">
-                          <i class="pi pi-user text-surface-500"></i>
-                        </div>
-                      }
-                      <span class="text-sm font-medium text-surface-700 dark:text-surface-300">{{ c.author.fullName || c.author.username }}</span>
-                    </div>
-                  </div>
-                }
-
-                @if (c.category) {
-                  <div>
-                    <p class="text-xs text-surface-400">Danh mục</p>
-                    <p class="text-sm text-surface-700 dark:text-surface-300">{{ c.category }}</p>
-                  </div>
-                }
-
-                <div>
-                  <p class="text-xs text-surface-400">Cấp độ</p>
-                  <p class="text-sm text-surface-700 dark:text-surface-300">{{ getLevelLabel(c.level) }}</p>
-                </div>
-
-                @if (c.tags) {
-                  <div>
-                    <p class="text-xs text-surface-400 mb-1">Tags</p>
-                    <div class="flex flex-wrap gap-1">
-                      @for (tag of c.tags.split(','); track tag) {
-                        <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{{ tag.trim() }}</span>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
-
-              <!-- Quick Stats -->
-              <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4 space-y-3">
-                <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0">Thống kê</h3>
-                <div class="grid grid-cols-2 gap-3">
-                  <div class="text-center">
-                    <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{ c.enrollmentCount }}</p>
-                    <p class="text-xs text-surface-400">Sinh viên</p>
-                  </div>
-                  <div class="text-center">
-                    <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{ c.averageRating | number:'1.1-1' }}</p>
-                    <p class="text-xs text-surface-400">Đánh giá TB</p>
-                  </div>
-                  <div class="text-center">
-                    <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{ getTotalLessons() }}</p>
-                    <p class="text-xs text-surface-400">Bài học</p>
-                  </div>
-                  <div class="text-center">
-                    <p class="text-2xl font-bold text-surface-900 dark:text-surface-0">{{ c.sections?.length || 0 }}</p>
-                    <p class="text-xs text-surface-400">Chương</p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
-        </p-tabpanel>
 
-        <!-- ==================== TAB: GIÁO TRÌNH ==================== -->
-        <p-tabpanel value="curriculum">
-          <div class="pt-4 space-y-4">
-            <!-- Curriculum header -->
-            <div class="flex items-center gap-3">
-              <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0">Nội dung khóa học</h2>
-              <span class="text-sm text-surface-400">{{ c.sections?.length || 0 }} chương · {{ getTotalLessons() }} bài học</span>
-            </div>
+          <h1 class="text-2xl lg:text-3xl font-bold mb-3" style="color: var(--cr-text-primary);">{{ c.title }}</h1>
 
-            @if (!c.sections || c.sections.length === 0) {
-              <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-12 text-center text-surface-400">
-                <i class="pi pi-folder-open text-4xl mb-3"></i>
-                <p class="text-lg mb-1">Chưa có nội dung</p>
-                <p class="text-sm">Nội dung khóa học sẽ được cập nhật sớm.</p>
+          @if (c.summary) {
+            <div class="mb-4 ql-editor p-0 line-clamp-3" style="color: var(--cr-text-secondary);" [innerHTML]="c.summary"></div>
+          }
+
+          <!-- Quick Stats -->
+          <div class="flex flex-wrap items-center gap-4 text-sm mb-4" style="color: var(--cr-text-muted);">
+            <span class="flex items-center gap-1.5">
+              <i class="pi pi-star-fill text-yellow-400"></i>
+              <span class="font-semibold" style="color: var(--cr-text-primary);">{{ c.averageRating | number:'1.1-1' }}</span>
+              <span>({{ c.reviewCount }} đánh giá)</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <i class="pi pi-users"></i>
+              <span>{{ c.enrollmentCount }} học viên</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <i class="pi pi-list"></i>
+              <span>{{ c.sections?.length || 0 }} chương</span>
+            </span>
+            <span class="flex items-center gap-1.5">
+              <i class="pi pi-book"></i>
+              <span>{{ getTotalLessons() }} bài học</span>
+            </span>
+            @if (c.estimatedDurationMinutes) {
+              <span class="flex items-center gap-1.5">
+                <i class="pi pi-clock"></i>
+                <span>{{ c.estimatedDurationMinutes }} phút</span>
+              </span>
+            }
+          </div>
+
+          <!-- Author -->
+          @if (c.author) {
+            <div class="flex items-center gap-3 mb-5">
+              @if (c.author.avatarUrl) {
+                <img [src]="c.author.avatarUrl" class="w-10 h-10 rounded-full" />
+              } @else {
+                <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: var(--cr-bg-tertiary);">
+                  <i class="pi pi-user" style="color: var(--cr-text-muted);"></i>
+                </div>
+              }
+              <div>
+                <p class="text-xs" style="color: var(--cr-text-muted);">Giảng viên</p>
+                <p class="font-medium" style="color: var(--cr-text-primary);">{{ c.author.fullName || c.author.username }}</p>
               </div>
+            </div>
+          }
+
+          <!-- Progress (if enrolled) -->
+          @if (isEnrolled() && progress(); as p) {
+            <div class="mb-5 p-4 rounded-xl bg-primary/5 border border-primary/20">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium" style="color: var(--cr-text-secondary);">Tiến độ học tập</span>
+                <span class="text-sm font-bold text-primary">{{ p.progressPercent }}%</span>
+              </div>
+              <div class="h-2.5 rounded-full overflow-hidden" style="background: var(--cr-bg-tertiary);">
+                <div
+                  class="h-full bg-primary rounded-full transition-all duration-500"
+                  [style.width.%]="p.progressPercent"
+                ></div>
+              </div>
+              <p class="text-xs mt-2" style="color: var(--cr-text-muted);">{{ p.completedLessons }}/{{ p.totalLessons }} bài học hoàn thành</p>
+            </div>
+          }
+
+          <!-- Enrollment Actions -->
+          <div class="flex items-center gap-3 flex-wrap">
+            @if (isEnrolled()) {
+              <button
+                type="button"
+                (click)="startLearning()"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-contrast text-sm font-semibold rounded-xl hover:bg-primary/90 transition-colors"
+              >
+                <i class="pi pi-play"></i>
+                {{ progress()?.progressPercent ? 'Tiếp tục học' : 'Bắt đầu học' }}
+              </button>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-medium rounded-full">
+                <i class="pi pi-check-circle text-[10px]"></i>
+                Đã đăng ký
+              </span>
+              <button
+                type="button"
+                (click)="unenroll()"
+                class="text-xs transition-colors"
+                style="color: var(--cr-text-muted);"
+                pTooltip="Hủy đăng ký"
+              >
+                <i class="pi pi-times-circle"></i>
+              </button>
             } @else {
-              <p-accordion [multiple]="true">
-                @for (section of c.sections; track section.id) {
-                  <p-accordion-panel>
-                    <p-accordion-header>
-                      <div class="flex items-center justify-between w-full pr-2">
-                        <div class="flex items-center gap-2">
-                          <span class="font-medium">{{ section.sectionOrder }}. {{ section.title }}</span>
-                          <span class="text-xs text-surface-400">({{ section.lessons?.length || 0 }} bài)</span>
+              <button
+                type="button"
+                (click)="enroll()"
+                [disabled]="enrolling()"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-contrast text-sm font-semibold rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                @if (enrolling()) {
+                  <i class="pi pi-spin pi-spinner"></i>
+                  Đang đăng ký...
+                } @else {
+                  <i class="pi pi-user-plus"></i>
+                  Đăng ký khóa học miễn phí
+                }
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Main Column (2/3) -->
+      <div class="lg:col-span-2 space-y-4">
+        <!-- Tabs -->
+        <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
+          <p-tablist>
+            <p-tab value="intro"><i class="pi pi-info-circle mr-2"></i>Giới thiệu</p-tab>
+            <p-tab value="curriculum"><i class="pi pi-book mr-2"></i>Nội dung</p-tab>
+            <p-tab value="reviews"><i class="pi pi-star mr-2"></i>Đánh giá ({{ c.reviewCount }})</p-tab>
+          </p-tablist>
+
+          <p-tabpanels>
+            <!-- TAB: GIỚI THIỆU -->
+            <p-tabpanel value="intro">
+              <div class="pt-4 space-y-4">
+                <!-- Learning Objectives -->
+                @if (parsedLearningObjectives().length > 0) {
+                  <div class="rounded-xl p-5" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+                    <h3 class="text-base font-semibold mb-4 flex items-center gap-2" style="color: var(--cr-text-primary);">
+                      <i class="pi pi-check-circle text-green-500"></i>
+                      Bạn sẽ học được gì
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      @for (obj of parsedLearningObjectives(); track $index) {
+                        <div class="flex items-start gap-2 text-sm" style="color: var(--cr-text-secondary);">
+                          <i class="pi pi-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                          <span>{{ obj }}</span>
                         </div>
-                      </div>
-                    </p-accordion-header>
-                    <p-accordion-content>
-                      @if (section.description) {
-                        <div class="text-sm text-surface-500 dark:text-surface-400 mb-3 ql-editor p-0" [innerHTML]="section.description"></div>
                       }
-                      @if (!section.lessons || section.lessons.length === 0) {
-                        <p class="text-sm text-surface-400 text-center py-4">Chưa có bài học trong chương này</p>
-                      } @else {
-                        <div class="space-y-2">
-                          @for (lesson of section.lessons; track lesson.id) {
-                            <div
-                              [class]="'flex items-center justify-between rounded-lg border px-4 py-3 transition-colors ' +
-                                (isEnrolled()
-                                  ? 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 hover:bg-surface-100 dark:hover:bg-surface-800 cursor-pointer'
-                                  : (lesson.isFreePreview
-                                    ? 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 hover:bg-surface-100 dark:hover:bg-surface-800 cursor-pointer'
-                                    : 'border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900 opacity-60 cursor-not-allowed'))"
-                              (click)="(isEnrolled() || lesson.isFreePreview) && navigateToLesson(section.id.toString(), lesson.id.toString())"
-                            >
-                              <div class="flex items-center gap-3">
-                                <!-- Completion check -->
-                                @if (isEnrolled() && isLessonCompleted(lesson.id)) {
-                                  <i class="pi pi-check-circle text-green-500"></i>
-                                } @else {
-                                  <i [class]="'pi ' + getLessonTypeIcon(lesson.type) + ' text-surface-400'"></i>
-                                }
-                                <div>
-                                  <div class="flex items-center gap-2">
-                                    <span class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ lesson.lessonOrder }}. {{ lesson.title }}</span>
-                                    @if (lesson.isFreePreview) {
-                                      <span class="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">Xem trước</span>
+                    </div>
+                  </div>
+                }
+
+                <!-- Prerequisites -->
+                @if (parsedPrerequisites().length > 0) {
+                  <div class="rounded-xl p-5" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+                    <h3 class="text-base font-semibold mb-4 flex items-center gap-2" style="color: var(--cr-text-primary);">
+                      <i class="pi pi-exclamation-circle text-amber-500"></i>
+                      Yêu cầu tiên quyết
+                    </h3>
+                    <ul class="space-y-2">
+                      @for (pre of parsedPrerequisites(); track $index) {
+                        <li class="flex items-start gap-2 text-sm" style="color: var(--cr-text-secondary);">
+                          <i class="pi pi-arrow-right text-amber-500 mt-0.5 flex-shrink-0"></i>
+                          <span>{{ pre }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+
+                <!-- Description -->
+                @if (c.description) {
+                  <div class="rounded-xl p-5" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+                    <h3 class="text-base font-semibold mb-4 flex items-center gap-2" style="color: var(--cr-text-primary);">
+                      <i class="pi pi-file-edit text-primary"></i>
+                      Mô tả chi tiết
+                    </h3>
+                    <div class="text-sm ql-editor p-0" style="color: var(--cr-text-secondary);" [innerHTML]="c.description"></div>
+                  </div>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- TAB: NỘI DUNG -->
+            <p-tabpanel value="curriculum">
+              <div class="pt-4 space-y-4">
+                <!-- Curriculum header -->
+                <div class="flex items-center justify-between">
+                  <h2 class="text-lg font-semibold" style="color: var(--cr-text-primary);">Nội dung khóa học</h2>
+                  <span class="text-sm" style="color: var(--cr-text-muted);">{{ c.sections?.length || 0 }} chương · {{ getTotalLessons() }} bài học</span>
+                </div>
+
+                @if (!c.sections || c.sections.length === 0) {
+                  <div class="rounded-xl p-12 text-center" style="background: var(--cr-bg-tertiary); border: 1px dashed var(--cr-border); color: var(--cr-text-muted);">
+                    <i class="pi pi-folder-open text-4xl mb-3"></i>
+                    <p class="text-lg mb-1">Chưa có nội dung</p>
+                    <p class="text-sm">Nội dung khóa học sẽ được cập nhật sớm.</p>
+                  </div>
+                } @else {
+                  <p-accordion [multiple]="true" >
+                    @for (section of c.sections; track section.id; let sIdx = $index) {
+                      <p-accordion-panel>
+                        <p-accordion-header>
+                          <div class="flex items-center justify-between w-full pr-2">
+                            <div class="flex items-center gap-2">
+                              <span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">{{ sIdx + 1 }}</span>
+                              <span class="font-medium" style="color: var(--cr-text-primary);">{{ section.title }}</span>
+                            </div>
+                            <span class="text-xs px-2 py-0.5 rounded" style="color: var(--cr-text-muted); background: var(--cr-bg-tertiary);">{{ section.lessons?.length || 0 }} bài</span>
+                          </div>
+                        </p-accordion-header>
+                        <p-accordion-content>
+                          @if (section.description) {
+                            <div class="text-sm mb-3 ql-editor p-0" style="color: var(--cr-text-muted);" [innerHTML]="section.description"></div>
+                          }
+                          @if (!section.lessons || section.lessons.length === 0) {
+                            <p class="text-sm text-center py-4" style="color: var(--cr-text-muted);">Chưa có bài học trong chương này</p>
+                          } @else {
+                            <div class="space-y-2">
+                              @for (lesson of section.lessons; track lesson.id) {
+                                <div
+                                  [class]="'flex items-center justify-between rounded-lg px-4 py-3 transition-colors ' +
+                                    (isEnrolled() || lesson.isFreePreview
+                                      ? 'hover:bg-primary/5 cursor-pointer'
+                                      : 'opacity-60')"
+                                  [style]="'background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border);'"
+                                  (click)="(isEnrolled() || lesson.isFreePreview) && navigateToLesson(section.id.toString(), lesson.id.toString())"
+                                >
+                                  <div class="flex items-center gap-3">
+                                    @if (isEnrolled() && isLessonCompleted(lesson.id)) {
+                                      <div class="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30">
+                                        <i class="pi pi-check text-green-500 text-xs"></i>
+                                      </div>
+                                    } @else {
+                                      <div class="flex items-center justify-center w-8 h-8 rounded-full" style="background: var(--cr-bg-secondary);">
+                                        <i [class]="'pi ' + getLessonTypeIcon(lesson.type) + ' text-xs'" style="color: var(--cr-text-muted);"></i>
+                                      </div>
                                     }
+                                    <div>
+                                      <div class="flex items-center gap-2">
+                                        <span class="text-sm font-medium" style="color: var(--cr-text-primary);">{{ lesson.title }}</span>
+                                        @if (lesson.isFreePreview) {
+                                          <span class="text-[10px] bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-medium">Miễn phí</span>
+                                        }
+                                      </div>
+                                      <div class="flex items-center gap-2 text-xs mt-0.5" style="color: var(--cr-text-muted);">
+                                        <span>{{ getLessonTypeLabel(lesson.type) }}</span>
+                                        @if (lesson.estimatedMinutes) {
+                                          <span>· {{ lesson.estimatedMinutes }} phút</span>
+                                        }
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div class="flex items-center gap-2 text-xs text-surface-400 mt-0.5">
-                                    <span>{{ getLessonTypeLabel(lesson.type) }}</span>
-                                    @if (lesson.estimatedMinutes) {
-                                      <span>· {{ lesson.estimatedMinutes }} phút</span>
+                                  <div>
+                                    @if (!isEnrolled() && !lesson.isFreePreview) {
+                                      <i class="pi pi-lock text-sm" style="color: var(--cr-text-muted);"></i>
+                                    } @else {
+                                      <i class="pi pi-chevron-right text-sm" style="color: var(--cr-text-muted);"></i>
                                     }
                                   </div>
                                 </div>
-                              </div>
-                              <div>
-                                @if (!isEnrolled() && !lesson.isFreePreview) {
-                                  <i class="pi pi-lock text-surface-300 text-xs"></i>
-                                } @else {
-                                  <i class="pi pi-chevron-right text-surface-300 text-xs"></i>
-                                }
-                              </div>
+                              }
                             </div>
                           }
+                        </p-accordion-content>
+                      </p-accordion-panel>
+                    }
+                  </p-accordion>
+                }
+              </div>
+            </p-tabpanel>
+
+            <!-- TAB: ĐÁNH GIÁ -->
+            <p-tabpanel value="reviews">
+              <div class="pt-4 space-y-4">
+                <!-- Rating Summary -->
+                <div class="rounded-xl p-6" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-8">
+                    <div class="text-center">
+                      <p class="text-5xl font-bold" style="color: var(--cr-text-primary);">{{ c.averageRating | number:'1.1-1' }}</p>
+                      <div class="flex items-center justify-center gap-0.5 mt-1">
+                        @for (star of [1,2,3,4,5]; track star) {
+                          <i class="pi text-lg" [class]="star <= roundRating(c.averageRating) ? 'pi-star-fill text-yellow-400' : 'pi-star'" [style]="star > roundRating(c.averageRating) ? 'color: var(--cr-text-muted);' : ''"></i>
+                        }
+                      </div>
+                      <p class="text-sm mt-1" style="color: var(--cr-text-muted);">{{ c.reviewCount }} đánh giá</p>
+                    </div>
+                    <div class="flex-1 space-y-1.5">
+                      @for (star of [5,4,3,2,1]; track star) {
+                        <div class="flex items-center gap-2">
+                          <span class="text-sm w-6 text-right" style="color: var(--cr-text-muted);">{{ star }}</span>
+                          <i class="pi pi-star-fill text-xs text-yellow-400"></i>
+                          <div class="flex-1 h-2 rounded-full overflow-hidden" style="background: var(--cr-bg-tertiary);">
+                            <div class="h-full bg-yellow-400 rounded-full" [style.width.%]="getStarPercent(star)"></div>
+                          </div>
+                          <span class="text-xs w-8" style="color: var(--cr-text-muted);">{{ getStarCount(star) }}</span>
                         </div>
                       }
-                    </p-accordion-content>
-                  </p-accordion-panel>
-                }
-              </p-accordion>
-            }
-          </div>
-        </p-tabpanel>
+                    </div>
+                  </div>
+                </div>
 
-        <!-- ==================== TAB: ĐÁNH GIÁ ==================== -->
-        <p-tabpanel value="reviews">
-          <div class="pt-4 space-y-4">
-            <!-- Rating Summary -->
-            <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-6">
-              <div class="flex flex-col sm:flex-row sm:items-center gap-8">
-                <div class="text-center">
-                  <p class="text-5xl font-bold text-surface-900 dark:text-surface-0">{{ c.averageRating | number:'1.1-1' }}</p>
-                  <div class="flex items-center justify-center gap-0.5 mt-1">
-                    @for (star of [1,2,3,4,5]; track star) {
-                      <i class="pi text-lg" [class]="star <= roundRating(c.averageRating) ? 'pi-star-fill text-yellow-400' : 'pi-star text-surface-300'"></i>
+                <!-- Write review button -->
+                <div class="flex items-center justify-between">
+                  <p class="text-sm" style="color: var(--cr-text-muted);">
+                    @if (!isEnrolled()) {
+                      <i class="pi pi-info-circle mr-1"></i>Đăng ký khóa học để viết đánh giá
+                    }
+                  </p>
+                  <p-button
+                    label="Viết đánh giá"
+                    icon="pi pi-star"
+                    [outlined]="true"
+                    [disabled]="!isEnrolled()"
+                    (onClick)="openReviewDialog()"
+                  />
+                </div>
+
+                <!-- Reviews List -->
+                @if (reviews().length === 0) {
+                  <div class="rounded-xl p-8 text-center" style="background: var(--cr-bg-tertiary); border: 1px dashed var(--cr-border); color: var(--cr-text-muted);">
+                    <i class="pi pi-star text-3xl mb-2"></i>
+                    <p>Chưa có đánh giá nào cho khóa học này.</p>
+                  </div>
+                } @else {
+                  <div class="space-y-3">
+                    @for (review of reviews(); track review.id) {
+                      <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+                        <div class="flex items-start gap-3">
+                          @if (review.user?.avatarUrl) {
+                            <img [src]="review.user?.avatarUrl" class="w-10 h-10 rounded-full flex-shrink-0" />
+                          } @else {
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background: var(--cr-bg-tertiary);">
+                              <i class="pi pi-user" style="color: var(--cr-text-muted);"></i>
+                            </div>
+                          }
+                          <div class="flex-1">
+                            <p class="text-sm font-medium" style="color: var(--cr-text-primary);">{{ review.user?.fullName || review.user?.username || 'Ẩn danh' }}</p>
+                            <div class="flex items-center gap-1 mt-0.5">
+                              @for (star of [1,2,3,4,5]; track star) {
+                                <i class="pi text-xs" [class]="star <= review.rating ? 'pi-star-fill text-yellow-400' : 'pi-star'" [style]="star > review.rating ? 'color: var(--cr-text-muted);' : ''"></i>
+                              }
+                              <span class="text-xs ml-2" style="color: var(--cr-text-muted);">{{ review.createdAt | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            @if (review.comment) {
+                              <p class="text-sm mt-2" style="color: var(--cr-text-secondary);">{{ review.comment }}</p>
+                            }
+                          </div>
+                        </div>
+                      </div>
                     }
                   </div>
-                  <p class="text-sm text-surface-400 mt-1">{{ c.reviewCount }} đánh giá</p>
+                }
+              </div>
+            </p-tabpanel>
+          </p-tabpanels>
+        </p-tabs>
+      </div>
+
+      <!-- Sidebar (1/3) -->
+      <div class="space-y-4">
+        <!-- Sticky sidebar wrapper -->
+        <div class="lg:sticky lg:top-4 space-y-4">
+          <!-- Course Metadata Card -->
+          <div class="rounded-xl p-5 space-y-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+            <h3 class="text-sm font-semibold flex items-center gap-2" style="color: var(--cr-text-primary);">
+              <i class="pi pi-info-circle text-primary"></i>
+              Thông tin khóa học
+            </h3>
+
+            <div class="space-y-3">
+              @if (c.author) {
+                <div class="flex items-center justify-between">
+                  <span class="text-sm" style="color: var(--cr-text-muted);">Giảng viên</span>
+                  <span class="text-sm font-medium" style="color: var(--cr-text-primary);">{{ c.author.fullName || c.author.username }}</span>
                 </div>
-                <div class="flex-1 space-y-1.5">
-                  @for (star of [5,4,3,2,1]; track star) {
-                    <div class="flex items-center gap-2">
-                      <span class="text-sm text-surface-500 w-6 text-right">{{ star }}</span>
-                      <i class="pi pi-star-fill text-xs text-yellow-400"></i>
-                      <div class="flex-1 h-2 bg-surface-200 dark:bg-surface-700 rounded-full overflow-hidden">
-                        <div class="h-full bg-yellow-400 rounded-full" [style.width.%]="getStarPercent(star)"></div>
-                      </div>
-                      <span class="text-xs text-surface-400 w-8">{{ getStarCount(star) }}</span>
-                    </div>
+              }
+
+              <div class="flex items-center justify-between">
+                <span class="text-sm" style="color: var(--cr-text-muted);">Cấp độ</span>
+                <p-tag [value]="getLevelLabel(c.level)" [severity]="getLevelSeverity(c.level)" [rounded]="true" />
+              </div>
+
+              @if (c.category) {
+                <div class="flex items-center justify-between">
+                  <span class="text-sm" style="color: var(--cr-text-muted);">Danh mục</span>
+                  <span class="text-sm font-medium" style="color: var(--cr-text-primary);">{{ c.category }}</span>
+                </div>
+              }
+
+              <div class="flex items-center justify-between">
+                <span class="text-sm" style="color: var(--cr-text-muted);">Nội dung</span>
+                <span class="text-sm font-medium" style="color: var(--cr-text-primary);">{{ c.sections?.length || 0 }} chương · {{ getTotalLessons() }} bài</span>
+              </div>
+
+              @if (c.estimatedDurationMinutes) {
+                <div class="flex items-center justify-between">
+                  <span class="text-sm" style="color: var(--cr-text-muted);">Thời lượng</span>
+                  <span class="text-sm font-medium" style="color: var(--cr-text-primary);">{{ c.estimatedDurationMinutes }} phút</span>
+                </div>
+              }
+
+              <div class="flex items-center justify-between">
+                <span class="text-sm" style="color: var(--cr-text-muted);">Học viên</span>
+                <span class="text-sm font-medium" style="color: var(--cr-text-primary);">{{ c.enrollmentCount }}</span>
+              </div>
+            </div>
+
+            @if (c.tags) {
+              <div class="pt-3" style="border-top: 1px solid var(--cr-border);">
+                <p class="text-xs mb-2" style="color: var(--cr-text-muted);">Tags</p>
+                <div class="flex flex-wrap gap-1">
+                  @for (tag of c.tags.split(','); track tag) {
+                    <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{{ tag.trim() }}</span>
                   }
                 </div>
               </div>
-            </div>
-
-            <!-- Write review button -->
-            <div class="flex items-center justify-end gap-3">
-              @if (!isEnrolled()) {
-                <span class="text-xs text-surface-400 italic">Bạn cần đăng ký khóa học để viết đánh giá</span>
-              }
-              <button
-                type="button"
-                (click)="openReviewDialog()"
-                [disabled]="!isEnrolled()"
-                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-                [ngClass]="isEnrolled()
-                  ? 'text-primary border border-primary hover:bg-primary/10 cursor-pointer'
-                  : 'text-surface-400 border border-surface-300 dark:border-surface-600 cursor-not-allowed opacity-60'"
-              >
-                <i class="pi pi-star text-xs"></i>
-                Viết đánh giá
-              </button>
-            </div>
-
-            <!-- Reviews List -->
-            @if (reviews().length === 0) {
-              <div class="rounded-xl border border-dashed border-surface-300 dark:border-surface-600 p-8 text-center text-surface-400">
-                <i class="pi pi-star text-3xl mb-2"></i>
-                <p>Chưa có đánh giá nào cho khóa học này.</p>
-              </div>
-            } @else {
-              <div class="space-y-3">
-                @for (review of reviews(); track review.id) {
-                  <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-4">
-                    <div class="flex items-start gap-3">
-                      @if (review.user?.avatarUrl) {
-                        <img [src]="review.user?.avatarUrl" class="w-10 h-10 rounded-full flex-shrink-0" />
-                      } @else {
-                        <div class="w-10 h-10 rounded-full bg-surface-200 dark:bg-surface-700 flex items-center justify-center flex-shrink-0">
-                          <i class="pi pi-user text-surface-500"></i>
-                        </div>
-                      }
-                      <div class="flex-1">
-                        <p class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ review.user?.fullName || review.user?.username || 'Ẩn danh' }}</p>
-                        <div class="flex items-center gap-1 mt-0.5">
-                          @for (star of [1,2,3,4,5]; track star) {
-                            <i class="pi text-xs" [class]="star <= review.rating ? 'pi-star-fill text-yellow-400' : 'pi-star text-surface-300'"></i>
-                          }
-                          <span class="text-xs text-surface-400 ml-2">{{ review.createdAt | date:'dd/MM/yyyy' }}</span>
-                        </div>
-                        @if (review.comment) {
-                          <p class="text-sm text-surface-700 dark:text-surface-300 mt-2">{{ review.comment }}</p>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
             }
           </div>
-        </p-tabpanel>
-      </p-tabpanels>
-    </p-tabs>
+
+          <!-- Enrollment CTA Card (for non-enrolled users) -->
+          @if (!isEnrolled()) {
+            <div class="rounded-xl border-2 border-primary/30 bg-primary/5 p-5">
+              <h3 class="text-lg font-semibold mb-2" style="color: var(--cr-text-primary);">Bắt đầu học ngay</h3>
+              <p class="text-sm mb-4" style="color: var(--cr-text-secondary);">Đăng ký miễn phí để truy cập toàn bộ nội dung khóa học.</p>
+              <button
+                type="button"
+                (click)="enroll()"
+                [disabled]="enrolling()"
+                class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-contrast text-sm font-semibold rounded-xl hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                @if (enrolling()) {
+                  <i class="pi pi-spin pi-spinner"></i>
+                  Đang đăng ký...
+                } @else {
+                  <i class="pi pi-user-plus"></i>
+                  Đăng ký khóa học
+                }
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Review Dialog -->
@@ -417,9 +513,8 @@
     [closable]="true"
   >
     <div class="space-y-4">
-      <!-- Stars -->
       <div>
-        <label class="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-2">Đánh giá</label>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-2">Đánh giá của bạn</label>
         <div class="flex items-center gap-1">
           @for (star of [1,2,3,4,5]; track star) {
             <button
@@ -436,14 +531,13 @@
         </div>
       </div>
 
-      <!-- Comment -->
       <div>
         <label class="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-2">Nhận xét (không bắt buộc)</label>
         <textarea
           pTextarea
           [(ngModel)]="reviewComment"
           [rows]="4"
-          placeholder="Chia sẻ trải nghiệm của bạn về khóa học..."
+          placeholder="Chia sẻ trải nghiệm của bạn..."
           class="w-full"
         ></textarea>
       </div>
@@ -468,7 +562,7 @@
     <div class="space-y-4">
       <div class="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
         <i class="pi pi-lock text-amber-500"></i>
-        <p class="text-sm text-amber-700 dark:text-amber-300">Khóa học này là riêng tư. Vui lòng nhập mật khẩu được cung cấp bởi giảng viên để đăng ký.</p>
+        <p class="text-sm text-amber-700 dark:text-amber-300">Khóa học này là riêng tư. Vui lòng nhập mật khẩu được cung cấp.</p>
       </div>
       <div>
         <label class="block text-sm font-medium text-surface-700 dark:text-surface-200 mb-2">Mật khẩu</label>
@@ -498,13 +592,6 @@
     </div>
     <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0 mb-1.5">Không tìm thấy khóa học</h2>
     <p class="text-sm text-surface-400 mb-4">Khóa học không tồn tại hoặc đã bị xóa.</p>
-    <button
-      type="button"
-      (click)="goBack()"
-      class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-contrast text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
-    >
-      <i class="pi pi-arrow-left text-xs"></i>
-      Quay lại danh sách
-    </button>
+    <p-button label="Quay lại danh sách" icon="pi pi-arrow-left" (onClick)="goBack()" />
   </div>
 }

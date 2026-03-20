@@ -85,4 +85,3 @@ export class ProblemsEntity extends BaseEntity {
   @OneToMany(() => SolutionsEntity, (s) => s.problem)
   solutions: SolutionsEntity[];
 }
-

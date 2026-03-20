@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsEnum, IsInt, Min, IsArray } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsInt,
+  Min,
+  IsArray,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { QuizQuestionTypeEnum } from 'src/common/enums/enums';
 
@@ -8,7 +15,10 @@ export class UpdateQuizQuestionDto {
   @IsString()
   questionText?: string;
 
-  @ApiPropertyOptional({ description: 'Question type', enum: QuizQuestionTypeEnum })
+  @ApiPropertyOptional({
+    description: 'Question type',
+    enum: QuizQuestionTypeEnum,
+  })
   @IsOptional()
   @IsEnum(QuizQuestionTypeEnum)
   questionType?: QuizQuestionTypeEnum;

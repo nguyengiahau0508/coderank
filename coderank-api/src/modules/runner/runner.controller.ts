@@ -1,20 +1,20 @@
 // coderunner/runner.controller.ts
-import { Body, Controller, Post } from "@nestjs/common";
-import { RunCodeDto } from "./dto/run-code.dto";
-import { ApiRun } from "./decorator/runner-swagger.decorator";
+import { Body, Controller, Post } from '@nestjs/common';
+import { RunCodeDto } from './dto/run-code.dto';
+import { ApiRun } from './decorator/runner-swagger.decorator';
 import { ApiTags } from '@nestjs/swagger';
-import { RunnerService } from "./services/runner.service";
+import { RunnerService } from './services/runner.service';
 
 @ApiTags('Runner')
-@Controller("runner")
+@Controller('runner')
 export class RunnerController {
-  constructor(private runner: RunnerService) { }
+  constructor(private runner: RunnerService) {}
 
-  @Post("run")
+  @Post('run')
   @ApiRun()
   async run(@Body() dto: RunCodeDto) {
     const result = await this.runner.runCode(dto);
-    console.log("Run code result:", result);
+    console.log('Run code result:', result);
     return result;
   }
 }

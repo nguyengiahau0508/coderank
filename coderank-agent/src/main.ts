@@ -24,7 +24,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.post('/agent/chat', verifyAgentSecret, async (req: Request, res: Response) => {
-  const { userToken, message, role, provider, modelName, apiKey, baseHost, contextPolicy, history } = req.body;
+  const { userToken, message, role, provider, modelName, apiKey, baseHost, contextPolicy, history, context } = req.body;
 
   if (!userToken || !message) {
     return res.status(400).json({ success: false, error: 'Missing userToken or message' });
@@ -36,7 +36,7 @@ app.post('/agent/chat', verifyAgentSecret, async (req: Request, res: Response) =
 
   try {
     const agent = new Agent(role, provider, modelName, llmConfig);
-    const responseText = await agent.processQuery(userToken, message);
+    const responseText = await agent.processQuery(userToken, message, context);
 
     return res.json({
       success: true,
@@ -57,7 +57,7 @@ function sleep(ms: number) {
 }
 
 app.post('/agent/chat/stream', verifyAgentSecret, async (req: Request, res: Response) => {
-  const { userToken, message, role, provider, modelName, apiKey, baseHost, contextPolicy, history } = req.body;
+  const { userToken, message, role, provider, modelName, apiKey, baseHost, contextPolicy, history, context } = req.body;
 
   if (!userToken || !message) {
     return res.status(400).json({ success: false, error: 'Missing userToken or message' });
@@ -78,7 +78,7 @@ app.post('/agent/chat/stream', verifyAgentSecret, async (req: Request, res: Resp
 
   try {
     const agent = new Agent(role, provider, modelName, llmConfig);
-    const responseText = await agent.processQueryStream(userToken, message, sendEvent);
+    const responseText = await agent.processQueryStream(userToken, message, sendEvent, context);
 
     // Stream final text word-by-word
     const words = responseText.split(/(?<=\s)/);

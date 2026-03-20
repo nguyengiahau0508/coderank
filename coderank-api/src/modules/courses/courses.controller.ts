@@ -49,16 +49,31 @@ import { CourseLessonProblemsEntity } from './entities/course-lesson-problems.en
 import { CourseAssignmentsEntity } from './entities/course-assignments.entity';
 
 // DTOs
-import { CreateCourseDto, UpdateCourseDto, PaginationQueryCoursesDto, DuplicateCourseDto } from './dto/course';
+import {
+  CreateCourseDto,
+  UpdateCourseDto,
+  PaginationQueryCoursesDto,
+  DuplicateCourseDto,
+} from './dto/course';
 import { CreateSectionDto, UpdateSectionDto } from './dto/section';
 import { CreateLessonDto, UpdateLessonDto } from './dto/lesson';
 import { CreateQuizDto, UpdateQuizDto } from './dto/quiz';
-import { CreateQuizQuestionDto, UpdateQuizQuestionDto } from './dto/quiz-question';
+import {
+  CreateQuizQuestionDto,
+  UpdateQuizQuestionDto,
+} from './dto/quiz-question';
 import { SubmitQuizAttemptDto } from './dto/quiz-attempt';
-import { CreateLessonProblemDto, UpdateLessonProblemDto } from './dto/lesson-problem';
+import {
+  CreateLessonProblemDto,
+  UpdateLessonProblemDto,
+} from './dto/lesson-problem';
 import { CreateReviewDto, UpdateReviewDto } from './dto/review';
 import { CreateAssignmentDto, UpdateAssignmentDto } from './dto/assignment';
-import { CreateSubmissionDto, UpdateSubmissionDto, GradeSubmissionDto } from './dto/assignment-submission';
+import {
+  CreateSubmissionDto,
+  UpdateSubmissionDto,
+  GradeSubmissionDto,
+} from './dto/assignment-submission';
 import { EnrollCourseDto } from './dto/enrollment';
 
 @ApiTags('Courses')
@@ -103,9 +118,9 @@ export class CoursesController {
    * Recalculate enrollmentCount for a course (only active enrollments)
    */
   private async recalculateEnrollmentCount(courseId: string): Promise<void> {
-    const count = await this.enrollmentsService
-      .getRepository()
-      .count({ where: { courseId, status: EnrollmentStatusEnum.Active } as any });
+    const count = await this.enrollmentsService.getRepository().count({
+      where: { courseId, status: EnrollmentStatusEnum.Active } as any,
+    });
 
     await this.coursesService.update(courseId, {
       enrollmentCount: count,
@@ -132,9 +147,21 @@ export class CoursesController {
   async getCourses(
     @Query() dto: PaginationQueryCoursesDto,
   ): Promise<PaginatedResponseDto<CoursesEntity>> {
-    const { page = 1, limit = 10, search, level, status, isPublic, category, sortBy = 'createdAt', sortOrder = 'DESC' } = dto;
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      level,
+      status,
+      isPublic,
+      category,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+    } = dto;
 
-    const queryBuilder = this.coursesService.getRepository().createQueryBuilder('course');
+    const queryBuilder = this.coursesService
+      .getRepository()
+      .createQueryBuilder('course');
 
     if (status) {
       queryBuilder.andWhere('course.status = :status', { status });
@@ -185,10 +212,22 @@ export class CoursesController {
     @Query() dto: PaginationQueryCoursesDto,
     @CurrentUser() currentUser: IJwtPayload,
   ): Promise<PaginatedResponseDto<CoursesEntity>> {
-    const { page = 1, limit = 10, search, level, status, sortBy = 'createdAt', sortOrder = 'DESC' } = dto;
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      level,
+      status,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+    } = dto;
 
-    const queryBuilder = this.coursesService.getRepository().createQueryBuilder('course');
-    queryBuilder.andWhere('course.authorId = :authorId', { authorId: currentUser.userId });
+    const queryBuilder = this.coursesService
+      .getRepository()
+      .createQueryBuilder('course');
+    queryBuilder.andWhere('course.authorId = :authorId', {
+      authorId: currentUser.userId,
+    });
 
     if (status) {
       queryBuilder.andWhere('course.status = :status', { status });
@@ -228,10 +267,98 @@ export class CoursesController {
     };
   }
 
+  @Get('enrolled')
+  @ApiBearerAuth('JWT-auth')
+  async getEnrolledCourses(
+    @Query() dto: PaginationQueryCoursesDto,
+    @CurrentUser() currentUser: IJwtPayload,
+  ): Promise<PaginatedResponseDto<CoursesEntity>> {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      level,
+      status: enrollmentStatus,
+      sortBy = 'enrolledAt',
+      sortOrder = 'DESC',
+    } = dto;
+
+    const queryBuilder = this.enrollmentsService
+      .getRepository()
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.course', 'course')
+      .leftJoinAndSelect('course.author', 'author')
+      .where('enrollment.userId = :userId', { userId: currentUser.userId });
+
+    // Filter by enrollment status (active, completed, dropped)
+    if (enrollmentStatus) {
+      queryBuilder.andWhere('enrollment.status = :enrollmentStatus', { enrollmentStatus });
+    } else {
+      // Default: only show active enrollments
+      queryBuilder.andWhere('enrollment.status = :status', { status: EnrollmentStatusEnum.Active });
+    }
+
+    if (level) {
+      queryBuilder.andWhere('course.level = :level', { level });
+    }
+    if (search) {
+      queryBuilder.andWhere(
+        '(course.title LIKE :search OR course.slug LIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    // Sort by enrollment fields or course fields
+    const enrollmentFields = ['enrolledAt', 'completedAt', 'progressPercent', 'lastAccessedAt'];
+    if (enrollmentFields.includes(sortBy)) {
+      queryBuilder.orderBy(`enrollment.${sortBy}`, sortOrder);
+    } else {
+      queryBuilder.orderBy(`course.${sortBy}`, sortOrder);
+    }
+
+    queryBuilder.skip((page - 1) * limit).take(limit);
+
+    const [enrollments, totalItems] = await queryBuilder.getManyAndCount();
+
+    // Map enrollments to include course with enrollment info
+    const items = enrollments.map((e) => ({
+      ...e.course,
+      enrollment: {
+        id: e.id,
+        status: e.status,
+        enrolledAt: e.enrolledAt,
+        completedAt: e.completedAt,
+        progressPercent: e.progressPercent,
+        completedLessons: e.completedLessons,
+        totalLessons: e.totalLessons,
+        lastAccessedAt: e.lastAccessedAt,
+        certificateIssuedAt: e.certificateIssuedAt,
+      },
+    }));
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Success',
+      data: items as any,
+      meta: {
+        totalItems,
+        page,
+        totalPages: Math.ceil(totalItems / limit),
+        limit,
+        hasNext: page < Math.ceil(totalItems / limit),
+        hasPrevious: page > 1,
+      },
+      timestamp: new Date().toISOString(),
+      path: '/courses/enrolled',
+    };
+  }
+
   @Get(':courseId')
   @ApiBearerAuth('JWT-auth')
   async getCourse(@Param('courseId') courseId: string) {
-    return this.coursesService.getRepository()
+    return this.coursesService
+      .getRepository()
       .createQueryBuilder('course')
       .leftJoinAndSelect('course.sections', 'section')
       .leftJoinAndSelect('section.lessons', 'lesson')
@@ -241,11 +368,28 @@ export class CoursesController {
       .addOrderBy('lesson.lessonOrder', 'ASC')
       .select([
         'course',
-        'section.id', 'section.title', 'section.description', 'section.sectionOrder', 'section.isPublished',
-        'lesson.id', 'lesson.title', 'lesson.type', 'lesson.lessonOrder', 'lesson.estimatedMinutes', 'lesson.isPublished', 'lesson.isFreePreview',
-        'author.id', 'author.fullName', 'author.username', 'author.avatarUrl',
+        'section.id',
+        'section.title',
+        'section.description',
+        'section.sectionOrder',
+        'section.isPublished',
+        'lesson.id',
+        'lesson.title',
+        'lesson.type',
+        'lesson.lessonOrder',
+        'lesson.estimatedMinutes',
+        'lesson.isPublished',
+        'lesson.isFreePreview',
+        'author.id',
+        'author.fullName',
+        'author.username',
+        'author.avatarUrl',
       ])
-      .addSelect(['course.description', 'course.learningObjectives', 'course.prerequisites'])
+      .addSelect([
+        'course.description',
+        'course.learningObjectives',
+        'course.prerequisites',
+      ])
       .getOne();
   }
 
@@ -287,7 +431,12 @@ export class CoursesController {
       .leftJoinAndSelect('quiz.questions', 'question')
       .leftJoinAndSelect('lesson.problems', 'lessonProblem')
       .leftJoinAndSelect('lesson.assignments', 'assignment')
-      .addSelect(['course.description', 'course.learningObjectives', 'course.prerequisites', 'course.password'])
+      .addSelect([
+        'course.description',
+        'course.learningObjectives',
+        'course.prerequisites',
+        'course.password',
+      ])
       .addSelect(['lesson.content'])
       .addSelect(['question.correctAnswer', 'question.explanation'])
       .where('course.id = :courseId', { courseId })
@@ -300,7 +449,9 @@ export class CoursesController {
       .getOne();
 
     if (!source) {
-      throw new NotFoundException('Không tìm thấy khóa học hoặc bạn không phải là chủ sở hữu');
+      throw new NotFoundException(
+        'Không tìm thấy khóa học hoặc bạn không phải là chủ sở hữu',
+      );
     }
 
     // 2. Duplicate inside a transaction
@@ -339,7 +490,10 @@ export class CoursesController {
           isPublished: false,
           authorId: currentUser.userId,
         });
-        const savedSection = await manager.save(CourseSectionsEntity, newSection);
+        const savedSection = await manager.save(
+          CourseSectionsEntity,
+          newSection,
+        );
 
         // Duplicate lessons
         for (const lesson of section.lessons || []) {
@@ -356,7 +510,10 @@ export class CoursesController {
             isFreePreview: lesson.isFreePreview,
             authorId: currentUser.userId,
           });
-          const savedLesson = await manager.save(CourseLessonsEntity, newLesson);
+          const savedLesson = await manager.save(
+            CourseLessonsEntity,
+            newLesson,
+          );
 
           // Duplicate quizzes + questions
           for (const quiz of lesson.quizzes || []) {
@@ -526,7 +683,8 @@ export class CoursesController {
     @Param('sectionId') sectionId: string,
     @Param('lessonId') lessonId: string,
   ) {
-    return this.lessonsService.getRepository()
+    return this.lessonsService
+      .getRepository()
       .createQueryBuilder('lesson')
       .addSelect(['lesson.content'])
       .leftJoinAndSelect('lesson.quizzes', 'quiz')
@@ -586,7 +744,9 @@ export class CoursesController {
     });
   }
 
-  @Patch(':courseId/sections/:sectionId/lessons/:lessonId/problems/:lessonProblemId')
+  @Patch(
+    ':courseId/sections/:sectionId/lessons/:lessonId/problems/:lessonProblemId',
+  )
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(CoursesEntity, 'authorId', 'courseId')
   @ApiBearerAuth('JWT-auth')
@@ -597,11 +757,15 @@ export class CoursesController {
     return this.lessonProblemsService.update(lessonProblemId, dto);
   }
 
-  @Delete(':courseId/sections/:sectionId/lessons/:lessonId/problems/:lessonProblemId')
+  @Delete(
+    ':courseId/sections/:sectionId/lessons/:lessonId/problems/:lessonProblemId',
+  )
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(CoursesEntity, 'authorId', 'courseId')
   @ApiBearerAuth('JWT-auth')
-  async removeProblemFromLesson(@Param('lessonProblemId') lessonProblemId: string) {
+  async removeProblemFromLesson(
+    @Param('lessonProblemId') lessonProblemId: string,
+  ) {
     return this.lessonProblemsService.delete(lessonProblemId);
   }
 
@@ -665,7 +829,9 @@ export class CoursesController {
 
   // ==================== QUIZ QUESTIONS ====================
 
-  @Post(':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/questions')
+  @Post(
+    ':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/questions',
+  )
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(CoursesEntity, 'authorId', 'courseId')
   @ApiBearerAuth('JWT-auth')
@@ -681,7 +847,9 @@ export class CoursesController {
     });
   }
 
-  @Get(':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/questions')
+  @Get(
+    ':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/questions',
+  )
   @ApiBearerAuth('JWT-auth')
   async getQuizQuestions(@Param('quizId') quizId: string) {
     return this.quizQuestionsService.find({
@@ -690,13 +858,16 @@ export class CoursesController {
     });
   }
 
-  @Get(':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/questions/:questionId')
+  @Get(
+    ':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/questions/:questionId',
+  )
   @ApiBearerAuth('JWT-auth')
   async getQuizQuestion(
     @Param('quizId') quizId: string,
     @Param('questionId') questionId: string,
   ) {
-    return this.quizQuestionsService.getRepository()
+    return this.quizQuestionsService
+      .getRepository()
       .createQueryBuilder('question')
       .addSelect(['question.correctAnswer', 'question.explanation'])
       .where('question.id = :questionId', { questionId })
@@ -704,7 +875,9 @@ export class CoursesController {
       .getOne();
   }
 
-  @Patch(':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/questions/:questionId')
+  @Patch(
+    ':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/questions/:questionId',
+  )
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(CoursesEntity, 'authorId', 'courseId')
   @ApiBearerAuth('JWT-auth')
@@ -715,7 +888,9 @@ export class CoursesController {
     return this.quizQuestionsService.update(questionId, dto);
   }
 
-  @Delete(':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/questions/:questionId')
+  @Delete(
+    ':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/questions/:questionId',
+  )
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @Owner(CoursesEntity, 'authorId', 'courseId')
   @ApiBearerAuth('JWT-auth')
@@ -725,7 +900,9 @@ export class CoursesController {
 
   // ==================== QUIZ ATTEMPTS ====================
 
-  @Post(':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/attempts')
+  @Post(
+    ':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/attempts',
+  )
   @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
   @ApiBearerAuth('JWT-auth')
   async submitQuizAttempt(
@@ -748,7 +925,9 @@ export class CoursesController {
     });
   }
 
-  @Get(':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/attempts')
+  @Get(
+    ':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/attempts',
+  )
   @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
   @ApiBearerAuth('JWT-auth')
   async getMyQuizAttempts(
@@ -761,7 +940,9 @@ export class CoursesController {
     });
   }
 
-  @Get(':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/attempts/:attemptId')
+  @Get(
+    ':courseId/sections/:sectionId/lessons/:lessonId/quizzes/:quizId/attempts/:attemptId',
+  )
   @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
   @ApiBearerAuth('JWT-auth')
   async getQuizAttempt(
@@ -794,7 +975,9 @@ export class CoursesController {
     }
     if (!course.isPublic) {
       if (!dto.password) {
-        throw new BadRequestException('Khóa học riêng tư yêu cầu mật khẩu để đăng ký');
+        throw new BadRequestException(
+          'Khóa học riêng tư yêu cầu mật khẩu để đăng ký',
+        );
       }
       if (dto.password !== course.password) {
         throw new BadRequestException('Mật khẩu không chính xác');
@@ -898,7 +1081,12 @@ export class CoursesController {
 
     const lessonIds = sections.flatMap((s) => s.lessons.map((l) => l.id));
     if (lessonIds.length === 0) {
-      return { totalLessons: 0, completedLessons: 0, progressPercent: 0, lessons: [] };
+      return {
+        totalLessons: 0,
+        completedLessons: 0,
+        progressPercent: 0,
+        lessons: [],
+      };
     }
 
     const progress = await this.progressService.find({
@@ -914,7 +1102,10 @@ export class CoursesController {
     return {
       totalLessons,
       completedLessons,
-      progressPercent: totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100 * 100) / 100 : 0,
+      progressPercent:
+        totalLessons > 0
+          ? Math.round((completedLessons / totalLessons) * 100 * 100) / 100
+          : 0,
       lessons: progress,
     };
   }
@@ -1006,7 +1197,10 @@ export class CoursesController {
     let attachmentFileSize: number | undefined;
 
     if (file) {
-      const uploaded = await this.localStorageService.uploadFile(file, 'assignments');
+      const uploaded = await this.localStorageService.uploadFile(
+        file,
+        'assignments',
+      );
       attachmentFileId = uploaded.filePath;
       attachmentFileName = file.originalname;
       attachmentMimeType = file.mimetype;
@@ -1063,7 +1257,10 @@ export class CoursesController {
       if (assignment.attachmentFileId) {
         await this.localStorageService.deleteFile(assignment.attachmentFileId);
       }
-      const uploaded = await this.localStorageService.uploadFile(file, 'assignments');
+      const uploaded = await this.localStorageService.uploadFile(
+        file,
+        'assignments',
+      );
       const attachmentFileId = uploaded.filePath;
       return this.assignmentsService.update(assignmentId, {
         ...dto,
@@ -1113,7 +1310,10 @@ export class CoursesController {
     if (files && files.length > 0) {
       submissionFiles = [];
       for (const file of files) {
-        const uploaded = await this.localStorageService.uploadFile(file, 'submissions');
+        const uploaded = await this.localStorageService.uploadFile(
+          file,
+          'submissions',
+        );
         submissionFiles.push({
           fileId: uploaded.fileId,
           filePath: uploaded.filePath,
@@ -1165,7 +1365,9 @@ export class CoursesController {
     });
   }
 
-  @Patch(':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/:submissionId/grade')
+  @Patch(
+    ':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/:submissionId/grade',
+  )
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @ApiBearerAuth('JWT-auth')
   async gradeSubmission(
@@ -1178,7 +1380,9 @@ export class CoursesController {
     });
   }
 
-  @Patch(':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/:submissionId')
+  @Patch(
+    ':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/:submissionId',
+  )
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(FilesInterceptor('files', 20))
   @ApiConsumes('multipart/form-data')
@@ -1188,7 +1392,8 @@ export class CoursesController {
     @Body() dto: UpdateSubmissionDto,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
-    const submission = await this.assignmentSubmissionsService.findById(submissionId);
+    const submission =
+      await this.assignmentSubmissionsService.findById(submissionId);
     if (!submission) {
       throw new NotFoundException('Submission not found');
     }
@@ -1196,7 +1401,9 @@ export class CoursesController {
       throw new ForbiddenException('Bạn không có quyền chỉnh sửa bài nộp này');
     }
     if (submission.status === 'graded') {
-      throw new ForbiddenException('Không thể chỉnh sửa bài nộp đã được chấm điểm');
+      throw new ForbiddenException(
+        'Không thể chỉnh sửa bài nộp đã được chấm điểm',
+      );
     }
 
     const updateData: any = {};
@@ -1214,7 +1421,10 @@ export class CoursesController {
       // Upload new files
       const submissionFiles: any[] = [];
       for (const file of files) {
-        const uploaded = await this.localStorageService.uploadFile(file, 'submissions');
+        const uploaded = await this.localStorageService.uploadFile(
+          file,
+          'submissions',
+        );
         submissionFiles.push({
           fileId: uploaded.fileId,
           filePath: uploaded.filePath,
@@ -1230,18 +1440,24 @@ export class CoursesController {
     return this.assignmentSubmissionsService.update(submissionId, updateData);
   }
 
-  @Get(':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/:submissionId/download')
+  @Get(
+    ':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/:submissionId/download',
+  )
   @ApiBearerAuth('JWT-auth')
   async downloadSubmission(
     @Param('submissionId') submissionId: string,
     @Query('fileIndex') fileIndex: string,
     @Res() res: Response,
   ) {
-    const submission = await this.assignmentSubmissionsService.findById(submissionId);
+    const submission =
+      await this.assignmentSubmissionsService.findById(submissionId);
     if (!submission) {
       throw new NotFoundException('Submission not found');
     }
-    if (!submission.submissionFiles || submission.submissionFiles.length === 0) {
+    if (
+      !submission.submissionFiles ||
+      submission.submissionFiles.length === 0
+    ) {
       throw new NotFoundException('Submission has no files');
     }
 
@@ -1251,7 +1467,9 @@ export class CoursesController {
     }
 
     const fileInfo = submission.submissionFiles[idx];
-    const absolutePath = this.localStorageService.getAbsolutePath(fileInfo.filePath);
+    const absolutePath = this.localStorageService.getAbsolutePath(
+      fileInfo.filePath,
+    );
     const exists = this.localStorageService.fileExists(fileInfo.filePath);
     if (!exists) {
       throw new NotFoundException('File not found on server');
@@ -1260,7 +1478,9 @@ export class CoursesController {
     res.download(absolutePath, fileInfo.fileName || 'download');
   }
 
-  @Delete(':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/:submissionId')
+  @Delete(
+    ':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/:submissionId',
+  )
   @ApiBearerAuth('JWT-auth')
   async deleteSubmission(
     @CurrentUser() currentUser: IJwtPayload,

@@ -1,8 +1,8 @@
 import { Repository, FindOptionsWhere, FindManyOptions } from 'typeorm';
-import { 
-  IRepository, 
-  IPaginationOptions, 
-  IPaginatedResult 
+import {
+  IRepository,
+  IPaginationOptions,
+  IPaginatedResult,
 } from '../interfaces/repository.interface';
 import { BaseEntity } from '../entities/base.entity';
 
@@ -10,7 +10,9 @@ import { BaseEntity } from '../entities/base.entity';
  * Base service providing common CRUD operations
  * @template T - Entity type extending BaseEntity
  */
-export abstract class BaseService<T extends BaseEntity> implements IRepository<T> {
+export abstract class BaseService<
+  T extends BaseEntity,
+> implements IRepository<T> {
   constructor(protected readonly repository: Repository<T>) {}
 
   /**
@@ -151,10 +153,15 @@ export abstract class BaseService<T extends BaseEntity> implements IRepository<T
    * @returns Paginated result
    */
   async paginate(options: IPaginationOptions): Promise<IPaginatedResult<T>> {
-    const { page, limit, orderBy = 'createdAt', orderDirection = 'DESC' } = options;
-    
+    const {
+      page,
+      limit,
+      orderBy = 'createdAt',
+      orderDirection = 'DESC',
+    } = options;
+
     const skip = (page - 1) * limit;
-    
+
     const [data, total] = await this.repository.findAndCount({
       take: limit,
       skip,

@@ -1,5 +1,9 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiProperty, ApiPropertyOptional, ApiPropertyOptions } from '@nestjs/swagger';
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiPropertyOptions,
+} from '@nestjs/swagger';
 
 /**
  * ===========================
@@ -101,14 +105,22 @@ export function ApiDateOptional(description: string, example = '1995-06-15') {
  */
 
 /** Required string field */
-export function ApiStringProperty(description: string, example: string, maxLength?: number) {
+export function ApiStringProperty(
+  description: string,
+  example: string,
+  maxLength?: number,
+) {
   const options: ApiPropertyOptions = { description, example };
   if (maxLength) options.maxLength = maxLength;
   return ApiProperty(options);
 }
 
 /** Optional string field */
-export function ApiStringOptional(description: string, example: string, maxLength?: number) {
+export function ApiStringOptional(
+  description: string,
+  example: string,
+  maxLength?: number,
+) {
   const options: ApiPropertyOptions = { description, example, nullable: true };
   if (maxLength) options.maxLength = maxLength;
   return ApiPropertyOptional(options);
@@ -185,7 +197,12 @@ export function ApiIntProperty(description: string, defaultValue = 0, min = 0) {
 }
 
 /** Decimal/Rating field */
-export function ApiDecimalProperty(description: string, min = 0, max = 100, defaultValue = 0) {
+export function ApiDecimalProperty(
+  description: string,
+  min = 0,
+  max = 100,
+  defaultValue = 0,
+) {
   return ApiProperty({
     description,
     type: 'number',
@@ -243,7 +260,10 @@ export function ApiEnumArrayProperty<T extends object>(
  */
 
 /** Optional relation to another entity */
-export function ApiRelationOptional(description: string, typeFactory: () => any) {
+export function ApiRelationOptional(
+  description: string,
+  typeFactory: () => any,
+) {
   return ApiPropertyOptional({
     description,
     type: typeFactory,
@@ -251,7 +271,10 @@ export function ApiRelationOptional(description: string, typeFactory: () => any)
 }
 
 /** Optional array relation */
-export function ApiRelationArrayOptional(description: string, typeFactory: () => any[]) {
+export function ApiRelationArrayOptional(
+  description: string,
+  typeFactory: () => any[],
+) {
   return ApiPropertyOptional({
     description,
     type: typeFactory,

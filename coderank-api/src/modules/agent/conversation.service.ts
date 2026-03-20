@@ -39,7 +39,8 @@ export class ConversationService {
     if (!conv) throw new NotFoundException('Conversation not found');
     // Sort messages by createdAt ascending
     conv.messages?.sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
     return conv;
   }
@@ -70,10 +71,7 @@ export class ConversationService {
     return this.messageRepo.save(msg);
   }
 
-  async findOneByUser(
-    id: string,
-    userId: string,
-  ): Promise<ConversationEntity> {
+  async findOneByUser(id: string, userId: string): Promise<ConversationEntity> {
     const conv = await this.conversationRepo.findOne({
       where: { id, authorId: userId },
     });

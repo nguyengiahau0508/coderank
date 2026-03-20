@@ -2,11 +2,15 @@ import {
   Component,
   ChangeDetectionStrategy,
   OnInit,
+  OnDestroy,
+  computed,
   signal,
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 
 // PrimeNG
 import { Toast } from 'primeng/toast';
@@ -31,11 +35,40 @@ import { HintsModel } from '../../../../data';
 import { SubmissionsModel } from '../../../../data';
 import { SolutionsModel } from '../../../../data';
 import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '../../../../data';
+import { RunnerApi, RunResult, RunStatusEnum } from '../../../../data';
+import { ProblemsWorkspaceService, WorkspaceSplitMode } from '../services/problems-workspace.service';
+import { ChatContextService } from '../../../../core/services/chat-context.service';
+import { ProblemChatContext } from '../../../../core/models/chat-context.model';
+
+interface WorkspaceCommand {
+  id: string;
+  label: string;
+  shortcut: string;
+  keywords: string[];
+}
+interface DetailTabItem {
+  label: string;
+  icon: string;
+  index: number;
+}
+
+interface CustomTestcase {
+  id: number;
+  input: string;
+  expectedOutput: string;
+}
+
+interface RunResultItem {
+  testcase: CustomTestcase;
+  result: RunResult | null;
+  running: boolean;
+}
 
 @Component({
   selector: 'app-student-problem-detail',
   imports: [
     CommonModule,
+    FormsModule,
     Toast,
     CodeEditorComponent,
     StudentSubmissionResultComponent,
@@ -46,8 +79,11 @@ import { DifficultyEnum, ProgrammingLanguageEnum, SubmissionStatusEnum } from '.
   providers: [MessageService],
   templateUrl: './problem-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:keydown)': 'onGlobalKeydown($event)',
+  },
 })
-export class StudentProblemDetailComponent implements OnInit {
+export class StudentProblemDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly problemsService = inject(ProblemsService);
@@ -56,6 +92,9 @@ export class StudentProblemDetailComponent implements OnInit {
   private readonly submissionsService = inject(SubmissionsService);
   private readonly solutionsService = inject(SolutionsService);
   private readonly messageService = inject(MessageService);
+  private readonly workspaceService = inject(ProblemsWorkspaceService);
+  private readonly runnerApi = inject(RunnerApi);
+  private readonly chatContextService = inject(ChatContextService);
 
   // State
   readonly problem = signal<ProblemsModel | null>(null);
@@ -73,24 +112,88 @@ export class StudentProblemDetailComponent implements OnInit {
   readonly mySolutionsLoading = signal<boolean>(false);
   readonly editingSolution = signal<SolutionsModel | null>(null);
   readonly selectedSubmission = signal<SubmissionsModel | null>(null);
+  readonly splitMode = signal<WorkspaceSplitMode>('50-50');
+  readonly showLeftPanel = signal<boolean>(true);
+  readonly showRightPanel = signal<boolean>(true);
+  readonly showCommandPalette = signal<boolean>(false);
+  readonly commandQuery = signal<string>('');
 
   // Code editor state
   readonly currentCode = signal<string>('');
   readonly currentLanguage = signal<ProgrammingLanguageEnum>(ProgrammingLanguageEnum.Python);
 
+  // Run code state
+  readonly isRunning = signal<boolean>(false);
+  readonly runResults = signal<RunResultItem[]>([]);
+  readonly editorTabIndex = signal<number>(0); // 0 = Code Editor, 1 = Chạy thử
+  readonly customTestcases = signal<CustomTestcase[]>([]);
+  private nextCustomId = 1;
+
+  readonly runPassedCount = computed(() =>
+    this.runResults().filter(r =>
+      r.result?.status === RunStatusEnum.OK &&
+      r.result?.stdout?.trim() === r.testcase.expectedOutput.trim()
+    ).length
+  );
+  readonly runAllPassed = computed(() =>
+    this.runResults().length > 0 && this.runPassedCount() === this.runResults().length
+  );
+
   // UI State
   readonly visibleHints = signal<Set<number>>(new Set());
   readonly activeTabIndex = signal<number>(0);
 
-  readonly tabs = [
-    { label: 'Đề bài', index: 0 },
-    { label: 'Ví dụ', index: 1 },
-    { label: 'Gợi ý', index: 2 },
-    { label: 'Lịch sử', index: 3 },
-    { label: 'Solutions', index: 4 },
+  readonly tabs: DetailTabItem[] = [
+    { label: 'Đề bài', icon: 'pi-file', index: 0 },
+    { label: 'Ví dụ', icon: 'pi-list', index: 1 },
+    { label: 'Gợi ý', icon: 'pi-lightbulb', index: 2 },
+    { label: 'Lịch sử', icon: 'pi-history', index: 3 },
+    { label: 'Solutions', icon: 'pi-code', index: 4 },
   ];
+  readonly splitModes: WorkspaceSplitMode[] = ['40-60', '50-50', '60-40'];
+
+  readonly splitGridClass = computed(() => {
+    if (!this.showLeftPanel()) return 'grid-cols-1';
+    if (!this.showRightPanel()) return 'grid-cols-1';
+
+    if (this.splitMode() === '40-60') {
+      return 'grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)]';
+    }
+    if (this.splitMode() === '60-40') {
+      return 'grid-cols-[minmax(0,0.6fr)_minmax(0,0.4fr)]';
+    }
+    return 'grid-cols-2';
+  });
+  readonly commands: WorkspaceCommand[] = [
+    { id: 'submit', label: 'Submit code', shortcut: 'Ctrl/Cmd + Enter', keywords: ['submit', 'nop bai', 'judge'] },
+    { id: 'save-draft', label: 'Save draft', shortcut: 'Ctrl/Cmd + S', keywords: ['save', 'draft', 'luu'] },
+    { id: 'run', label: 'Run placeholder', shortcut: '-', keywords: ['run', 'execute', 'test'] },
+    { id: 'tab-statement', label: 'Go to Statement tab', shortcut: '1', keywords: ['statement', 'de bai', 'tab'] },
+    { id: 'tab-examples', label: 'Go to Examples tab', shortcut: '2', keywords: ['example', 'vi du', 'tab'] },
+    { id: 'tab-hints', label: 'Go to Hints tab', shortcut: '3', keywords: ['hint', 'goi y', 'tab'] },
+    { id: 'toggle-left', label: 'Toggle left panel', shortcut: '-', keywords: ['left', 'panel', 'toggle'] },
+    { id: 'toggle-right', label: 'Toggle editor panel', shortcut: '-', keywords: ['right', 'editor', 'panel', 'toggle'] },
+    { id: 'split-50-50', label: 'Set split 50-50', shortcut: '-', keywords: ['split', '50', 'layout'] },
+  ];
+  readonly filteredCommands = computed(() => {
+    const query = this.commandQuery().trim().toLowerCase();
+    if (!query) return this.commands;
+    return this.commands.filter(cmd =>
+      cmd.label.toLowerCase().includes(query) ||
+      cmd.keywords.some(keyword => keyword.includes(query))
+    );
+  });
+  readonly acceptanceRate = computed(() => {
+    const total = this.submissionHistory().length;
+    if (total === 0) return 0;
+    const accepted = this.submissionHistory().filter(
+      item => item.status === SubmissionStatusEnum.Accepted
+    ).length;
+    return Math.round((accepted / total) * 100);
+  });
 
   ngOnInit(): void {
+    this.splitMode.set(this.workspaceService.preferences().splitMode);
     const problemId = this.route.snapshot.paramMap.get('id');
     if (problemId) {
       this.loadProblem(problemId);
@@ -109,7 +212,17 @@ export class StudentProblemDetailComponent implements OnInit {
     this.loading.set(true);
     this.problemsService.getProblem(problemId).subscribe({
       next: (response) => {
-        this.problem.set(response.data || null);
+        const problem = response.data || null;
+        this.problem.set(problem);
+        if (problem) {
+          this.workspaceService.addRecent(problem.id, problem.title);
+          const draft = this.workspaceService.getDraft(problem.id, this.currentLanguage());
+          if (draft) {
+            this.currentCode.set(draft);
+          }
+          // Set chat context for AI assistant
+          this.updateChatContext(problem);
+        }
         this.loading.set(false);
       },
       error: () => {
@@ -121,6 +234,29 @@ export class StudentProblemDetailComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  /**
+   * Update chat context with current problem info
+   */
+  private updateChatContext(problem: ProblemsModel): void {
+    const lastSubmission = this.submissionHistory()[0];
+    const context: ProblemChatContext = {
+      type: 'problem',
+      problemId: problem.id,
+      title: problem.title,
+      difficulty: problem.difficulty,
+      description: problem.description ?? undefined,
+      tags: problem.tags?.map(t => t.name),
+      userCode: this.currentCode() || undefined,
+      lastSubmissionStatus: lastSubmission?.status,
+    };
+    this.chatContextService.pushContext(context);
+  }
+
+  ngOnDestroy(): void {
+    // Clear chat context when leaving the problem
+    this.chatContextService.popContext();
   }
 
   /**
@@ -176,6 +312,12 @@ export class StudentProblemDetailComponent implements OnInit {
           (s) => s.status === SubmissionStatusEnum.Accepted
         );
         this.hasAccepted.set(accepted);
+        if (accepted) {
+          const problem = this.problem();
+          if (problem) {
+            this.workspaceService.markSolved(problem.id);
+          }
+        }
       },
       error: () => {
         // Silent fail for submission history
@@ -334,6 +476,10 @@ export class StudentProblemDetailComponent implements OnInit {
    */
   onCodeChange(code: string): void {
     this.currentCode.set(code);
+    const problem = this.problem();
+    if (problem) {
+      this.workspaceService.saveDraft(problem.id, this.currentLanguage(), code);
+    }
   }
 
   /**
@@ -341,6 +487,228 @@ export class StudentProblemDetailComponent implements OnInit {
    */
   onLanguageChange(language: ProgrammingLanguageEnum): void {
     this.currentLanguage.set(language);
+    const problem = this.problem();
+    if (!problem) return;
+
+    const draft = this.workspaceService.getDraft(problem.id, language);
+    if (draft) {
+      this.currentCode.set(draft);
+    }
+  }
+
+  saveDraft(): void {
+    const problem = this.problem();
+    if (!problem) return;
+
+    this.workspaceService.saveDraft(problem.id, this.currentLanguage(), this.currentCode());
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Đã lưu draft',
+      detail: 'Code hiện tại đã được lưu local.',
+      life: 1400,
+    });
+  }
+
+  async runCode(): Promise<void> {
+    const code = this.currentCode();
+    if (!code.trim()) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Không có code',
+        detail: 'Vui lòng nhập code trước khi chạy thử.',
+        life: 2000,
+      });
+      return;
+    }
+
+    const problem = this.problem();
+    if (!problem) return;
+
+    // Merge sample testcases with custom testcases
+    const sampleTests: CustomTestcase[] = this.sampleTestcases().map((tc, idx) => ({
+      id: -(idx + 1), // negative IDs for sample testcases
+      input: tc.input,
+      expectedOutput: tc.expectedOutput,
+    }));
+    const customTests = this.customTestcases();
+    const allTestcases = [...sampleTests, ...customTests];
+
+    if (allTestcases.length === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Không có test case',
+        detail: 'Không có test case nào để chạy thử.',
+        life: 2000,
+      });
+      return;
+    }
+
+    this.isRunning.set(true);
+    this.editorTabIndex.set(1); // Switch to run results tab
+
+    // Initialize run results
+    const initialResults: RunResultItem[] = allTestcases.map(tc => ({
+      testcase: tc,
+      result: null,
+      running: true,
+    }));
+    this.runResults.set(initialResults);
+
+    // Run each testcase
+    for (let i = 0; i < allTestcases.length; i++) {
+      const tc = allTestcases[i];
+      try {
+        const response = await firstValueFrom(this.runnerApi.runCode({
+          code,
+          language: this.currentLanguage(),
+          input: tc.input,
+          timeLimit: problem.timeLimitMs,
+          memoryLimit: problem.memoryLimitMb * 1024, // Convert MB to KB if needed
+        }));
+
+        this.runResults.update(results => {
+          const updated = [...results];
+          updated[i] = { ...updated[i], result: response.data ?? null, running: false };
+          return updated;
+        });
+      } catch {
+        this.runResults.update(results => {
+          const updated = [...results];
+          updated[i] = {
+            ...updated[i],
+            result: {
+              status: RunStatusEnum.RE,
+              stdout: '',
+              stderr: 'Lỗi khi thực thi code',
+              time: 0,
+              memory: 0,
+            },
+            running: false,
+          };
+          return updated;
+        });
+      }
+    }
+
+    this.isRunning.set(false);
+
+    // Show summary
+    const passed = this.runPassedCount();
+    const total = allTestcases.length;
+    if (passed === total) {
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Tất cả test case đều pass!',
+        detail: `${passed}/${total} test case pass`,
+        life: 3000,
+      });
+    } else {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Một số test case không pass',
+        detail: `${passed}/${total} test case pass`,
+        life: 3000,
+      });
+    }
+  }
+
+  addCustomTestcase(): void {
+    this.customTestcases.update(tests => [
+      ...tests,
+      { id: this.nextCustomId++, input: '', expectedOutput: '' },
+    ]);
+  }
+
+  removeCustomTestcase(id: number): void {
+    this.customTestcases.update(tests => tests.filter(t => t.id !== id));
+  }
+
+  updateCustomTestcase(id: number, field: 'input' | 'expectedOutput', value: string): void {
+    this.customTestcases.update(tests =>
+      tests.map(t => (t.id === id ? { ...t, [field]: value } : t))
+    );
+  }
+
+  isTestcasePassed(item: RunResultItem): boolean {
+    return (
+      item.result?.status === RunStatusEnum.OK &&
+      item.result?.stdout?.trim() === item.testcase.expectedOutput.trim()
+    );
+  }
+
+  getRunStatusLabel(status: RunStatusEnum): string {
+    switch (status) {
+      case RunStatusEnum.OK: return 'OK';
+      case RunStatusEnum.TLE: return 'Time Limit Exceeded';
+      case RunStatusEnum.MLE: return 'Memory Limit Exceeded';
+      case RunStatusEnum.RE: return 'Runtime Error';
+      case RunStatusEnum.CE: return 'Compilation Error';
+      default: return 'Unknown';
+    }
+  }
+
+  openCommandPalette(): void {
+    this.commandQuery.set('');
+    this.showCommandPalette.set(true);
+  }
+
+  closeCommandPalette(): void {
+    this.showCommandPalette.set(false);
+  }
+
+  runCommand(commandId: string): void {
+    switch (commandId) {
+      case 'submit':
+        this.onSubmit();
+        break;
+      case 'save-draft':
+        this.saveDraft();
+        break;
+      case 'run':
+        this.runCode();
+        break;
+      case 'tab-statement':
+        this.activeTabIndex.set(0);
+        break;
+      case 'tab-examples':
+        this.activeTabIndex.set(1);
+        break;
+      case 'tab-hints':
+        this.activeTabIndex.set(2);
+        break;
+      case 'toggle-left':
+        this.toggleLeftPanel();
+        break;
+      case 'toggle-right':
+        this.toggleRightPanel();
+        break;
+      case 'split-50-50':
+        this.setSplitMode('50-50');
+        break;
+      default:
+        break;
+    }
+    this.closeCommandPalette();
+  }
+
+  onPaletteEnter(): void {
+    const first = this.filteredCommands()[0];
+    if (first) {
+      this.runCommand(first.id);
+    }
+  }
+
+  setSplitMode(mode: WorkspaceSplitMode): void {
+    this.splitMode.set(mode);
+    this.workspaceService.setSplitMode(mode);
+  }
+
+  toggleLeftPanel(): void {
+    this.showLeftPanel.update(v => !v);
+  }
+
+  toggleRightPanel(): void {
+    this.showRightPanel.update(v => !v);
   }
 
   /**
@@ -389,6 +757,9 @@ export class StudentProblemDetailComponent implements OnInit {
 
           // Poll for result if pending/running
           if (submission) {
+            if (submission.status === SubmissionStatusEnum.Accepted) {
+              this.workspaceService.markSolved(problem.id);
+            }
             this.pollSubmissionResult(submission.id.toString());
           }
         },
@@ -482,5 +853,33 @@ export class StudentProblemDetailComponent implements OnInit {
         life: 1500,
       });
     });
+  }
+
+  onGlobalKeydown(event: KeyboardEvent): void {
+    const key = event.key.toLowerCase();
+    const withCommand = event.metaKey || event.ctrlKey;
+
+    if (withCommand && key === 'k') {
+      event.preventDefault();
+      this.openCommandPalette();
+      return;
+    }
+
+    if (this.showCommandPalette() && key === 'escape') {
+      event.preventDefault();
+      this.closeCommandPalette();
+      return;
+    }
+
+    if (withCommand && key === 's') {
+      event.preventDefault();
+      this.saveDraft();
+      return;
+    }
+
+    if (withCommand && key === 'enter') {
+      event.preventDefault();
+      this.onSubmit();
+    }
   }
 }

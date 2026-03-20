@@ -51,7 +51,10 @@ export class LocalStorageService {
    * @param subDir - Optional subdirectory (e.g., 'assignments', 'submissions')
    * @returns File info including generated fileId and URL
    */
-  async uploadFile(file: Express.Multer.File, subDir = 'general'): Promise<LocalFileInfo> {
+  async uploadFile(
+    file: Express.Multer.File,
+    subDir = 'general',
+  ): Promise<LocalFileInfo> {
     const dir = this.ensureSubDir(subDir);
     const ext = path.extname(file.originalname);
     const fileId = uuidv4();

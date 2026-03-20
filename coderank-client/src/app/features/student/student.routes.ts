@@ -3,7 +3,7 @@ import { Routes } from '@angular/router';
 export const studentRoutes: Routes = [
   {
     path: '',
-    redirectTo: 'problems',
+    redirectTo: 'courses/my-courses',
     pathMatch: 'full',
   },
   {

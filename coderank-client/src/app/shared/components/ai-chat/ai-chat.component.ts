@@ -24,6 +24,7 @@ import {
 } from '../../../data/domains/agent/api/agent.api';
 import { AiProviderEnum } from '../../../data/shared/enums/enums';
 import { environment } from '../../../../environments/environment';
+import { ChatContextService } from '../../../core/services/chat-context.service';
 
 /** Provider display metadata */
 const PROVIDER_META: Record<AiProviderEnum, { label: string; icon: string; color: string }> = {
@@ -42,6 +43,7 @@ const PROVIDER_META: Record<AiProviderEnum, { label: string; icon: string; color
 export class AiChatComponent {
   private readonly agentApi = inject(AgentApi);
   private readonly ngZone = inject(NgZone);
+  private readonly chatContextService = inject(ChatContextService);
   private readonly messagesEl = viewChild<ElementRef<HTMLElement>>('messagesContainer');
   private readonly configPanelEl = viewChild<ElementRef<HTMLElement>>('configPanel');
 
@@ -102,6 +104,11 @@ export class AiChatComponent {
     if (!id) return null;
     return this.conversations().find(c => c.id === id) ?? null;
   });
+
+  // Context awareness
+  readonly currentContext = this.chatContextService.currentContext;
+  readonly contextSummary = this.chatContextService.contextSummary;
+  readonly hasContext = this.chatContextService.hasContext;
 
   quickQuestions = [
     'How to solve Two Sum?',
@@ -321,6 +328,9 @@ export class AiChatComponent {
     const token = localStorage.getItem('access_token');
     const url = `${environment.apiUrl}/agent/conversations/${encodeURIComponent(conversationId)}/messages`;
 
+    // Get current context if available
+    const context = this.currentContext();
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -331,6 +341,7 @@ export class AiChatComponent {
         body: JSON.stringify({
           message,
           provider: this.activeProvider(),
+          context: context ?? undefined,
         }),
       });
 

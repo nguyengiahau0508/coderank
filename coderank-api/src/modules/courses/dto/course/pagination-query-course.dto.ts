@@ -5,12 +5,18 @@ import { PaginationQueryDto } from 'src/common/dto';
 import { Transform } from 'class-transformer';
 
 export class PaginationQueryCoursesDto extends PaginationQueryDto {
-  @ApiPropertyOptional({ description: 'Filter by level', enum: CourseLevelEnum })
+  @ApiPropertyOptional({
+    description: 'Filter by level',
+    enum: CourseLevelEnum,
+  })
   @IsOptional()
   @IsEnum(CourseLevelEnum)
   level?: CourseLevelEnum;
 
-  @ApiPropertyOptional({ description: 'Filter by status', enum: CourseStatusEnum })
+  @ApiPropertyOptional({
+    description: 'Filter by status',
+    enum: CourseStatusEnum,
+  })
   @IsOptional()
   @IsEnum(CourseStatusEnum)
   status?: CourseStatusEnum;

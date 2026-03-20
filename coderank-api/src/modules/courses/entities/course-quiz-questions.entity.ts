@@ -12,7 +12,10 @@ export class CourseQuizQuestionsEntity extends BaseEntity {
   @Column({ type: 'uuid' })
   quizId: string;
 
-  @ApiProperty({ description: 'Question text (supports Markdown)', example: 'Độ phức tạp thời gian của Binary Search là gì?' })
+  @ApiProperty({
+    description: 'Question text (supports Markdown)',
+    example: 'Độ phức tạp thời gian của Binary Search là gì?',
+  })
   @Column({ type: 'text' })
   questionText: string;
 
@@ -37,7 +40,10 @@ export class CourseQuizQuestionsEntity extends BaseEntity {
   @Column({ type: 'json', nullable: true })
   options?: Record<string, any>[];
 
-  @ApiProperty({ description: 'Correct answer (for short answer / true-false)', example: 'O(log n)' })
+  @ApiProperty({
+    description: 'Correct answer (for short answer / true-false)',
+    example: 'O(log n)',
+  })
   @Column({ type: 'text', nullable: true, select: false })
   correctAnswer?: string;
 
@@ -59,7 +65,9 @@ export class CourseQuizQuestionsEntity extends BaseEntity {
 
   // ===== RELATIONS =====
 
-  @ManyToOne(() => CourseQuizzesEntity, (q) => q.questions, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CourseQuizzesEntity, (q) => q.questions, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'quizId' })
   quiz: CourseQuizzesEntity;
 }

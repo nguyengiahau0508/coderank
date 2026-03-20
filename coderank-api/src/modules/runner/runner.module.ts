@@ -1,11 +1,11 @@
-import { Module } from "@nestjs/common";
-import { RunnerController } from "./runner.controller";
-import { RunnerService } from "./services/runner.service";
-import { CheckerService } from "./services/checker.service";
-import { BullModule } from "@nestjs/bullmq";
+import { Module } from '@nestjs/common';
+import { RunnerController } from './runner.controller';
+import { RunnerService } from './services/runner.service';
+import { CheckerService } from './services/checker.service';
+import { BullModule } from '@nestjs/bullmq';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
-import { RunnerProcessor } from "./processor/runner.processor";
+import { RunnerProcessor } from './processor/runner.processor';
 
 @Module({
   imports: [
@@ -19,7 +19,6 @@ import { RunnerProcessor } from "./processor/runner.processor";
   ],
   controllers: [RunnerController],
   providers: [RunnerService, CheckerService, RunnerProcessor],
-  exports: [RunnerService, CheckerService]
+  exports: [RunnerService, CheckerService],
 })
-
-export class RunnerModule { }
+export class RunnerModule {}

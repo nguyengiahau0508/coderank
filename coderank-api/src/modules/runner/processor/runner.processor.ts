@@ -1,13 +1,16 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
-import { Job } from "bullmq";
-import { Logger } from "@nestjs/common";
-import { EventEmitter2 } from "@nestjs/event-emitter";
-import { RunnerService } from "../services/runner.service";
-import { CheckerService } from "../services/checker.service";
-import { ICheckResult } from "src/common/interfaces/interfaces";
-import { SubmissionStatusEnum, TestcaseCompareTypeEnum } from "src/common/enums/enums";
-import { RunStatusEnum } from "../dto/run-result.dto";
-import { SubmissionCompletedEvent } from "../events/submission-completed.event";
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+import { Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { RunnerService } from '../services/runner.service';
+import { CheckerService } from '../services/checker.service';
+import { ICheckResult } from 'src/common/interfaces/interfaces';
+import {
+  SubmissionStatusEnum,
+  TestcaseCompareTypeEnum,
+} from 'src/common/enums/enums';
+import { RunStatusEnum } from '../dto/run-result.dto';
+import { SubmissionCompletedEvent } from '../events/submission-completed.event';
 
 @Processor('runner-queue')
 export class RunnerProcessor extends WorkerHost {
@@ -17,14 +20,32 @@ export class RunnerProcessor extends WorkerHost {
     private readonly runnerService: RunnerService,
     private readonly checkerService: CheckerService,
     private readonly eventEmitter: EventEmitter2,
-  ) { super(); }
+  ) {
+    super();
+  }
 
   async process(job: Job) {
-    const { submissionId, language, testcases, code, timeLimitMs, memoryLimitMb } = job.data;
-    if (!submissionId || !language || !testcases || !code || timeLimitMs == null || memoryLimitMb == null) {
+    const {
+      submissionId,
+      language,
+      testcases,
+      code,
+      timeLimitMs,
+      memoryLimitMb,
+    } = job.data;
+    if (
+      !submissionId ||
+      !language ||
+      !testcases ||
+      !code ||
+      timeLimitMs == null ||
+      memoryLimitMb == null
+    ) {
       throw new Error('Invalid job data');
     }
-    this.logger.log(`Processing submission ${submissionId} with ${testcases.length} testcases`);
+    this.logger.log(
+      `Processing submission ${submissionId} with ${testcases.length} testcases`,
+    );
 
     try {
       let passedCount = 0;

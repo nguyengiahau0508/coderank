@@ -4,18 +4,17 @@ import { Injectable } from '@nestjs/common';
 import { AuthProvidersEnum } from 'src/common/enums/enums';
 import { GoogleConfigService } from 'src/config/integrations/google/google-config.service';
 
-
 @Injectable()
-export class GoogleStrategy extends PassportStrategy(Strategy, AuthProvidersEnum.Google) {
+export class GoogleStrategy extends PassportStrategy(
+  Strategy,
+  AuthProvidersEnum.Google,
+) {
   constructor(private readonly googleConfigService: GoogleConfigService) {
     super({
       clientID: googleConfigService.clientId,
       clientSecret: googleConfigService.clientSecret,
       callbackURL: googleConfigService.oauth2RedirectUri,
-      scope: [
-        'email',
-        'profile',
-      ],
+      scope: ['email', 'profile'],
     });
   }
   async validate(

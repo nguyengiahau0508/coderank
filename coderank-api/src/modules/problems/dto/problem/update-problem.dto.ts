@@ -1,23 +1,44 @@
-import { IsOptional, IsString, MaxLength, IsInt, Min, IsBoolean, IsEnum, IsArray, ArrayUnique, IsUUID, ValidateNested } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  MaxLength,
+  IsInt,
+  Min,
+  IsBoolean,
+  IsEnum,
+  IsArray,
+  ArrayUnique,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { DifficultyEnum } from 'src/common/enums/enums';
 import { CreateTestcaseDto } from '../testcase/create-testcase.dto';
 
 export class UpdateProblemDto {
-  @ApiPropertyOptional({ description: 'Problem title', example: 'Sum of Two', maxLength: 255 })
+  @ApiPropertyOptional({
+    description: 'Problem title',
+    example: 'Sum of Two',
+    maxLength: 255,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   title?: string;
 
-  @ApiPropertyOptional({ description: 'URL-friendly slug', example: 'sum-of-two' })
+  @ApiPropertyOptional({
+    description: 'URL-friendly slug',
+    example: 'sum-of-two',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(255)
   slug?: string;
 
-  @ApiPropertyOptional({ description: 'Full problem statement (markdown/html)' })
+  @ApiPropertyOptional({
+    description: 'Full problem statement (markdown/html)',
+  })
   @IsOptional()
   @IsString()
   description?: string;

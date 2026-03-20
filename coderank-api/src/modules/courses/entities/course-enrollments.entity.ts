@@ -35,7 +35,10 @@ export class CourseEnrollmentsEntity extends BaseEntity {
   @Column({ type: 'timestamp', nullable: true })
   completedAt?: Date;
 
-  @ApiProperty({ description: 'Overall progress percentage (0-100)', example: 0 })
+  @ApiProperty({
+    description: 'Overall progress percentage (0-100)',
+    example: 0,
+  })
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
   progressPercent: number;
 
@@ -43,7 +46,10 @@ export class CourseEnrollmentsEntity extends BaseEntity {
   @Column({ type: 'int', default: 0, unsigned: true })
   completedLessons: number;
 
-  @ApiProperty({ description: 'Total lessons in the course at enrollment', example: 0 })
+  @ApiProperty({
+    description: 'Total lessons in the course at enrollment',
+    example: 0,
+  })
   @Column({ type: 'int', default: 0, unsigned: true })
   totalLessons: number;
 
@@ -51,7 +57,9 @@ export class CourseEnrollmentsEntity extends BaseEntity {
   @Column({ type: 'timestamp', nullable: true })
   lastAccessedAt?: Date;
 
-  @ApiPropertyOptional({ description: 'Certificate issued date (if completed)' })
+  @ApiPropertyOptional({
+    description: 'Certificate issued date (if completed)',
+  })
   @Column({ type: 'timestamp', nullable: true })
   certificateIssuedAt?: Date;
 

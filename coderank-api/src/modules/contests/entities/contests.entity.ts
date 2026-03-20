@@ -1,6 +1,12 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { Column, Entity, Index, ManyToOne, JoinColumn, OneToMany } from
-  'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { UsersEntity } from 'src/modules/users/entities/user.entity';
 import { ContestStatusEnum } from 'src/common/enums/enums';
 import { ContestProblemsEntity } from './contest-problems.entity';
@@ -16,7 +22,10 @@ export class ContestsEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
-  @ApiProperty({ description: 'URL-friendly slug', example: 'weekly-contest-1' })
+  @ApiProperty({
+    description: 'URL-friendly slug',
+    example: 'weekly-contest-1',
+  })
   @Column({ type: 'varchar', length: 255, unique: true })
   slug: string;
 
@@ -28,22 +37,36 @@ export class ContestsEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   rules?: string;
 
-  @ApiProperty({ description: 'Contest start time', example: '2024-01-01T00:00:00Z' })
+  @ApiProperty({
+    description: 'Contest start time',
+    example: '2024-01-01T00:00:00Z',
+  })
   @Column({ type: 'timestamp' })
   startTime: Date;
 
-  @ApiProperty({ description: 'Contest end time', example: '2024-01-01T03:00:00Z' })
+  @ApiProperty({
+    description: 'Contest end time',
+    example: '2024-01-01T03:00:00Z',
+  })
   @Column({ type: 'timestamp' })
   endTime: Date;
 
-  @ApiPropertyOptional({ description: 'Contest duration in minutes', example: 180 })
+  @ApiPropertyOptional({
+    description: 'Contest duration in minutes',
+    example: 180,
+  })
   @Column({ type: 'int', nullable: true })
   durationMinutes?: number; // Thời gian thi (phút)
 
-  @ApiProperty({ description: 'Contest status', enum: ContestStatusEnum, example: ContestStatusEnum.Draft })
+  @ApiProperty({
+    description: 'Contest status',
+    enum: ContestStatusEnum,
+    example: ContestStatusEnum.Draft,
+  })
   @Column({
-    type: 'enum', enum: ContestStatusEnum, default:
-      ContestStatusEnum.Draft
+    type: 'enum',
+    enum: ContestStatusEnum,
+    default: ContestStatusEnum.Draft,
   })
   status: ContestStatusEnum; // Draft, Upcoming, Running, Ended
 
@@ -55,7 +78,10 @@ export class ContestsEntity extends BaseEntity {
   @Column({ type: 'boolean', default: false })
   isRated: boolean; // Có tính rating không
 
-  @ApiPropertyOptional({ description: 'Maximum participants (0 for unlimited)', example: 0 })
+  @ApiPropertyOptional({
+    description: 'Maximum participants (0 for unlimited)',
+    example: 0,
+  })
   @Column({ type: 'int', default: 0, unsigned: true })
   maxParticipants?: number; // Giới hạn số người tham gia
 
@@ -68,16 +94,21 @@ export class ContestsEntity extends BaseEntity {
   @JoinColumn({ name: 'authorId' })
   author?: UsersEntity;
 
-  @ApiPropertyOptional({ description: 'Contest problems', type: () => [ContestProblemsEntity] })
+  @ApiPropertyOptional({
+    description: 'Contest problems',
+    type: () => [ContestProblemsEntity],
+  })
   @OneToMany(() => ContestProblemsEntity, (cp) => cp.contest, {
-    cascade:
-      true
+    cascade: true,
   })
   contestProblems: ContestProblemsEntity[];
 
-  @ApiPropertyOptional({ description: 'Contest participants', type: () => [ContestParticipantsEntity] })
+  @ApiPropertyOptional({
+    description: 'Contest participants',
+    type: () => [ContestParticipantsEntity],
+  })
   @OneToMany(() => ContestParticipantsEntity, (cp) => cp.contest, {
-    cascade: true
+    cascade: true,
   })
   participants: ContestParticipantsEntity[];
 }

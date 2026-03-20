@@ -1,15 +1,18 @@
-import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
-import { BaseService } from "src/common/services/base.service";
-import { ContestParticipantsEntity } from "../entities/contest-participants.entity";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { ContestsEntity } from "../entities/contests.entity";
-
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { BaseService } from 'src/common/services/base.service';
+import { ContestParticipantsEntity } from '../entities/contest-participants.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ContestsEntity } from '../entities/contests.entity';
 
 @Injectable()
 export class ContestParticipantsService extends BaseService<ContestParticipantsEntity> {
   constructor(
-    @InjectRepository(ContestParticipantsEntity) 
+    @InjectRepository(ContestParticipantsEntity)
     protected readonly repository: Repository<ContestParticipantsEntity>,
     @InjectRepository(ContestsEntity)
     private readonly contestsRepository: Repository<ContestsEntity>,
@@ -66,7 +69,7 @@ export class ContestParticipantsService extends BaseService<ContestParticipantsE
     return this.repository.find({
       where: { contestId },
       relations: { user: true },
-      order: { 
+      order: {
         rank: 'ASC',
         totalScore: 'DESC',
         penaltyMinutes: 'ASC',
@@ -86,11 +89,15 @@ export class ContestParticipantsService extends BaseService<ContestParticipantsE
 
     // Only allow leaving if contest hasn't started yet (upcoming/draft)
     if (contest.status === 'running') {
-      throw new BadRequestException('Không thể hủy đăng ký khi cuộc thi đang diễn ra');
+      throw new BadRequestException(
+        'Không thể hủy đăng ký khi cuộc thi đang diễn ra',
+      );
     }
 
     if (contest.status === 'ended') {
-      throw new BadRequestException('Không thể hủy đăng ký khi cuộc thi đã kết thúc');
+      throw new BadRequestException(
+        'Không thể hủy đăng ký khi cuộc thi đã kết thúc',
+      );
     }
 
     // Find participation

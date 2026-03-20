@@ -7,7 +7,11 @@ export class CreateContestSubmissionDto {
   @IsString()
   code: string;
 
-  @ApiProperty({ description: 'Programming language', enum: ProgrammingLanguageEnum, example: ProgrammingLanguageEnum.Python })
+  @ApiProperty({
+    description: 'Programming language',
+    enum: ProgrammingLanguageEnum,
+    example: ProgrammingLanguageEnum.Python,
+  })
   @IsEnum(ProgrammingLanguageEnum)
   language: ProgrammingLanguageEnum;
 }

@@ -60,6 +60,10 @@ export class CoursesApi extends BaseApi {
     return this.apiService.get<PaginatedResponse<CoursesModel>>(this.getUrl('/me'), this.buildParams(params));
   }
 
+  getEnrolledCourses(params?: PaginationQueryCoursesDto): Observable<PaginatedResponse<CoursesModel>> {
+    return this.apiService.get<PaginatedResponse<CoursesModel>>(this.getUrl('/enrolled'), this.buildParams(params));
+  }
+
   getCourse(courseId: string): Observable<ApiResponse<CoursesModel>> {
     return this.apiService.get<ApiResponse<CoursesModel>>(this.getUrl(`/${courseId}`));
   }

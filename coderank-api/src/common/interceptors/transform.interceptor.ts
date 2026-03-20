@@ -29,29 +29,35 @@ export interface IApiResponse<T> {
  * Transforms all successful responses into a consistent format
  */
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, IApiResponse<T>> {
+export class TransformInterceptor<T> implements NestInterceptor<
+  T,
+  IApiResponse<T>
+> {
   constructor(private reflector: Reflector) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<IApiResponse<T>> {
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Observable<IApiResponse<T>> {
     const ctx = context.switchToHttp();
     const request = ctx.getRequest<Request>();
     const response = ctx.getResponse<Response>();
 
     // Check if transformation should be skipped
-    const skipTransform = this.reflector.getAllAndOverride<boolean>(SKIP_TRANSFORM_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const skipTransform = this.reflector.getAllAndOverride<boolean>(
+      SKIP_TRANSFORM_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (skipTransform) {
       return next.handle();
     }
 
     // Get custom message from decorator or use default
-    const customMessage = this.reflector.getAllAndOverride<string>(RESPONSE_MESSAGE_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const customMessage = this.reflector.getAllAndOverride<string>(
+      RESPONSE_MESSAGE_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     return next.handle().pipe(
       map((data) => {

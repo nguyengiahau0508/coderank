@@ -35,6 +35,10 @@ export class StudentCoursesService {
     return this.coursesApi.getCourses(params);
   }
 
+  getEnrolledCourses(params?: PaginationQueryCoursesDto): Observable<PaginatedResponse<CoursesModel>> {
+    return this.coursesApi.getEnrolledCourses(params);
+  }
+
   getCourse(courseId: string): Observable<ApiResponse<CoursesModel>> {
     return this.coursesApi.getCourse(courseId);
   }

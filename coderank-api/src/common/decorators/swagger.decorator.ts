@@ -127,7 +127,10 @@ export function ApiFileUpload(fieldName: string = 'file') {
 /**
  * Decorator for multiple files upload
  */
-export function ApiFilesUpload(fieldName: string = 'files', maxCount: number = 10) {
+export function ApiFilesUpload(
+  fieldName: string = 'files',
+  maxCount: number = 10,
+) {
   return applyDecorators(
     ApiConsumes('multipart/form-data'),
     ApiBody({

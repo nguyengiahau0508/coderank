@@ -1,5 +1,12 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { Column, Entity, Index, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { CourseLessonsEntity } from './course-lessons.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CourseAssignmentSubmissionsEntity } from './course-assignment-submissions.entity';
@@ -18,11 +25,16 @@ export class CourseAssignmentsEntity extends BaseEntity {
   @Column({ type: 'uuid' })
   lessonId: string;
 
-  @ApiProperty({ description: 'Assignment title', example: 'Bài tập 1: Xử lý mảng' })
+  @ApiProperty({
+    description: 'Assignment title',
+    example: 'Bài tập 1: Xử lý mảng',
+  })
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
-  @ApiPropertyOptional({ description: 'Assignment description/instructions (HTML)' })
+  @ApiPropertyOptional({
+    description: 'Assignment description/instructions (HTML)',
+  })
   @Column({ type: 'text', nullable: true })
   description?: string;
 
@@ -34,7 +46,9 @@ export class CourseAssignmentsEntity extends BaseEntity {
   })
   type: AssignmentTypeEnum;
 
-  @ApiPropertyOptional({ description: 'Attached requirement file - Google Drive file ID' })
+  @ApiPropertyOptional({
+    description: 'Attached requirement file - Google Drive file ID',
+  })
   @Column({ type: 'varchar', length: 255, nullable: true })
   attachmentFileId?: string;
 
@@ -50,7 +64,10 @@ export class CourseAssignmentsEntity extends BaseEntity {
   @Column({ type: 'bigint', nullable: true, unsigned: true })
   attachmentFileSize?: number;
 
-  @ApiProperty({ description: 'Maximum score for this assignment', example: 100 })
+  @ApiProperty({
+    description: 'Maximum score for this assignment',
+    example: 100,
+  })
   @Column({ type: 'int', default: 100, unsigned: true })
   maxScore: number;
 
@@ -62,11 +79,17 @@ export class CourseAssignmentsEntity extends BaseEntity {
   @Column({ type: 'int', default: 0, unsigned: true })
   assignmentOrder: number;
 
-  @ApiProperty({ description: 'Whether this assignment is published', example: true })
+  @ApiProperty({
+    description: 'Whether this assignment is published',
+    example: true,
+  })
   @Column({ type: 'boolean', default: false })
   isPublished: boolean;
 
-  @ApiPropertyOptional({ description: 'Allowed file extensions (comma-separated)', example: '.pdf,.docx,.zip,.py,.java,.cpp' })
+  @ApiPropertyOptional({
+    description: 'Allowed file extensions (comma-separated)',
+    example: '.pdf,.docx,.zip,.py,.java,.cpp',
+  })
   @Column({ type: 'varchar', length: 500, nullable: true })
   allowedFileTypes?: string;
 
@@ -76,10 +99,14 @@ export class CourseAssignmentsEntity extends BaseEntity {
 
   // ===== RELATIONS =====
 
-  @ManyToOne(() => CourseLessonsEntity, (l) => l.assignments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CourseLessonsEntity, (l) => l.assignments, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'lessonId' })
   lesson: CourseLessonsEntity;
 
-  @OneToMany(() => CourseAssignmentSubmissionsEntity, (s) => s.assignment, { cascade: true })
+  @OneToMany(() => CourseAssignmentSubmissionsEntity, (s) => s.assignment, {
+    cascade: true,
+  })
   submissions: CourseAssignmentSubmissionsEntity[];
 }

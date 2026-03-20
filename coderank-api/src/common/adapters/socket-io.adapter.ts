@@ -3,7 +3,6 @@ import { IoAdapter } from '@nestjs/platform-socket.io';
 import { ServerOptions } from 'socket.io';
 import { AppConfigService } from 'src/config/app/app-config.service';
 
-
 export class SocketIoAdapter extends IoAdapter {
   private readonly appConfig: AppConfigService;
 

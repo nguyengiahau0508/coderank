@@ -1,8 +1,8 @@
-import { Global, Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
-import * as Joi from 'joi'
-import mariadbConfig from "./mariadb-config";
-import { MariadbConfigService } from "./mariadb-config.service";
+import { Global, Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import * as Joi from 'joi';
+import mariadbConfig from './mariadb-config';
+import { MariadbConfigService } from './mariadb-config.service';
 
 @Module({
   imports: [
@@ -13,12 +13,11 @@ import { MariadbConfigService } from "./mariadb-config.service";
         DB_MARIADB_PORT: Joi.number().default(3306),
         DB_MARIADB_USERNAME: Joi.string().default('root'),
         DB_MARIADB_PASSWORD: Joi.string().required(),
-        DB_MARIADB_NAME: Joi.string().required()
-      })
-    })
+        DB_MARIADB_NAME: Joi.string().required(),
+      }),
+    }),
   ],
   providers: [MariadbConfigService],
-  exports: [MariadbConfigService]
+  exports: [MariadbConfigService],
 })
-
-export class MariadbConfigModule { }
+export class MariadbConfigModule {}

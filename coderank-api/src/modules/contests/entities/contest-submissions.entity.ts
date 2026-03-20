@@ -1,18 +1,17 @@
-
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { ContestsEntity } from './contests.entity';
 import { UsersEntity } from 'src/modules/users/entities/user.entity';
-import { ProblemsEntity } from
-  'src/modules/problems/entities/problems.entity';
-import { SubmissionStatusEnum, ProgrammingLanguageEnum } from
-  'src/common/enums/enums';
+import { ProblemsEntity } from 'src/modules/problems/entities/problems.entity';
+import {
+  SubmissionStatusEnum,
+  ProgrammingLanguageEnum,
+} from 'src/common/enums/enums';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity('contest_submissions')
 @Index('IDX_contest_sub_contest', ['contestId'])
-@Index('IDX_contest_sub_user_problem', ['userId', 'problemId',
-  'contestId'])
+@Index('IDX_contest_sub_user_problem', ['userId', 'problemId', 'contestId'])
 @Index('IDX_contest_sub_status', ['status'])
 export class ContestSubmissionsEntity extends BaseEntity {
   @ApiProperty({ description: 'Contest UUID' })
@@ -31,14 +30,18 @@ export class ContestSubmissionsEntity extends BaseEntity {
   @Column({ type: 'text', select: false })
   code: string;
 
-  @ApiProperty({ description: 'Programming language', enum: ProgrammingLanguageEnum })
+  @ApiProperty({
+    description: 'Programming language',
+    enum: ProgrammingLanguageEnum,
+  })
   @Column({ type: 'enum', enum: ProgrammingLanguageEnum })
   language: ProgrammingLanguageEnum;
 
   @ApiProperty({ description: 'Submission status', enum: SubmissionStatusEnum })
   @Column({
-    type: 'enum', enum: SubmissionStatusEnum, default:
-      SubmissionStatusEnum.Pending
+    type: 'enum',
+    enum: SubmissionStatusEnum,
+    default: SubmissionStatusEnum.Pending,
   })
   status: SubmissionStatusEnum;
 
@@ -46,7 +49,10 @@ export class ContestSubmissionsEntity extends BaseEntity {
   @Column({ type: 'int', default: 0 })
   score: number;
 
-  @ApiPropertyOptional({ description: 'Execution time in milliseconds', example: 100 })
+  @ApiPropertyOptional({
+    description: 'Execution time in milliseconds',
+    example: 100,
+  })
   @Column({ type: 'int', nullable: true })
   executionTimeMs?: number;
 

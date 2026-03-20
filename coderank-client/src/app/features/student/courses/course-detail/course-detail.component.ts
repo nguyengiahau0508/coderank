@@ -13,6 +13,7 @@ import { Tooltip } from 'primeng/tooltip';
 import { Accordion, AccordionPanel, AccordionHeader, AccordionContent } from 'primeng/accordion';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
 import { Textarea } from 'primeng/textarea';
+import { Skeleton } from 'primeng/skeleton';
 import { MessageService } from 'primeng/api';
 
 // Models & Enums
@@ -48,6 +49,7 @@ import { StudentCoursesService } from '../services/courses.service';
     TabPanels,
     TabPanel,
     Textarea,
+    Skeleton,
   ],
   providers: [MessageService],
   templateUrl: './course-detail.component.html',
@@ -211,11 +213,31 @@ export class StudentCourseDetailComponent implements OnInit {
   // ==================== NAVIGATION ====================
 
   navigateToLesson(sectionId: string, lessonId: string): void {
-    if (!this.isEnrolled()) {
-      this.messageService.add({ severity: 'warn', summary: 'Chú ý', detail: 'Bạn cần đăng ký khóa học để xem bài học' });
-      return;
-    }
     this.router.navigate(['sections', sectionId, 'lessons', lessonId], { relativeTo: this.route });
+  }
+
+  startLearning(): void {
+    const c = this.course();
+    if (!c?.sections?.length) return;
+
+    // Find first incomplete lesson, or first lesson if all complete
+    const p = this.progress();
+    for (const section of c.sections) {
+      if (!section.lessons?.length) continue;
+      for (const lesson of section.lessons) {
+        const isComplete = p?.lessons?.some(l => l.lessonId === lesson.id.toString() && l.isCompleted);
+        if (!isComplete) {
+          this.navigateToLesson(section.id.toString(), lesson.id.toString());
+          return;
+        }
+      }
+    }
+
+    // All lessons complete, go to first lesson
+    const firstSection = c.sections[0];
+    if (firstSection?.lessons?.length) {
+      this.navigateToLesson(firstSection.id.toString(), firstSection.lessons[0].id.toString());
+    }
   }
 
   // ==================== REVIEWS ====================

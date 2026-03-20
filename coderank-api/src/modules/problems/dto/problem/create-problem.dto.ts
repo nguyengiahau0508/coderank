@@ -1,22 +1,44 @@
-import { IsNotEmpty, IsOptional, IsString, IsInt, Min, MaxLength, IsBoolean, IsUUID, IsArray, ArrayUnique, ValidateNested, IsEnum } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsInt,
+  Min,
+  MaxLength,
+  IsBoolean,
+  IsUUID,
+  IsArray,
+  ArrayUnique,
+  ValidateNested,
+  IsEnum,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DifficultyEnum } from 'src/common/enums/enums';
 import { CreateTestcaseDto } from '../testcase/create-testcase.dto';
 
 export class CreateProblemDto {
-  @ApiProperty({ description: 'Problem title', example: 'Sum of Two', maxLength: 255 })
+  @ApiProperty({
+    description: 'Problem title',
+    example: 'Sum of Two',
+    maxLength: 255,
+  })
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
   title: string;
 
-  @ApiPropertyOptional({ description: 'URL-friendly slug (auto-generated from title if omitted)', example: 'sum-of-two' })
+  @ApiPropertyOptional({
+    description: 'URL-friendly slug (auto-generated from title if omitted)',
+    example: 'sum-of-two',
+  })
   @IsString()
   @MaxLength(255)
   slug: string;
 
-  @ApiPropertyOptional({ description: 'Full problem statement (markdown/html)' })
+  @ApiPropertyOptional({
+    description: 'Full problem statement (markdown/html)',
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -43,17 +65,27 @@ export class CreateProblemDto {
   @Min(0)
   memoryLimitMb?: number;
 
-  @ApiPropertyOptional({ description: 'Difficulty', enum: DifficultyEnum, example: DifficultyEnum.Medium })
+  @ApiPropertyOptional({
+    description: 'Difficulty',
+    enum: DifficultyEnum,
+    example: DifficultyEnum.Medium,
+  })
   @IsOptional()
   @IsEnum(DifficultyEnum)
   difficulty?: DifficultyEnum;
 
-  @ApiPropertyOptional({ description: 'Whether the problem is published', example: false })
+  @ApiPropertyOptional({
+    description: 'Whether the problem is published',
+    example: false,
+  })
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean;
 
-  @ApiPropertyOptional({ description: 'Points awarded for full solve', example: 100 })
+  @ApiPropertyOptional({
+    description: 'Points awarded for full solve',
+    example: 100,
+  })
   @IsOptional()
   @IsInt()
   @Min(0)

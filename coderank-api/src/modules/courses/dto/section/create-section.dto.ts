@@ -1,8 +1,20 @@
-import { IsNotEmpty, IsOptional, IsString, IsBoolean, IsInt, Min, MaxLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsInt,
+  Min,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateSectionDto {
-  @ApiProperty({ description: 'Section title', example: 'Chương 1: Mảng và Chuỗi', maxLength: 255 })
+  @ApiProperty({
+    description: 'Section title',
+    example: 'Chương 1: Mảng và Chuỗi',
+    maxLength: 255,
+  })
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)

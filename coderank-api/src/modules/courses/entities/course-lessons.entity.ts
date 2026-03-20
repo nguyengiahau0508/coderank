@@ -1,5 +1,12 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { Column, Entity, Index, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
 import { CourseSectionsEntity } from './course-sections.entity';
 import { LessonTypeEnum } from 'src/common/enums/enums';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -17,7 +24,10 @@ export class CourseLessonsEntity extends BaseEntity {
   @Column({ type: 'uuid' })
   sectionId: string;
 
-  @ApiProperty({ description: 'Lesson title', example: 'Bài 1: Mảng một chiều' })
+  @ApiProperty({
+    description: 'Lesson title',
+    example: 'Bài 1: Mảng một chiều',
+  })
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
@@ -45,21 +55,32 @@ export class CourseLessonsEntity extends BaseEntity {
   @Column({ type: 'int', default: 0, unsigned: true })
   lessonOrder: number;
 
-  @ApiPropertyOptional({ description: 'Estimated reading/completion time in minutes', example: 15 })
+  @ApiPropertyOptional({
+    description: 'Estimated reading/completion time in minutes',
+    example: 15,
+  })
   @Column({ type: 'int', nullable: true, unsigned: true })
   estimatedMinutes?: number;
 
-  @ApiProperty({ description: 'Whether this lesson is published', example: true })
+  @ApiProperty({
+    description: 'Whether this lesson is published',
+    example: true,
+  })
   @Column({ type: 'boolean', default: false })
   isPublished: boolean;
 
-  @ApiProperty({ description: 'Whether this lesson is free to preview', example: false })
+  @ApiProperty({
+    description: 'Whether this lesson is free to preview',
+    example: false,
+  })
   @Column({ type: 'boolean', default: false })
   isFreePreview: boolean;
 
   // ===== RELATIONS =====
 
-  @ManyToOne(() => CourseSectionsEntity, (s) => s.lessons, { onDelete: 'CASCADE' })
+  @ManyToOne(() => CourseSectionsEntity, (s) => s.lessons, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'sectionId' })
   section: CourseSectionsEntity;
 
@@ -69,7 +90,9 @@ export class CourseLessonsEntity extends BaseEntity {
   @OneToMany(() => CourseQuizzesEntity, (q) => q.lesson, { cascade: true })
   quizzes: CourseQuizzesEntity[];
 
-  @OneToMany(() => CourseLessonProblemsEntity, (p) => p.lesson, { cascade: true })
+  @OneToMany(() => CourseLessonProblemsEntity, (p) => p.lesson, {
+    cascade: true,
+  })
   problems: CourseLessonProblemsEntity[];
 
   @OneToMany(() => CourseAssignmentsEntity, (a) => a.lesson, { cascade: true })

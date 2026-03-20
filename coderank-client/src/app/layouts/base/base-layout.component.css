@@ -1,0 +1,62 @@
+:host {
+      display: block;
+      height: 100vh;
+    }
+
+    main {
+      position: relative;
+    }
+
+    main::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 200px;
+      background: linear-gradient(180deg, rgba(88, 166, 255, 0.03) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Custom scrollbar for main content */
+    main::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    main::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    main::-webkit-scrollbar-thumb {
+      background: var(--cr-bg-elevated);
+      border-radius: 4px;
+    }
+
+    main::-webkit-scrollbar-thumb:hover {
+      background: var(--cr-border);
+    }
+
+    /* Fade in animation for page transitions */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    /* Loading bar animation */
+    @keyframes loadingBar {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(100%);
+      }
+    }

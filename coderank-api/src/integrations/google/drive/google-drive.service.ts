@@ -1,4 +1,3 @@
-
 import { Injectable } from '@nestjs/common';
 import { drive_v3, google } from 'googleapis';
 import { Readable } from 'stream';
@@ -17,10 +16,11 @@ export class GoogleDriveService {
     this.driveClient = google.drive({ version: 'v3', auth });
   }
 
-
   private bufferToStream(buffer: any): Readable {
     // Chuyển đổi thành Buffer thực sự nếu chưa phải
-    const realBuffer = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer.data);
+    const realBuffer = Buffer.isBuffer(buffer)
+      ? buffer
+      : Buffer.from(buffer.data);
     const stream = new Readable();
     stream.push(realBuffer);
     stream.push(null); // Kết thúc stream
@@ -56,7 +56,6 @@ export class GoogleDriveService {
       throw new Error('Could not upload file to Google Drive');
     }
   }
-
 
   /**
    * Xóa file trên Google Drive

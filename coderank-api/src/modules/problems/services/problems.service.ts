@@ -1,10 +1,17 @@
-import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, FindOptionsWhere, Like, Between, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
-import slugify from "slugify";
-import { BaseService } from "src/common/services/base.service";
-import { ProblemsEntity } from "../entities/problems.entity";
-import { PaginationQueryProblemsDto } from "../dto/problem/pagination-query-problem.dto";
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import {
+  Repository,
+  FindOptionsWhere,
+  Like,
+  Between,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+} from 'typeorm';
+import slugify from 'slugify';
+import { BaseService } from 'src/common/services/base.service';
+import { ProblemsEntity } from '../entities/problems.entity';
+import { PaginationQueryProblemsDto } from '../dto/problem/pagination-query-problem.dto';
 
 @Injectable()
 export class ProblemsService extends BaseService<ProblemsEntity> {
@@ -17,11 +24,15 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
 
   async create(entity: Partial<ProblemsEntity>): Promise<ProblemsEntity> {
     if (!entity.slug && entity.title) {
-      let baseSlug = slugify(entity.title, { lower: true, strict: true });
+      const baseSlug = slugify(entity.title, { lower: true, strict: true });
       let slug = baseSlug;
       let suffix = 1;
 
-      while (await this.repository.findOne({ where: { slug } as FindOptionsWhere<ProblemsEntity> })) {
+      while (
+        await this.repository.findOne({
+          where: { slug } as FindOptionsWhere<ProblemsEntity>,
+        })
+      ) {
         slug = `${baseSlug}-${suffix}`;
         suffix++;
       }
@@ -36,8 +47,8 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
     const {
       page = 1,
       limit = 10,
-      sortBy = "createdAt",
-      sortOrder = "DESC",
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
       difficulty,
       tagIds,
       isPublished,
@@ -49,7 +60,9 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
     const queryBuilder = this.repository.createQueryBuilder('problem');
 
     if (currentUserId) {
-      queryBuilder.andWhere('problem.authorId = :authorId', { authorId: currentUserId });
+      queryBuilder.andWhere('problem.authorId = :authorId', {
+        authorId: currentUserId,
+      });
     }
 
     // Join tags relation
@@ -62,15 +75,20 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
 
     // Published filter
     if (isPublished !== undefined) {
-      queryBuilder.andWhere('problem.isPublished = :isPublished', { isPublished });
+      queryBuilder.andWhere('problem.isPublished = :isPublished', {
+        isPublished,
+      });
     }
 
     // Points filter - Using Between, MoreThanOrEqual, LessThanOrEqual for better performance
     if (minPoints !== undefined && maxPoints !== undefined) {
-      queryBuilder.andWhere('problem.points BETWEEN :minPoints AND :maxPoints', {
-        minPoints,
-        maxPoints,
-      });
+      queryBuilder.andWhere(
+        'problem.points BETWEEN :minPoints AND :maxPoints',
+        {
+          minPoints,
+          maxPoints,
+        },
+      );
     } else if (minPoints !== undefined) {
       queryBuilder.andWhere('problem.points >= :minPoints', { minPoints });
     } else if (maxPoints !== undefined) {
@@ -81,7 +99,7 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
     if (search) {
       queryBuilder.andWhere(
         '(problem.title LIKE :search OR problem.slug LIKE :search)',
-        { search: `%${search}%` }
+        { search: `%${search}%` },
       );
     }
 
@@ -114,7 +132,7 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
     ]);
 
     // Sorting
-    queryBuilder.orderBy(`problem.${sortBy}`, sortOrder as 'ASC' | 'DESC');
+    queryBuilder.orderBy(`problem.${sortBy}`, sortOrder);
 
     // Pagination
     queryBuilder.skip((page - 1) * limit).take(limit);
@@ -133,7 +151,7 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
   async addTag(problemId: string, tagId: string) {
     return this.repository
       .createQueryBuilder()
-      .relation(ProblemsEntity, "tags")
+      .relation(ProblemsEntity, 'tags')
       .of(problemId)
       .add(tagId);
   }
@@ -141,7 +159,7 @@ export class ProblemsService extends BaseService<ProblemsEntity> {
   async removeTag(problemId: string, tagId: string) {
     return this.repository
       .createQueryBuilder()
-      .relation(ProblemsEntity, "tags")
+      .relation(ProblemsEntity, 'tags')
       .of(problemId)
       .remove(tagId);
   }

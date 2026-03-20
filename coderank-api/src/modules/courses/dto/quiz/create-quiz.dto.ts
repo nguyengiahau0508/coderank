@@ -1,8 +1,20 @@
-import { IsNotEmpty, IsOptional, IsString, IsBoolean, IsInt, Min, MaxLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsInt,
+  Min,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateQuizDto {
-  @ApiProperty({ description: 'Quiz title', example: 'Kiểm tra: Mảng một chiều', maxLength: 255 })
+  @ApiProperty({
+    description: 'Quiz title',
+    example: 'Kiểm tra: Mảng một chiều',
+    maxLength: 255,
+  })
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
@@ -19,13 +31,19 @@ export class CreateQuizDto {
   @Min(1)
   timeLimitMinutes?: number;
 
-  @ApiPropertyOptional({ description: 'Passing score percentage (0-100)', example: 70 })
+  @ApiPropertyOptional({
+    description: 'Passing score percentage (0-100)',
+    example: 70,
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
   passingScore?: number;
 
-  @ApiPropertyOptional({ description: 'Max attempts (0 = unlimited)', example: 3 })
+  @ApiPropertyOptional({
+    description: 'Max attempts (0 = unlimited)',
+    example: 3,
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
@@ -42,7 +60,10 @@ export class CreateQuizDto {
   @IsBoolean()
   shuffleQuestions?: boolean;
 
-  @ApiPropertyOptional({ description: 'Show correct answers after submission', example: true })
+  @ApiPropertyOptional({
+    description: 'Show correct answers after submission',
+    example: true,
+  })
   @IsOptional()
   @IsBoolean()
   showCorrectAnswers?: boolean;

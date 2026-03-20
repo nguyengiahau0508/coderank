@@ -7,6 +7,28 @@ import { RolesEnum } from '../../common/enums/enums';
 import { config } from '../../config';
 import { ContextWindowManager, ContextWindowPolicy } from '../context-window';
 
+export interface ChatContext {
+  type: 'problem' | 'course' | 'lesson' | 'contest' | 'submission';
+  title: string;
+  description?: string;
+  problemId?: string;
+  difficulty?: string;
+  tags?: string[];
+  userCode?: string;
+  lastSubmissionStatus?: string;
+  courseId?: string;
+  level?: string;
+  currentLessonTitle?: string;
+  lessonId?: string;
+  courseTitle?: string;
+  contestId?: string;
+  currentProblemTitle?: string;
+  submissionId?: string;
+  problemTitle?: string;
+  status?: string;
+  language?: string;
+}
+
 export class Agent {
   private llm: ILLMProvider;
   private toolRegistry: ToolRegistry;
@@ -195,9 +217,64 @@ export class Agent {
     }
   }
 
-  async processQuery(userToken: string, userMessage: string): Promise<string> {
+  private formatContextMessage(context: ChatContext): string {
+    let contextMsg = `\n[USER CONTEXT]\n`;
+    contextMsg += `The user is currently viewing: ${context.type.toUpperCase()}\n`;
+    contextMsg += `Title: ${context.title}\n`;
+
+    switch (context.type) {
+      case 'problem':
+        if (context.difficulty) contextMsg += `Difficulty: ${context.difficulty}\n`;
+        if (context.tags?.length) contextMsg += `Tags: ${context.tags.join(', ')}\n`;
+        if (context.description) {
+          const truncatedDesc = context.description.length > 500 
+            ? context.description.substring(0, 500) + '...' 
+            : context.description;
+          contextMsg += `Description: ${truncatedDesc}\n`;
+        }
+        if (context.userCode) {
+          const truncatedCode = context.userCode.length > 1000
+            ? context.userCode.substring(0, 1000) + '...'
+            : context.userCode;
+          contextMsg += `User's current code:\n\`\`\`\n${truncatedCode}\n\`\`\`\n`;
+        }
+        if (context.lastSubmissionStatus) {
+          contextMsg += `Last submission status: ${context.lastSubmissionStatus}\n`;
+        }
+        break;
+
+      case 'course':
+        if (context.level) contextMsg += `Level: ${context.level}\n`;
+        if (context.currentLessonTitle) contextMsg += `Current lesson: ${context.currentLessonTitle}\n`;
+        break;
+
+      case 'lesson':
+        if (context.courseTitle) contextMsg += `Course: ${context.courseTitle}\n`;
+        break;
+
+      case 'contest':
+        if (context.currentProblemTitle) contextMsg += `Current problem: ${context.currentProblemTitle}\n`;
+        break;
+
+      case 'submission':
+        if (context.problemTitle) contextMsg += `Problem: ${context.problemTitle}\n`;
+        if (context.status) contextMsg += `Status: ${context.status}\n`;
+        if (context.language) contextMsg += `Language: ${context.language}\n`;
+        break;
+    }
+
+    contextMsg += `[END CONTEXT]\n\n`;
+    return contextMsg;
+  }
+
+  async processQuery(userToken: string, userMessage: string, context?: ChatContext): Promise<string> {
     const apiClient = createInternalClient(userToken);
-    let currentMessage: any = userMessage;
+    
+    // Prepend context to user message if available
+    let currentMessage: any = context 
+      ? this.formatContextMessage(context) + userMessage 
+      : userMessage;
+    
     const MAX_ITERATIONS = 20;
 
     // Log the initial user query
@@ -288,13 +365,22 @@ export class Agent {
     userToken: string,
     userMessage: string,
     onEvent: (event: { type: string; content?: string }) => void,
+    context?: ChatContext,
   ): Promise<string> {
     const apiClient = createInternalClient(userToken);
-    let currentMessage: any = userMessage;
+    
+    // Prepend context to user message if available
+    let currentMessage: any = context 
+      ? this.formatContextMessage(context) + userMessage 
+      : userMessage;
+    
     const MAX_ITERATIONS = 10;
 
     console.log(`\n==================================================`);
     console.log(`[Agent:Stream:Start] User query: "${userMessage}"`);
+    if (context) {
+      console.log(`[Agent:Stream:Context] Type: ${context.type}, Title: ${context.title}`);
+    }
     onEvent({ type: 'status', content: 'Thinking...' });
 
     try {

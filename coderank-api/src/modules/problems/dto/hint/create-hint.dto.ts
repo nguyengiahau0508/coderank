@@ -25,4 +25,3 @@ export class CreateHintDto {
   @IsBoolean()
   isPublic?: boolean;
 }
-

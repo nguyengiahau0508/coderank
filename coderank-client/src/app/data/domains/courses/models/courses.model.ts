@@ -25,6 +25,18 @@ export interface CoursesModel extends BaseModel {
   sections?: CourseSectionsModel[];
   enrollments?: CourseEnrollmentsModel[];
   reviews?: CourseReviewsModel[];
+  // Embedded enrollment info (from /enrolled endpoint)
+  enrollment?: {
+    id: string;
+    status: EnrollmentStatusEnum;
+    enrolledAt: Date | null;
+    completedAt: Date | null;
+    progressPercent: number;
+    completedLessons: number;
+    totalLessons: number;
+    lastAccessedAt: Date | null;
+    certificateIssuedAt: Date | null;
+  };
 }
 
 export interface CourseSectionsModel extends BaseModel {

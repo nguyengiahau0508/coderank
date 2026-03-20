@@ -39,7 +39,10 @@ export class CheckerService {
   /**
    * Exact comparison - outputs must match exactly including whitespace
    */
-  private checkExact(actualOutput: string, expectedOutput: string): ICheckResult {
+  private checkExact(
+    actualOutput: string,
+    expectedOutput: string,
+  ): ICheckResult {
     const passed = actualOutput === expectedOutput;
     return {
       passed,

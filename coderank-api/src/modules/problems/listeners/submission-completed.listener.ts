@@ -1,10 +1,10 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { OnEvent } from "@nestjs/event-emitter";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { SubmissionsEntity } from "../entities/submissions.entity";
-import { SubmissionCompletedEvent } from "src/modules/runner/events/submission-completed.event";
-import { SubmissionGateway } from "../gateways/submission.gateway";
+import { Injectable, Logger } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { SubmissionsEntity } from '../entities/submissions.entity';
+import { SubmissionCompletedEvent } from 'src/modules/runner/events/submission-completed.event';
+import { SubmissionGateway } from '../gateways/submission.gateway';
 
 @Injectable()
 export class SubmissionCompletedListener {
@@ -14,11 +14,13 @@ export class SubmissionCompletedListener {
     @InjectRepository(SubmissionsEntity)
     private readonly submissionRepository: Repository<SubmissionsEntity>,
     private readonly submissionGateway: SubmissionGateway,
-  ) { }
+  ) {}
 
   @OnEvent('submission.completed')
   async handleSubmissionCompleted(event: SubmissionCompletedEvent) {
-    this.logger.log(`Handling submission completed event for submission ${event.submissionId}`);
+    this.logger.log(
+      `Handling submission completed event for submission ${event.submissionId}`,
+    );
 
     try {
       await this.submissionRepository.update(event.submissionId, {
@@ -33,7 +35,7 @@ export class SubmissionCompletedListener {
       });
 
       this.logger.log(
-        `Updated submission ${event.submissionId}: ${event.status} (${event.passedTestcases}/${event.totalTestcases} passed)`
+        `Updated submission ${event.submissionId}: ${event.status} (${event.passedTestcases}/${event.totalTestcases} passed)`,
       );
 
       // Notify the submission author via WebSocket
@@ -56,7 +58,10 @@ export class SubmissionCompletedListener {
         });
       }
     } catch (error) {
-      this.logger.error(`Failed to update submission ${event.submissionId}:`, error);
+      this.logger.error(
+        `Failed to update submission ${event.submissionId}:`,
+        error,
+      );
       throw error;
     }
   }
