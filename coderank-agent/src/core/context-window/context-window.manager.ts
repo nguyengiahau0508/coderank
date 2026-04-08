@@ -1,4 +1,4 @@
-import { ContextWindowPolicy, ToolCompactionResult } from './context-window.interface';
+import { ContextWindowPolicy, ToolCompactionResult, CompactionMeta } from './context-window.interface';
 import { stringifySafe } from './token-estimator';
 
 export class ContextWindowManager {
@@ -55,18 +55,23 @@ export class ContextWindowManager {
     }
 
     const name = item.functionResponse.name || 'unknown_tool';
-    const summary = this.toSummary(serializedResponse);
+    const reason = singleLimitExceeded ? 'single_limit' : 'total_limit';
+    const summary = this.toSummary(serializedResponse, name);
+
+    const meta: CompactionMeta = {
+      truncated: true,
+      originalChars: responseChars,
+      summaryChars: summary.length,
+      reason,
+      hint: this.getCompactionHint(name, reason),
+    };
 
     const compacted = {
       functionResponse: {
         name,
         response: {
-          _meta: {
-            truncated: true,
-            originalChars: responseChars,
-            reason: singleLimitExceeded ? 'single_limit' : 'total_limit',
-          },
-          summary,
+          _compaction: meta,
+          data: summary,
         },
       },
     };
@@ -74,7 +79,7 @@ export class ContextWindowManager {
     return { payload: compacted, compacted: true };
   }
 
-  private toSummary(text: string): string {
+  private toSummary(text: string, toolName: string): string {
     if (!text) {
       return '';
     }
@@ -83,7 +88,97 @@ export class ContextWindowManager {
       return text;
     }
 
-    const clipped = text.slice(0, this.policy.summaryMaxChars);
-    return `${clipped}...[truncated ${text.length - this.policy.summaryMaxChars} chars]`;
+    // Try to preserve structured data better
+    const preservedChars = this.policy.summaryMaxChars;
+    const truncatedChars = text.length - preservedChars;
+
+    // For array responses, try to show count and sample
+    if (text.startsWith('[') && text.includes('{')) {
+      const arrayInfo = this.summarizeArray(text);
+      if (arrayInfo) {
+        return arrayInfo;
+      }
+    }
+
+    // For object responses, try to show key structure
+    if (text.startsWith('{')) {
+      const objectInfo = this.summarizeObject(text);
+      if (objectInfo && objectInfo.length <= this.policy.summaryMaxChars) {
+        return objectInfo;
+      }
+    }
+
+    // Default: truncate with marker
+    const clipped = text.slice(0, preservedChars);
+    return `${clipped}\n\n[... ${truncatedChars} more characters truncated. Full data available via tool call with more specific filters.]`;
+  }
+
+  private summarizeArray(text: string): string | null {
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) {
+        const count = parsed.length;
+        const sample = parsed.slice(0, 3);
+        const sampleStr = JSON.stringify(sample, null, 2);
+        
+        if (count > 3) {
+          return `[Array of ${count} items. First 3 shown:]\n${sampleStr}\n\n[... and ${count - 3} more items]`;
+        }
+        return sampleStr;
+      }
+    } catch {
+      // Not valid JSON
+    }
+    return null;
+  }
+
+  private summarizeObject(text: string): string | null {
+    try {
+      const parsed = JSON.parse(text);
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        const keys = Object.keys(parsed);
+        
+        // Create a summary with key names and truncated values
+        const summary: Record<string, any> = {};
+        for (const key of keys.slice(0, 10)) {
+          const value = parsed[key];
+          if (typeof value === 'string' && value.length > 100) {
+            summary[key] = value.slice(0, 100) + '...';
+          } else if (Array.isArray(value)) {
+            summary[key] = `[Array of ${value.length} items]`;
+          } else if (typeof value === 'object' && value !== null) {
+            summary[key] = `{Object with ${Object.keys(value).length} keys}`;
+          } else {
+            summary[key] = value;
+          }
+        }
+
+        if (keys.length > 10) {
+          summary['_moreKeys'] = `... and ${keys.length - 10} more properties`;
+        }
+
+        return JSON.stringify(summary, null, 2);
+      }
+    } catch {
+      // Not valid JSON
+    }
+    return null;
+  }
+
+  private getCompactionHint(toolName: string, reason: 'single_limit' | 'total_limit'): string {
+    if (reason === 'total_limit') {
+      return 'Context limit reached. Consider using more specific queries or filtering results.';
+    }
+
+    // Tool-specific hints
+    if (toolName.includes('get_problems') || toolName.includes('get_courses')) {
+      return 'Large result set. Consider using pagination or filtering by specific criteria.';
+    }
+
+    if (toolName.includes('get_testcases')) {
+      return 'Many test cases returned. Consider requesting specific test case IDs.';
+    }
+
+    return 'Response truncated due to size. The most relevant data has been preserved.';
   }
 }

@@ -20,3 +20,15 @@ export interface ToolCompactionResult {
   totalCharsBefore: number;
   totalCharsAfter: number;
 }
+
+/**
+ * Compaction metadata added to truncated tool results.
+ * Provides context to the LLM about what was removed.
+ */
+export interface CompactionMeta {
+  truncated: boolean;
+  originalChars: number;
+  summaryChars: number;
+  reason: 'single_limit' | 'total_limit';
+  hint?: string;
+}

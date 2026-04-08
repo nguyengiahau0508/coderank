@@ -6,6 +6,9 @@ import { STUDENT_SYSTEM_PROMPT,LECTURER_SYSTEM_PROMPT,ADMIN_SYSTEM_PROMPT, SYSTE
 import { RolesEnum } from '../../common/enums/enums';
 import { config } from '../../config';
 import { ContextWindowManager, ContextWindowPolicy } from '../context-window';
+import { UsageTracker, UsageStats } from '../usage';
+import { PermissionPolicy, PermissionMode } from '../permissions';
+import { HookRunner, IHook, LoggingHook } from '../hooks';
 
 export interface ChatContext {
   type: 'problem' | 'course' | 'lesson' | 'contest' | 'submission';
@@ -33,12 +36,21 @@ export class Agent {
   private llm: ILLMProvider;
   private toolRegistry: ToolRegistry;
   private contextWindowManager: ContextWindowManager;
+  private usageTracker: UsageTracker;
+  private permissionPolicy: PermissionPolicy;
+  private hookRunner: HookRunner;
   private readonly LLM_RETRY_ATTEMPTS = 2;
   private readonly LLM_RETRY_BASE_DELAY_MS = 700;
 
   constructor(role: RolesEnum, providerName?: string, modelName?: string, providerConfig?: ILLMConfig) {
     const contextPolicy = this.buildContextPolicy(providerConfig?.contextPolicy);
     this.contextWindowManager = new ContextWindowManager(contextPolicy);
+    
+    // Initialize usage tracker, permission policy, and hook runner
+    this.usageTracker = new UsageTracker();
+    this.permissionPolicy = this.buildPermissionPolicy(role);
+    this.hookRunner = new HookRunner();
+    this.registerDefaultHooks();
 
     this.llm = LLMFactory.createProvider(providerName, modelName, providerConfig);
     
@@ -58,6 +70,49 @@ export class Agent {
         break;
     }
     this.llm.init(systemPrompt, this.toolRegistry.getAll(), providerConfig?.initialHistory);
+  }
+
+  private buildPermissionPolicy(role: RolesEnum): PermissionPolicy {
+    // Admin and Instructor get full access, Student gets workspace write
+    switch (role) {
+      case RolesEnum.Admin:
+        return PermissionPolicy.fullAccess();
+      case RolesEnum.Instructor:
+        return PermissionPolicy.fullAccess();
+      case RolesEnum.Student:
+        return PermissionPolicy.workspaceWrite();
+      default:
+        return PermissionPolicy.readOnly();
+    }
+  }
+
+  /**
+   * Get usage statistics for this agent session.
+   */
+  getUsageStats(): UsageStats {
+    return this.usageTracker.getStats();
+  }
+
+  /**
+   * Register a custom hook with the agent.
+   */
+  registerHook(hook: IHook): this {
+    this.hookRunner.register(hook);
+    return this;
+  }
+
+  /**
+   * Get the hook runner for advanced hook management.
+   */
+  getHookRunner(): HookRunner {
+    return this.hookRunner;
+  }
+
+  private registerDefaultHooks(): void {
+    // Register built-in logging hook (disabled by default, enable via env)
+    if (config.AGENT_HOOKS_LOGGING_ENABLED) {
+      this.hookRunner.register(new LoggingHook({ verbose: config.AGENT_HOOKS_LOGGING_VERBOSE }));
+    }
   }
 
   private buildContextPolicy(overrides?: Partial<ContextWindowPolicy>): ContextWindowPolicy {
@@ -270,6 +325,9 @@ export class Agent {
   async processQuery(userToken: string, userMessage: string, context?: ChatContext): Promise<string> {
     const apiClient = createInternalClient(userToken);
     
+    // Reset usage tracker for new query
+    this.usageTracker.reset();
+    
     // Prepend context to user message if available
     let currentMessage: any = context 
       ? this.formatContextMessage(context) + userMessage 
@@ -287,6 +345,11 @@ export class Agent {
         // Send message to LLM
         const response = await this.sendMessageWithRetry(currentMessage, '[Agent');
 
+        // Track usage if available
+        if (response.usage) {
+          this.usageTracker.record(response.usage);
+        }
+
         // Record any intermediate thoughts or partial responses before tools
         if (response.text && response.toolCalls && response.toolCalls.length > 0) {
           console.log(`[Agent:Thought] Partial output before tools:`, response.text);
@@ -303,13 +366,47 @@ export class Agent {
             const tool = this.toolRegistry.get(call.name);
 
             if (tool) {
+              // Check permission before executing tool
+              const permissionCheck = this.permissionPolicy.authorize(call.name, call.arguments);
+              if (!permissionCheck.allowed) {
+                console.warn(`[Agent:Permission] DENIED tool: ${call.name} - ${permissionCheck.reason}`);
+                toolResponses.push({
+                  functionResponse: {
+                    name: call.name,
+                    response: { error: `Permission denied: ${permissionCheck.reason}` }
+                  }
+                });
+                continue;
+              }
+
+              // Run PreToolUse hooks
+              const preHookResult = await this.hookRunner.runPreToolUse(call.name, call.arguments);
+              if (preHookResult.action === 'deny') {
+                console.warn(`[Agent:Hook] DENIED tool: ${call.name} - ${preHookResult.message}`);
+                toolResponses.push({
+                  functionResponse: {
+                    name: call.name,
+                    response: { error: `Hook denied: ${preHookResult.message}` }
+                  }
+                });
+                continue;
+              }
+
               try {
-                const apiResult = await this.executeToolWithRecovery(
+                this.usageTracker.recordToolCall();
+                let apiResult = await this.executeToolWithRecovery(
                   tool,
                   call.arguments,
                   apiClient,
                   '[Agent',
                 );
+                
+                // Run PostToolUse hooks
+                const postHookResult = await this.hookRunner.runPostToolUse(call.name, call.arguments, apiResult, false);
+                if (postHookResult.finalOutput !== undefined) {
+                  apiResult = postHookResult.finalOutput;
+                }
+
                 console.log(`[Agent:ToolResult] <- Tool: ${tool.name} returned successfully.`);
                 toolResponses.push({
                   functionResponse: {
@@ -318,6 +415,9 @@ export class Agent {
                   }
                 });
               } catch (error: any) {
+                // Run PostToolUse hooks for error case
+                await this.hookRunner.runPostToolUse(call.name, call.arguments, { error: error.message }, true);
+                
                 console.error(`[Agent:ToolError] ERROR in ${tool.name}:`, error.message);
                 toolResponses.push({
                   functionResponse: {
@@ -348,6 +448,7 @@ export class Agent {
           currentMessage = compactionResult.payload;
         } else if (response.text) {
           // If no tools required and we have text, return the final response
+          this.logUsageStats();
           console.log(`[Agent:Finish] Returning final answer.`);
           console.log(`==================================================\n`);
           return response.text;
@@ -355,9 +456,11 @@ export class Agent {
       }
     } catch (error: any) {
       console.error("[Agent Error]:", error);
+      this.logUsageStats();
       return "Tôi gặp sự cố khi xử lý yêu cầu. Vui lòng thử lại!";
     }
 
+    this.logUsageStats();
     return "Xin lỗi, tôi không thể tìm ra giải pháp sau nhiều bước xử lý.";
   }
 
@@ -368,6 +471,9 @@ export class Agent {
     context?: ChatContext,
   ): Promise<string> {
     const apiClient = createInternalClient(userToken);
+    
+    // Reset usage tracker for new query
+    this.usageTracker.reset();
     
     // Prepend context to user message if available
     let currentMessage: any = context 
@@ -388,6 +494,11 @@ export class Agent {
         console.log(`[Agent:Stream:Iteration ${i + 1}] Processing with LLM...`);
         const response = await this.sendMessageWithRetry(currentMessage, '[Agent:Stream', onEvent);
 
+        // Track usage if available
+        if (response.usage) {
+          this.usageTracker.record(response.usage);
+        }
+
         if (response.text && response.toolCalls && response.toolCalls.length > 0) {
           console.log(`[Agent:Stream:Thought] Partial output before tools:`, response.text);
         }
@@ -402,18 +513,49 @@ export class Agent {
 
             const tool = this.toolRegistry.get(call.name);
             if (tool) {
+              // Check permission before executing tool
+              const permissionCheck = this.permissionPolicy.authorize(call.name, call.arguments);
+              if (!permissionCheck.allowed) {
+                console.warn(`[Agent:Stream:Permission] DENIED tool: ${call.name} - ${permissionCheck.reason}`);
+                toolResponses.push({
+                  functionResponse: { name: call.name, response: { error: `Permission denied: ${permissionCheck.reason}` } },
+                });
+                continue;
+              }
+
+              // Run PreToolUse hooks
+              const preHookResult = await this.hookRunner.runPreToolUse(call.name, call.arguments);
+              if (preHookResult.action === 'deny') {
+                console.warn(`[Agent:Stream:Hook] DENIED tool: ${call.name} - ${preHookResult.message}`);
+                toolResponses.push({
+                  functionResponse: { name: call.name, response: { error: `Hook denied: ${preHookResult.message}` } },
+                });
+                continue;
+              }
+
               try {
-                const apiResult = await this.executeToolWithRecovery(
+                this.usageTracker.recordToolCall();
+                let apiResult = await this.executeToolWithRecovery(
                   tool,
                   call.arguments,
                   apiClient,
                   '[Agent:Stream',
                 );
+
+                // Run PostToolUse hooks
+                const postHookResult = await this.hookRunner.runPostToolUse(call.name, call.arguments, apiResult, false);
+                if (postHookResult.finalOutput !== undefined) {
+                  apiResult = postHookResult.finalOutput;
+                }
+
                 console.log(`[Agent:Stream:ToolResult] <- Tool: ${tool.name} returned successfully.`);
                 toolResponses.push({
                   functionResponse: { name: tool.name, response: apiResult },
                 });
               } catch (error: any) {
+                // Run PostToolUse hooks for error case
+                await this.hookRunner.runPostToolUse(call.name, call.arguments, { error: error.message }, true);
+
                 console.error(`[Agent:Stream:ToolError] ERROR in ${tool.name}:`, error.message);
                 toolResponses.push({
                   functionResponse: { name: tool.name, response: { error: error.message } },
@@ -439,6 +581,7 @@ export class Agent {
           console.log(`[Agent:Stream:Status] Processing tool results...`);
           onEvent({ type: 'status', content: 'Processing results...' });
         } else if (response.text) {
+          this.logUsageStats();
           console.log(`[Agent:Stream:Finish] Returning final answer.`);
           console.log(`==================================================\n`);
           return response.text;
@@ -446,9 +589,16 @@ export class Agent {
       }
     } catch (error: any) {
       console.error('[Agent Stream Error]:', error);
+      this.logUsageStats();
       return 'Tôi gặp sự cố khi xử lý yêu cầu. Vui lòng thử lại!';
     }
 
+    this.logUsageStats();
     return 'Xin lỗi, tôi không thể tìm ra giải pháp sau nhiều bước xử lý.';
+  }
+
+  private logUsageStats(): void {
+    const stats = this.usageTracker.getStats();
+    console.log(`[Agent:Usage] Tokens: ${stats.totalInputTokens} in / ${stats.totalOutputTokens} out | Total: ${stats.totalTokens} | Turns: ${stats.turnCount} | Tools: ${stats.toolCallCount}`);
   }
 }
