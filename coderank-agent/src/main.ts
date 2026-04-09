@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { config } from './config';
 import cors from 'cors';
 import { Agent } from './core/agent/agent';
+import { AssignmentSubmissionGrader } from './core/agent/assignment-submission-grader';
 
 const PORT = config.PORT;
 
@@ -95,6 +96,71 @@ app.post('/agent/chat/stream', verifyAgentSecret, async (req: Request, res: Resp
     res.end();
   }
 });
+
+app.post(
+  '/agent/grade-assignment-submissions',
+  verifyAgentSecret,
+  async (req: Request, res: Response) => {
+    const {
+      userToken,
+      role,
+      provider,
+      modelName,
+      apiKey,
+      baseHost,
+      courseId,
+      lessonId,
+      assignmentId,
+      submissionIds,
+      similarityThreshold,
+      defaultMaxScore,
+      gradingCriteria,
+      assignmentTitle,
+      assignmentDescription,
+    } = req.body ?? {};
+
+    if (!userToken || !courseId || !lessonId || !assignmentId) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'Missing required fields: userToken, courseId, lessonId, assignmentId',
+      });
+    }
+
+    try {
+      const grader = new AssignmentSubmissionGrader();
+      const result = await grader.grade({
+        userToken,
+        role,
+        provider,
+        modelName,
+        apiKey,
+        baseHost,
+        courseId,
+        lessonId,
+        assignmentId,
+        submissionIds,
+        similarityThreshold,
+        defaultMaxScore,
+        gradingCriteria,
+        assignmentTitle,
+        assignmentDescription,
+      });
+
+      return res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      console.error(`[Assignment Grading Error]: ${error.message}`);
+      return res.status(500).json({
+        success: false,
+        error: 'Assignment grading failed',
+        details: error.message,
+      });
+    }
+  },
+);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[CodeRank Agent] Running on port ${PORT}`);

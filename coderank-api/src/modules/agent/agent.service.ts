@@ -12,6 +12,13 @@ type AgentHistoryMessage = {
   content: string;
 };
 
+type AgentProviderConfig = {
+  provider?: UserAiConfigEntity['provider'];
+  modelName?: string;
+  apiKey?: string;
+  baseHost?: string;
+};
+
 @Injectable()
 export class AgentService {
   constructor(
@@ -23,7 +30,7 @@ export class AgentService {
     message: string,
     userToken: string,
     role: RolesEnum,
-    aiConfig?: UserAiConfigEntity,
+    aiConfig?: AgentProviderConfig,
     history?: AgentHistoryMessage[],
     context?: ChatContextDto,
   ): Promise<string> {
@@ -68,7 +75,7 @@ export class AgentService {
     message: string,
     userToken: string,
     role: RolesEnum,
-    aiConfig?: UserAiConfigEntity,
+    aiConfig?: AgentProviderConfig,
     history?: AgentHistoryMessage[],
     context?: ChatContextDto,
   ): Record<string, unknown> {
@@ -92,7 +99,7 @@ export class AgentService {
     message: string,
     userToken: string,
     role: RolesEnum,
-    aiConfig?: UserAiConfigEntity,
+    aiConfig?: AgentProviderConfig,
     history?: AgentHistoryMessage[],
     context?: ChatContextDto,
   ): Promise<Readable> {
@@ -121,5 +128,73 @@ export class AgentService {
     );
 
     return response.data as Readable;
+  }
+
+  async gradeAssignmentSubmissions(
+    payload: {
+      courseId: string;
+      lessonId: string;
+      assignmentId: string;
+      submissionIds: string[];
+      similarityThreshold: number;
+      defaultMaxScore: number;
+      gradingCriteria?: Array<{
+        criterion: string;
+        description?: string;
+        maxScore: number;
+      }>;
+      assignmentTitle?: string;
+      assignmentDescription?: string;
+    },
+    userToken: string,
+    role: RolesEnum,
+    aiConfig?: AgentProviderConfig,
+  ): Promise<{
+    assignmentId: string;
+    gradedCount: number;
+    flaggedCount: number;
+    results: Array<{
+      submissionId: string;
+      score?: number;
+      status?: string;
+      feedback?: string;
+      aiGradingResult?: any;
+      isSimilarityFlagged?: boolean;
+      maxSimilarityScore?: number;
+      similarityMatches?: any[];
+    }>;
+  }> {
+    const agentUrl = this.appConfigService.agent_url;
+    const agentSecret = this.appConfigService.agent_secret_token;
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${agentUrl}/agent/grade-assignment-submissions`,
+          {
+            userToken,
+            role,
+            ...payload,
+            provider: aiConfig?.provider,
+            modelName: aiConfig?.modelName,
+            apiKey: aiConfig?.apiKey,
+            baseHost: aiConfig?.baseHost,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'x-agent-secret': agentSecret,
+            },
+            timeout: 600000,
+          },
+        ),
+      );
+
+      return response.data?.data ?? response.data;
+    } catch (error: any) {
+      const detail =
+        error.response?.data?.error ?? error.message ?? 'Unknown error';
+      throw new InternalServerErrorException(`Agent service error: ${detail}`);
+    }
   }
 }

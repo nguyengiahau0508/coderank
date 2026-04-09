@@ -17,6 +17,12 @@ export enum AssignmentTypeEnum {
   Mixed = 'mixed',
 }
 
+export interface AssignmentGradingCriterion {
+  criterion: string;
+  description?: string;
+  maxScore: number;
+}
+
 @Entity('course_assignments')
 @Index('IDX_assignment_lesson', ['lessonId'])
 @Index('IDX_assignment_lesson_order', ['lessonId', 'assignmentOrder'])
@@ -96,6 +102,29 @@ export class CourseAssignmentsEntity extends BaseEntity {
   @ApiPropertyOptional({ description: 'Maximum file size in MB', example: 10 })
   @Column({ type: 'int', nullable: true, unsigned: true })
   maxFileSizeMb?: number;
+
+  @ApiPropertyOptional({
+    description: 'Instructor-defined grading criteria for AI grading',
+    example: [
+      {
+        criterion: 'Architecture',
+        description: 'Project structure and layering',
+        maxScore: 30,
+      },
+      {
+        criterion: 'Feature completeness',
+        description: 'Required features are implemented',
+        maxScore: 40,
+      },
+      {
+        criterion: 'Code quality',
+        description: 'Readable code and maintainability',
+        maxScore: 30,
+      },
+    ],
+  })
+  @Column({ type: 'json', nullable: true })
+  gradingCriteria?: AssignmentGradingCriterion[];
 
   // ===== RELATIONS =====
 

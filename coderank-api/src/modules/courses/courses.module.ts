@@ -29,9 +29,11 @@ import {
 } from './services';
 import { CoursesController } from './courses.controller';
 import { CourseAssignmentSubmissionsEntity } from './entities/course-assignment-submissions.entity';
+import { AgentModule } from '../agent/agent.module';
 
 @Module({
   imports: [
+    AgentModule,
     TypeOrmModule.forFeature([
       CourseAssignmentSubmissionsEntity,
       CourseAssignmentsEntity,

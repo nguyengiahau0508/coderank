@@ -18,6 +18,38 @@ export interface SubmissionFileInfo {
   fileSize: number;
 }
 
+export interface SubmissionSimilarityMatch {
+  submissionId: string;
+  authorId: string;
+  similarity: number;
+}
+
+export interface AssignmentAiGradingResult {
+  rubricUsed: {
+    criterion: string;
+    description?: string;
+    maxScore: number;
+  }[];
+  criterionScores?: {
+    criterion: string;
+    maxScore: number;
+    score: number;
+    feedback?: string;
+  }[];
+  score: number;
+  maxScore: number;
+  percentageScore: number;
+  feedback: string;
+  strengths: string[];
+  improvements: string[];
+  confidence: number;
+  evaluatedFileCount: number;
+  generatedAt: string;
+  graderProvider?: string;
+  graderModel?: string;
+  error?: string;
+}
+
 @Entity('course_assignment_submissions')
 @Index('IDX_submission_assignment', ['assignmentId'])
 @Index('IDX_submission_user', ['authorId'])
@@ -56,6 +88,33 @@ export class CourseAssignmentSubmissionsEntity extends BaseEntity {
   @ApiPropertyOptional({ description: 'When the submission was graded' })
   @Column({ type: 'timestamp', nullable: true })
   gradedAt?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Structured AI grading result for this submission',
+  })
+  @Column({ type: 'json', nullable: true })
+  aiGradingResult?: AssignmentAiGradingResult;
+
+  @ApiPropertyOptional({
+    description: 'Whether submission is flagged by similarity scan',
+    default: false,
+  })
+  @Column({ type: 'boolean', default: false })
+  isSimilarityFlagged: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Top similarity matches with other submissions in same assignment',
+  })
+  @Column({ type: 'json', nullable: true })
+  similarityMatches?: SubmissionSimilarityMatch[];
+
+  @ApiPropertyOptional({
+    description: 'Highest similarity score (0-1)',
+    example: 0.87,
+  })
+  @Column({ type: 'float', nullable: true })
+  maxSimilarityScore?: number;
 
   @ApiProperty({ description: 'Attempt number', example: 1 })
   @Column({ type: 'int', default: 1, unsigned: true })

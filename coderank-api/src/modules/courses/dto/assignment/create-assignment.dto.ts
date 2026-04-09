@@ -9,9 +9,33 @@ import {
   MaxLength,
   IsEnum,
   IsDateString,
+  IsArray,
+  ValidateNested,
+  IsNumber,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AssignmentTypeEnum } from '../../entities/course-assignments.entity';
+import { Type } from 'class-transformer';
+
+class AssignmentGradingCriterionDto {
+  @ApiProperty({ description: 'Criterion name', example: 'Code quality' })
+  @IsString()
+  @IsNotEmpty()
+  criterion: string;
+
+  @ApiPropertyOptional({
+    description: 'Criterion description',
+    example: 'Readability, maintainability, and naming',
+  })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiProperty({ description: 'Maximum score for criterion', example: 30 })
+  @IsNumber()
+  @Min(0)
+  maxScore: number;
+}
 
 export class CreateAssignmentDto {
   @ApiProperty({
@@ -75,4 +99,14 @@ export class CreateAssignmentDto {
   @Min(1)
   @Max(100)
   maxFileSizeMb?: number;
+
+  @ApiPropertyOptional({
+    description: 'Instructor-defined AI grading criteria',
+    type: [AssignmentGradingCriterionDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AssignmentGradingCriterionDto)
+  gradingCriteria?: AssignmentGradingCriterionDto[];
 }

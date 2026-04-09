@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Req,
   Param,
   Patch,
   Post,
@@ -19,9 +20,13 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, Public, Roles } from 'src/auth/decorators';
 import { Owner } from 'src/auth/decorators/owner.decorator';
-import { RolesEnum, EnrollmentStatusEnum } from 'src/common/enums/enums';
+import {
+  RolesEnum,
+  EnrollmentStatusEnum,
+  AiProviderEnum,
+} from 'src/common/enums/enums';
 import type { IJwtPayload } from 'src/common/interfaces/jwt-payload.interface';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { PaginatedResponseDto } from 'src/common/dto';
 
 // Services
@@ -73,8 +78,11 @@ import {
   CreateSubmissionDto,
   UpdateSubmissionDto,
   GradeSubmissionDto,
+  TriggerAiGradeAssignmentSubmissionsDto,
 } from './dto/assignment-submission';
 import { EnrollCourseDto } from './dto/enrollment';
+import { AgentService } from '../agent/agent.service';
+import { UserAiConfigService } from '../agent/user-ai-config.service';
 
 @ApiTags('Courses')
 @Controller('courses')
@@ -93,6 +101,8 @@ export class CoursesController {
     private readonly assignmentsService: CourseAssignmentsService,
     private readonly assignmentSubmissionsService: CourseAssignmentSubmissionsService,
     private readonly localStorageService: LocalStorageService,
+    private readonly agentService: AgentService,
+    private readonly userAiConfigService: UserAiConfigService,
   ) {}
 
   /**
@@ -1387,6 +1397,140 @@ export class CoursesController {
       ...dto,
       gradedAt: new Date(),
     });
+  }
+
+  @Post(
+    ':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/ai-grade',
+  )
+  @Roles(RolesEnum.Admin, RolesEnum.Instructor)
+  @ApiBearerAuth('JWT-auth')
+  async triggerAiGradeAssignmentSubmissions(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('courseId') courseId: string,
+    @Param('lessonId') lessonId: string,
+    @Param('assignmentId') assignmentId: string,
+    @Body() dto: TriggerAiGradeAssignmentSubmissionsDto,
+    @Req() req: Request,
+    @Query('sync') sync?: string,
+  ) {
+    const assignment = await this.assignmentsService.findById(assignmentId);
+    if (!assignment) {
+      throw new NotFoundException('Assignment not found');
+    }
+
+    const submissions =
+      await this.assignmentSubmissionsService.getSubmissionsForAiGrading({
+        assignmentId,
+        submissionIds: dto.submissionIds,
+        forceRegrade: dto.forceRegrade,
+      });
+
+    if (submissions.length === 0) {
+      return {
+        assignmentId,
+        gradedCount: 0,
+        flaggedCount: 0,
+        results: [],
+        message: 'No submissions available for AI grading',
+      };
+    }
+
+    const isSync = sync === 'true';
+    const runGrading = async () => {
+      const userToken = (req.headers.authorization as string)?.replace(
+        'Bearer ',
+        '',
+      );
+      if (!userToken) {
+        throw new BadRequestException('Missing user token for AI grading');
+      }
+
+      const providerConfig = dto.provider
+        ? await this.userAiConfigService.findByUserIdAndProviderWithApiKey(
+            currentUser.userId,
+            dto.provider,
+          )
+        : null;
+
+      if (
+        dto.provider &&
+        !providerConfig?.apiKey &&
+        dto.provider !== AiProviderEnum.Ollama
+      ) {
+        throw new BadRequestException(
+          `Missing API key configuration for provider ${dto.provider}`,
+        );
+      }
+
+      const aiConfig = dto.provider
+        ? {
+            provider: dto.provider,
+            modelName: dto.modelName || providerConfig?.modelName,
+            apiKey: providerConfig?.apiKey,
+            baseHost: providerConfig?.baseHost,
+          }
+        : undefined;
+
+      const gradingResponse =
+        await this.agentService.gradeAssignmentSubmissions(
+          {
+            courseId,
+            lessonId,
+            assignmentId,
+            similarityThreshold: dto.similarityThreshold ?? 0.85,
+            submissionIds: submissions.map((submission) => submission.id),
+            defaultMaxScore: assignment.maxScore || 100,
+            gradingCriteria: assignment.gradingCriteria || [],
+            assignmentTitle: assignment.title,
+            assignmentDescription: assignment.description,
+          },
+          userToken,
+          currentUser.roles?.[0] || RolesEnum.Instructor,
+          aiConfig,
+        );
+
+      for (const result of gradingResponse.results || []) {
+        const updates: Record<string, unknown> = {
+          aiGradingResult: result.aiGradingResult,
+          isSimilarityFlagged: !!result.isSimilarityFlagged,
+          maxSimilarityScore: result.maxSimilarityScore,
+          similarityMatches: result.similarityMatches || [],
+          gradedAt: new Date(),
+          status: result.status || 'graded',
+        };
+
+        if (typeof result.score === 'number') {
+          updates.score = result.score;
+        }
+        if (typeof result.feedback === 'string') {
+          updates.feedback = result.feedback;
+        }
+
+        await this.assignmentSubmissionsService.update(
+          result.submissionId,
+          updates as any,
+        );
+      }
+
+      return gradingResponse;
+    };
+
+    if (!isSync) {
+      void runGrading().catch((error) => {
+        console.error(
+          '[CoursesController] async AI grading failed:',
+          error?.message ?? error,
+        );
+      });
+      return {
+        assignmentId,
+        queued: true,
+        gradedCount: submissions.length,
+        message: 'AI grading has been started in background',
+      };
+    }
+
+    return runGrading();
   }
 
   @Patch(
