@@ -69,7 +69,7 @@ export class TriggerAiGradeAssignmentSubmissionsDto {
 
   @ApiPropertyOptional({
     description: 'Whether to regrade already graded submissions',
-    default: false,
+    default: true,
   })
   @IsOptional()
   @IsBoolean()

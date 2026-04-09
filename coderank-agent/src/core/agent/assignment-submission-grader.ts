@@ -20,6 +20,11 @@ const IGNORED_DIRS = new Set([
   '.idea',
   'coverage',
   'vendor',
+  '.dart_tool',
+  '.gradle',
+  'target',
+  'bin',
+  'obj',
 ]);
 
 const READABLE_EXTENSIONS = new Set([
@@ -68,13 +73,109 @@ const READABLE_EXTENSIONS = new Set([
   '.svelte',
   '.gradle',
   '.properties',
+  '.dart',
 ]);
 
-const MAX_FILES_PER_SUBMISSION = 80;
-const MAX_FILE_BYTES = 400 * 1024;
+const CODE_EXTENSIONS = new Set([
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.java',
+  '.kt',
+  '.py',
+  '.cpp',
+  '.cc',
+  '.cxx',
+  '.c',
+  '.h',
+  '.hpp',
+  '.cs',
+  '.go',
+  '.rs',
+  '.php',
+  '.rb',
+  '.swift',
+  '.vue',
+  '.svelte',
+  '.dart',
+]);
+
+const JAVASCRIPT_TYPESCRIPT_EXTENSIONS = new Set([
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.vue',
+  '.svelte',
+]);
+const PYTHON_EXTENSIONS = new Set(['.py']);
+const JVM_EXTENSIONS = new Set(['.java', '.kt']);
+const DOTNET_EXTENSIONS = new Set(['.cs']);
+const GO_EXTENSIONS = new Set(['.go']);
+const RUST_EXTENSIONS = new Set(['.rs']);
+const PHP_EXTENSIONS = new Set(['.php']);
+const CPP_C_EXTENSIONS = new Set(['.cpp', '.cc', '.cxx', '.c', '.h', '.hpp']);
+
+const METADATA_BASENAMES = new Set([
+  'package.json',
+  'package-lock.json',
+  'pnpm-lock.yaml',
+  'yarn.lock',
+  'bun.lock',
+  'bun.lockb',
+  'composer.json',
+  'composer.lock',
+  'cargo.toml',
+  'cargo.lock',
+  'go.mod',
+  'go.sum',
+  'pom.xml',
+  'build.gradle',
+  'settings.gradle',
+  'gradle.properties',
+  'tsconfig.json',
+  'pubspec.yaml',
+  'analysis_options.yaml',
+  '.gitignore',
+  '.gitattributes',
+  'readme.md',
+  'readme.txt',
+  'license',
+  'license.md',
+  'license.txt',
+]);
+
+const METADATA_EXTENSIONS = new Set([
+  '.md',
+  '.txt',
+  '.yaml',
+  '.yml',
+  '.toml',
+  '.ini',
+  '.lock',
+]);
+
+const MAX_FILES_PER_SUBMISSION = 120;
+const MAX_FILE_BYTES = 500 * 1024;
 const MAX_FILE_CHARS = 12000;
-const MAX_TOTAL_CHARS = 140000;
+const MAX_TOTAL_CHARS = 180000;
 const MAX_SIMILARITY_MATCHES = 5;
+const MIN_SIMILARITY_TOKEN_COUNT = 40;
+const MAX_RAW_RESPONSE_CHARS_FOR_REPAIR = 20000;
+const MAX_FILES_FOR_AI_GRADING = 14;
+const MAX_FILE_SELECTION_PREVIEW_CHARS = 500;
+const MAX_PATHS_FOR_PROJECT_INFERENCE = 220;
+const MAX_PATHS_FOR_SELECTION_MANIFEST = 180;
+const MIN_IMPLEMENTATION_FILES_FOR_GRADING = 4;
+const MAX_METADATA_FILES_FOR_GRADING = 1;
+const MAX_FILES_FOR_TRAVERSAL = 48;
+const MIN_FILES_BEFORE_EARLY_STOP = 2;
+const MIN_IMPLEMENTATION_FILES_BEFORE_EARLY_STOP = 1;
 
 type SubmissionFileInfo = {
   fileId: string;
@@ -104,6 +205,8 @@ type GradingCriterion = {
 type SubmissionFileSnippet = {
   relativePath: string;
   content: string;
+  includeInSimilarity: boolean;
+  isMetadata: boolean;
 };
 
 type SubmissionPreparedData = {
@@ -151,6 +254,34 @@ type LlmGradeJson = {
   confidence?: number;
 };
 
+type LlmFileSelectionJson = {
+  selectedFiles?: string[];
+};
+
+type LlmProjectContextJson = {
+  projectType?: string;
+  keyDirectories?: string[];
+  prioritizePatterns?: string[];
+  deprioritizePatterns?: string[];
+  implementationExtensions?: string[];
+};
+
+type LlmReadDecisionJson = {
+  needsMoreFiles?: boolean;
+  reason?: string;
+  confidence?: number;
+  missingEvidence?: string[];
+};
+
+type InferredProjectContext = {
+  projectType: string;
+  keyDirectories: string[];
+  prioritizePatterns: string[];
+  deprioritizePatterns: string[];
+  implementationExtensions: string[];
+  source: 'heuristic' | 'llm';
+};
+
 type BatchGradeResult = {
   assignmentId: string;
   gradedCount: number;
@@ -190,6 +321,18 @@ const ASSIGNMENT_GRADING_SYSTEM_PROMPT = `You are an assignment grading assistan
 You will grade student project submissions using provided rubric criteria.
 Return JSON only, no markdown, no code fences, no extra commentary.`;
 
+const FILE_SELECTION_SYSTEM_PROMPT = `You select the most relevant files for grading.
+Prefer student-authored implementation files, avoid generated or scaffolding files.
+Return JSON only.`;
+
+const PROJECT_CONTEXT_SYSTEM_PROMPT = `You infer project type and grading-relevant areas from file paths.
+Return JSON only.`;
+
+const ADAPTIVE_READING_SYSTEM_PROMPT = `You are controlling adaptive file reading for assignment grading.
+After each file, decide whether more files are needed before grading.
+Be conservative: if uncertain, require more files.
+Return JSON only.`;
+
 const unwrapApiData = <T>(payload: unknown): T => {
   if (
     payload &&
@@ -207,6 +350,13 @@ const safeFileName = (fileName: string): string =>
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, value));
+
+const toNumber = (value: unknown, fallback: number): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  return fallback;
+};
 
 const normalizeForSimilarity = (source: string): string =>
   source
@@ -231,12 +381,8 @@ const tokenize = (source: string): Set<string> => {
 };
 
 const jaccardSimilarity = (left: Set<string>, right: Set<string>): number => {
-  if (left.size === 0 && right.size === 0) {
-    return 1;
-  }
-  if (left.size === 0 || right.size === 0) {
-    return 0;
-  }
+  if (left.size === 0 && right.size === 0) return 0;
+  if (left.size === 0 || right.size === 0) return 0;
 
   let intersection = 0;
   for (const token of left) {
@@ -244,59 +390,84 @@ const jaccardSimilarity = (left: Set<string>, right: Set<string>): number => {
       intersection++;
     }
   }
-
   const union = left.size + right.size - intersection;
   return union === 0 ? 0 : intersection / union;
 };
 
-const extractJsonObject = (raw: string): LlmGradeJson => {
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    throw new Error('LLM returned empty grading response');
-  }
+const normalizePathForMatch = (value: string): string =>
+  value.replace(/\\/g, '/').toLowerCase().trim();
 
-  const fencedMatch = trimmed.match(/```json\s*([\s\S]*?)```/i);
-  const candidate = fencedMatch?.[1]?.trim() || trimmed;
+const normalizePattern = (value: string): string =>
+  normalizePathForMatch(value);
 
-  try {
-    return JSON.parse(candidate) as LlmGradeJson;
-  } catch {
-    const firstBrace = candidate.indexOf('{');
-    const lastBrace = candidate.lastIndexOf('}');
-    if (firstBrace < 0 || lastBrace <= firstBrace) {
-      throw new Error('LLM grading response is not valid JSON');
+const uniqueStrings = (values: string[]): string[] =>
+  Array.from(new Set(values.map((item) => item.trim()).filter(Boolean)));
+
+const toStringArray = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter((item) => typeof item === 'string').map((item) => String(item))
+    : [];
+
+const matchesAnyPattern = (relativePath: string, patterns: string[]): boolean => {
+  if (patterns.length === 0) return false;
+  const normalizedPath = normalizePathForMatch(relativePath);
+
+  return patterns.some((rawPattern) => {
+    const pattern = normalizePattern(rawPattern);
+    if (!pattern) return false;
+
+    const compact = pattern.replace(/^\//, '');
+    if (pattern.endsWith('/')) {
+      return normalizedPath.includes(compact);
     }
-
-    const objectLike = candidate.slice(firstBrace, lastBrace + 1);
-    return JSON.parse(objectLike) as LlmGradeJson;
-  }
+    if (pattern.startsWith('.')) {
+      return normalizedPath.endsWith(pattern);
+    }
+    return (
+      normalizedPath === compact ||
+      normalizedPath.endsWith(`/${compact}`) ||
+      normalizedPath.includes(compact)
+    );
+  });
 };
 
-const toNumber = (value: unknown, fallback: number): number => {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
+const isMetadataPath = (relativePath: string): boolean => {
+  const normalized = normalizePathForMatch(relativePath);
+  const baseName = path.basename(normalized);
+  if (METADATA_BASENAMES.has(baseName)) {
+    return true;
   }
-  return fallback;
+  return METADATA_EXTENSIONS.has(path.extname(normalized));
+};
+
+const isLikelyGeneratedPath = (relativePath: string): boolean => {
+  const normalized = normalizePathForMatch(relativePath);
+  return [
+    '/dist/',
+    '/build/',
+    '/coverage/',
+    '/node_modules/',
+    '/.dart_tool/',
+    '/android/',
+    '/ios/',
+    '/windows/',
+    '/linux/',
+    '/macos/',
+    '/web/',
+    '/runner/',
+  ].some((segment) => normalized.includes(segment));
 };
 
 const isLikelyText = (content: Buffer): boolean => {
-  if (content.length === 0) {
-    return true;
-  }
-
+  if (content.length === 0) return true;
   const sampleSize = Math.min(content.length, 4096);
   let nonText = 0;
 
   for (let i = 0; i < sampleSize; i++) {
     const byte = content[i];
-    if (byte === 0) {
-      return false;
-    }
-
+    if (byte === 0) return false;
     const isControl = byte < 9 || (byte > 13 && byte < 32);
-    if (isControl) {
-      nonText++;
-    }
+    if (isControl) nonText++;
   }
 
   return nonText / sampleSize < 0.1;
@@ -304,17 +475,13 @@ const isLikelyText = (content: Buffer): boolean => {
 
 const shouldIncludeFile = (filePath: string, size: number): boolean => {
   const ext = path.extname(filePath).toLowerCase();
-  if (READABLE_EXTENSIONS.has(ext)) {
-    return true;
-  }
-
+  if (READABLE_EXTENSIONS.has(ext)) return true;
   return size <= 100 * 1024;
 };
 
 const isZipFile = (file: SubmissionFileInfo): boolean => {
   const lowerName = (file.fileName || '').toLowerCase();
   const lowerMime = (file.mimeType || '').toLowerCase();
-
   return (
     lowerName.endsWith('.zip') ||
     lowerMime.includes('zip') ||
@@ -322,9 +489,102 @@ const isZipFile = (file: SubmissionFileInfo): boolean => {
   );
 };
 
+const normalizeCriterionKey = (value: string): string =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '')
+    .trim();
+
+const extractAnyJsonObject = (raw: string): Record<string, unknown> => {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    throw new Error('LLM returned empty response');
+  }
+
+  const fencedMatch = trimmed.match(/```json\s*([\s\S]*?)```/i);
+  const candidate = fencedMatch?.[1]?.trim() || trimmed;
+
+  try {
+    const parsed = JSON.parse(candidate) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('Response JSON must be an object');
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    const firstBrace = candidate.indexOf('{');
+    const lastBrace = candidate.lastIndexOf('}');
+    if (firstBrace < 0 || lastBrace <= firstBrace) {
+      throw new Error('LLM response is not valid JSON');
+    }
+    const objectLike = candidate.slice(firstBrace, lastBrace + 1);
+    const parsed = JSON.parse(objectLike) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('Response JSON must be an object');
+    }
+    return parsed as Record<string, unknown>;
+  }
+};
+
+const findBestCriterionMatch = (
+  criterion: GradingCriterion,
+  parsedScores: NonNullable<LlmGradeJson['criterionScores']>,
+): (typeof parsedScores)[number] | undefined => {
+  const rubricKey = normalizeCriterionKey(criterion.criterion);
+  if (!rubricKey) return undefined;
+
+  for (const item of parsedScores) {
+    const itemKey = normalizeCriterionKey(item.criterion || '');
+    if (!itemKey) continue;
+    if (
+      itemKey === rubricKey ||
+      itemKey.includes(rubricKey) ||
+      rubricKey.includes(itemKey)
+    ) {
+      return item;
+    }
+  }
+  return undefined;
+};
+
+const distributeTotalScoreByRubric = (
+  rubric: GradingCriterion[],
+  totalScore: number,
+  maxPossibleScore: number,
+): LlmCriterionScore[] => {
+  if (rubric.length === 0) return [];
+  const safeMax = Math.max(1, maxPossibleScore);
+  const clampedTotal = Number(clamp(totalScore, 0, safeMax).toFixed(2));
+  const distributed: LlmCriterionScore[] = [];
+  let assigned = 0;
+
+  for (let i = 0; i < rubric.length; i++) {
+    const criterion = rubric[i];
+    const isLast = i === rubric.length - 1;
+    const score = isLast
+      ? Number(
+        clamp(Number((clampedTotal - assigned).toFixed(2)), 0, criterion.maxScore).toFixed(2),
+      )
+      : Number(
+        clamp(
+          Number((clampedTotal * (criterion.maxScore / safeMax)).toFixed(2)),
+          0,
+          criterion.maxScore,
+        ).toFixed(2),
+      );
+    assigned = Number((assigned + score).toFixed(2));
+    distributed.push({
+      criterion: criterion.criterion,
+      maxScore: criterion.maxScore,
+      score,
+    });
+  }
+  return distributed;
+};
+
 const buildDefaultRubric = (maxScore: number): GradingCriterion[] => {
   const safeMaxScore = Math.max(1, maxScore);
-
   const ratios = [0.4, 0.3, 0.2, 0.1];
   const labels: GradingCriterion[] = [
     {
@@ -350,9 +610,8 @@ const buildDefaultRubric = (maxScore: number): GradingCriterion[] => {
   ];
 
   let assigned = 0;
-  const lastIndex = labels.length - 1;
   for (let i = 0; i < labels.length; i++) {
-    if (i === lastIndex) {
+    if (i === labels.length - 1) {
       labels[i].maxScore = safeMaxScore - assigned;
     } else {
       const score = Math.max(1, Math.round(safeMaxScore * ratios[i]));
@@ -360,7 +619,6 @@ const buildDefaultRubric = (maxScore: number): GradingCriterion[] => {
       assigned += score;
     }
   }
-
   return labels;
 };
 
@@ -371,7 +629,6 @@ const normalizeRubric = (
   if (!criteria || criteria.length === 0) {
     return buildDefaultRubric(maxScore);
   }
-
   const sanitized = criteria
     .filter((item) => item && item.criterion && Number.isFinite(item.maxScore))
     .map((item) => ({
@@ -384,8 +641,268 @@ const normalizeRubric = (
   if (sanitized.length === 0) {
     return buildDefaultRubric(maxScore);
   }
-
   return sanitized;
+};
+
+const detectProjectType = (paths: string[]): string => {
+  const hasSuffix = (suffix: string): boolean =>
+    paths.some((filePath) => filePath.endsWith(normalizePattern(suffix)));
+  const hasFragment = (fragment: string): boolean =>
+    paths.some((filePath) => filePath.includes(normalizePattern(fragment)));
+  const countByExtension = (extensions: Set<string>): number =>
+    paths.filter((filePath) => extensions.has(path.extname(filePath))).length;
+
+  if (
+    hasSuffix('/pubspec.yaml') ||
+    paths.some((filePath) => filePath.includes('/lib/') && filePath.endsWith('.dart'))
+  ) {
+    return 'flutter';
+  }
+  if (hasSuffix('/angular.json')) return 'angular';
+  if (hasSuffix('/next.config.js') || hasSuffix('/next.config.mjs')) return 'nextjs';
+  if (hasSuffix('/nest-cli.json') || hasFragment('/src/modules/')) return 'nestjs';
+  if (
+    hasSuffix('/requirements.txt') ||
+    hasSuffix('/pyproject.toml') ||
+    hasSuffix('/poetry.lock') ||
+    countByExtension(PYTHON_EXTENSIONS) >= 3
+  ) {
+    return 'python';
+  }
+  if (
+    hasSuffix('/pom.xml') ||
+    hasSuffix('/build.gradle') ||
+    hasFragment('/src/main/java/') ||
+    countByExtension(JVM_EXTENSIONS) >= 3
+  ) {
+    return 'jvm';
+  }
+  if (
+    hasFragment('.csproj') ||
+    hasSuffix('/program.cs') ||
+    countByExtension(DOTNET_EXTENSIONS) >= 3
+  ) {
+    return 'dotnet';
+  }
+  if (hasSuffix('/go.mod') || countByExtension(GO_EXTENSIONS) >= 3) return 'go';
+  if (
+    hasSuffix('/cargo.toml') ||
+    hasFragment('/src/main.rs') ||
+    countByExtension(RUST_EXTENSIONS) >= 3
+  ) {
+    return 'rust';
+  }
+  if (
+    hasSuffix('/composer.json') ||
+    hasFragment('/artisan') ||
+    countByExtension(PHP_EXTENSIONS) >= 3
+  ) {
+    return 'php';
+  }
+  if (countByExtension(CPP_C_EXTENSIONS) >= 4) return 'cpp-c';
+  if (hasSuffix('/package.json') && countByExtension(JAVASCRIPT_TYPESCRIPT_EXTENSIONS) >= 4) {
+    return 'node-web';
+  }
+  return 'generic';
+};
+
+const contextForProjectType = (projectType: string): Omit<InferredProjectContext, 'source'> => {
+  switch (projectType) {
+    case 'flutter':
+      return {
+        projectType: 'flutter',
+        keyDirectories: ['lib', 'test', 'integration_test', 'bin'],
+        prioritizePatterns: ['/lib/', '/test/', '/integration_test/', '/bin/'],
+        deprioritizePatterns: [
+          '/android/',
+          '/ios/',
+          '/windows/',
+          '/linux/',
+          '/macos/',
+          '/web/',
+          '/runner/',
+          '/build/',
+          '/.dart_tool/',
+        ],
+        implementationExtensions: ['.dart'],
+      };
+    case 'angular':
+      return {
+        projectType: 'angular',
+        keyDirectories: ['src/app', 'src'],
+        prioritizePatterns: ['/src/app/', '/src/'],
+        deprioritizePatterns: ['/node_modules/', '/dist/', '/coverage/', '/.angular/'],
+        implementationExtensions: Array.from(JAVASCRIPT_TYPESCRIPT_EXTENSIONS),
+      };
+    case 'nextjs':
+      return {
+        projectType: 'nextjs',
+        keyDirectories: ['app', 'pages', 'src'],
+        prioritizePatterns: ['/app/', '/pages/', '/src/', '/components/'],
+        deprioritizePatterns: ['/node_modules/', '/.next/', '/dist/', '/coverage/'],
+        implementationExtensions: Array.from(JAVASCRIPT_TYPESCRIPT_EXTENSIONS),
+      };
+    case 'nestjs':
+      return {
+        projectType: 'nestjs',
+        keyDirectories: ['src/modules', 'src/common', 'src/auth', 'src'],
+        prioritizePatterns: ['/src/modules/', '/src/common/', '/src/auth/', '/src/'],
+        deprioritizePatterns: ['/node_modules/', '/dist/', '/coverage/'],
+        implementationExtensions: Array.from(JAVASCRIPT_TYPESCRIPT_EXTENSIONS),
+      };
+    case 'node-web':
+      return {
+        projectType: 'node-web',
+        keyDirectories: ['src', 'app', 'server'],
+        prioritizePatterns: ['/src/', '/app/', '/server/', '/routes/', '/controllers/'],
+        deprioritizePatterns: ['/node_modules/', '/dist/', '/build/', '/coverage/'],
+        implementationExtensions: Array.from(JAVASCRIPT_TYPESCRIPT_EXTENSIONS),
+      };
+    case 'python':
+      return {
+        projectType: 'python',
+        keyDirectories: ['src', 'app', 'project'],
+        prioritizePatterns: ['/src/', '/app/', '/project/', '/tests/'],
+        deprioritizePatterns: [
+          '/venv/',
+          '/.venv/',
+          '/site-packages/',
+          '/dist/',
+          '/build/',
+          '/__pycache__/',
+        ],
+        implementationExtensions: Array.from(PYTHON_EXTENSIONS),
+      };
+    case 'jvm':
+      return {
+        projectType: 'jvm',
+        keyDirectories: ['src/main/java', 'src/main/kotlin', 'src/test/java'],
+        prioritizePatterns: ['/src/main/java/', '/src/main/kotlin/', '/src/test/java/'],
+        deprioritizePatterns: ['/build/', '/target/', '/.gradle/', '/out/'],
+        implementationExtensions: Array.from(JVM_EXTENSIONS),
+      };
+    case 'dotnet':
+      return {
+        projectType: 'dotnet',
+        keyDirectories: ['src', 'app'],
+        prioritizePatterns: ['/src/', '/app/', '/controllers/', '/services/'],
+        deprioritizePatterns: ['/bin/', '/obj/', '/packages/', '/testresults/'],
+        implementationExtensions: Array.from(DOTNET_EXTENSIONS),
+      };
+    case 'go':
+      return {
+        projectType: 'go',
+        keyDirectories: ['cmd', 'internal', 'pkg'],
+        prioritizePatterns: ['/cmd/', '/internal/', '/pkg/'],
+        deprioritizePatterns: ['/vendor/', '/bin/', '/dist/', '/build/'],
+        implementationExtensions: Array.from(GO_EXTENSIONS),
+      };
+    case 'rust':
+      return {
+        projectType: 'rust',
+        keyDirectories: ['src', 'tests'],
+        prioritizePatterns: ['/src/', '/tests/'],
+        deprioritizePatterns: ['/target/', '/.cargo/'],
+        implementationExtensions: Array.from(RUST_EXTENSIONS),
+      };
+    case 'php':
+      return {
+        projectType: 'php',
+        keyDirectories: ['app', 'routes', 'src'],
+        prioritizePatterns: ['/app/', '/routes/', '/src/'],
+        deprioritizePatterns: ['/vendor/', '/storage/', '/bootstrap/cache/'],
+        implementationExtensions: Array.from(PHP_EXTENSIONS),
+      };
+    case 'cpp-c':
+      return {
+        projectType: 'cpp-c',
+        keyDirectories: ['src', 'include'],
+        prioritizePatterns: ['/src/', '/include/'],
+        deprioritizePatterns: ['/build/', '/cmake-build-', '/dist/'],
+        implementationExtensions: Array.from(CPP_C_EXTENSIONS),
+      };
+    default:
+      return {
+        projectType: 'generic',
+        keyDirectories: ['src', 'app', 'lib'],
+        prioritizePatterns: ['/src/', '/app/', '/lib/'],
+        deprioritizePatterns: ['/dist/', '/build/', '/vendor/', '/coverage/'],
+        implementationExtensions: Array.from(CODE_EXTENSIONS),
+      };
+  }
+};
+
+const buildHeuristicProjectContext = (paths: string[]): InferredProjectContext => {
+  const projectType = detectProjectType(paths);
+  const base = contextForProjectType(projectType);
+  return {
+    ...base,
+    source: 'heuristic',
+  };
+};
+
+const normalizeProjectContext = (
+  context: Partial<InferredProjectContext>,
+  fallback: InferredProjectContext,
+): InferredProjectContext => {
+  const projectType = (context.projectType || fallback.projectType || 'generic').toLowerCase();
+  const base = contextForProjectType(projectType);
+
+  const keyDirectories = uniqueStrings([
+    ...base.keyDirectories,
+    ...toStringArray(context.keyDirectories),
+  ]).map(normalizePattern);
+  const prioritizePatterns = uniqueStrings([
+    ...base.prioritizePatterns,
+    ...toStringArray(context.prioritizePatterns),
+  ]).map(normalizePattern);
+  const deprioritizePatterns = uniqueStrings([
+    ...base.deprioritizePatterns,
+    ...toStringArray(context.deprioritizePatterns),
+  ]).map(normalizePattern);
+  const implementationExtensions = uniqueStrings([
+    ...base.implementationExtensions,
+    ...toStringArray(context.implementationExtensions).map((item) =>
+      item.startsWith('.') ? item.toLowerCase() : `.${item.toLowerCase()}`,
+    ),
+  ]);
+
+  return {
+    projectType: base.projectType,
+    keyDirectories,
+    prioritizePatterns,
+    deprioritizePatterns,
+    implementationExtensions,
+    source: context.source === 'llm' ? 'llm' : 'heuristic',
+  };
+};
+
+const isImplementationPath = (
+  relativePath: string,
+  projectContext: InferredProjectContext,
+): boolean => {
+  const normalizedPath = normalizePathForMatch(relativePath);
+  const ext = path.extname(normalizedPath);
+  if (isMetadataPath(relativePath)) {
+    return false;
+  }
+  if (projectContext.implementationExtensions.length > 0) {
+    if (!projectContext.implementationExtensions.includes(ext)) {
+      return false;
+    }
+  } else if (!CODE_EXTENSIONS.has(ext)) {
+    return false;
+  }
+  if (matchesAnyPattern(relativePath, projectContext.deprioritizePatterns)) {
+    return false;
+  }
+  if (matchesAnyPattern(relativePath, projectContext.prioritizePatterns)) {
+    return true;
+  }
+  if (projectContext.keyDirectories.some((dir) => normalizedPath.includes(`/${dir}/`))) {
+    return true;
+  }
+  return !isLikelyGeneratedPath(relativePath);
 };
 
 export class AssignmentSubmissionGrader {
@@ -395,11 +912,7 @@ export class AssignmentSubmissionGrader {
     }
 
     const client = createInternalClient(payload.userToken);
-    const similarityThreshold = clamp(
-      toNumber(payload.similarityThreshold, 0.85),
-      0,
-      1,
-    );
+    const similarityThreshold = clamp(toNumber(payload.similarityThreshold, 0.85), 0, 1);
     const defaultMaxScore = Math.max(1, Math.round(payload.defaultMaxScore || 100));
     const rubric = normalizeRubric(payload.gradingCriteria, defaultMaxScore);
     const maxPossibleScore = rubric.reduce((sum, item) => sum + item.maxScore, 0);
@@ -407,10 +920,7 @@ export class AssignmentSubmissionGrader {
     const submissionsResponse = await client.get(
       `/courses/${payload.courseId}/lessons/${payload.lessonId}/assignments/${payload.assignmentId}/submissions`,
     );
-
-    const allSubmissions = unwrapApiData<CourseAssignmentSubmission[]>(
-      submissionsResponse.data,
-    );
+    const allSubmissions = unwrapApiData<CourseAssignmentSubmission[]>(submissionsResponse.data);
 
     if (!Array.isArray(allSubmissions) || allSubmissions.length === 0) {
       return {
@@ -431,9 +941,7 @@ export class AssignmentSubmissionGrader {
 
     const latestSubmissions = Array.from(latestByAuthor.values());
     const targetSubmissions = payload.submissionIds?.length
-      ? allSubmissions.filter((submission) =>
-          payload.submissionIds!.includes(submission.id),
-        )
+      ? allSubmissions.filter((submission) => payload.submissionIds!.includes(submission.id))
       : latestSubmissions;
 
     if (targetSubmissions.length === 0) {
@@ -456,13 +964,10 @@ export class AssignmentSubmissionGrader {
     }
 
     const poolSubmissions = Array.from(poolById.values());
-    const tempRoot = await fs.mkdtemp(
-      path.join(os.tmpdir(), 'coderank-assignment-grading-'),
-    );
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'coderank-assignment-grading-'));
 
     try {
       const preparedMap = new Map<string, SubmissionPreparedData>();
-
       for (const submission of poolSubmissions) {
         const prepared = await this.prepareSubmissionData({
           client,
@@ -472,13 +977,14 @@ export class AssignmentSubmissionGrader {
         });
         preparedMap.set(submission.id, prepared);
       }
+      this.pruneCommonSimilarityTokens(preparedMap);
 
       const llmConfig: ILLMConfig | undefined =
         payload.apiKey || payload.baseHost
           ? {
-              apiKey: payload.apiKey,
-              baseHost: payload.baseHost,
-            }
+            apiKey: payload.apiKey,
+            baseHost: payload.baseHost,
+          }
           : undefined;
 
       const providerSelection = LLMFactory.createProviderWithFallback(
@@ -493,11 +999,33 @@ export class AssignmentSubmissionGrader {
       const results: BatchGradeResult['results'] = [];
       let flaggedCount = 0;
 
-      for (const submission of targetSubmissions) {
+      for (const [submissionIndex, submission] of targetSubmissions.entries()) {
         const prepared = preparedMap.get(submission.id);
         if (!prepared) {
           throw new Error(`Missing prepared data for submission ${submission.id}`);
         }
+
+        console.log(
+          `[AssignmentSubmissionGrader] progress ${submissionIndex + 1}/${targetSubmissions.length} start grading submission ${submission.id} (student ${submission.authorId}, attempt ${submission.attemptNumber})`,
+        );
+
+        const projectContext = await this.inferProjectContext({
+          provider,
+          payload,
+          prepared,
+        });
+        const selectedSnippets = await this.selectSnippetsForGrading({
+          provider,
+          payload,
+          rubric,
+          prepared,
+          projectContext,
+        });
+
+        console.log(
+          `[AssignmentSubmissionGrader] projectType=${projectContext.projectType} source=${projectContext.source} selected ${selectedSnippets.length}/${prepared.snippets.length} files for grading submission ${submission.id} (student ${submission.authorId}):`,
+          selectedSnippets.map((item) => item.relativePath),
+        );
 
         const similarityMatches = this.computeSimilarityMatches(
           submission.id,
@@ -519,6 +1047,7 @@ export class AssignmentSubmissionGrader {
             rubric,
             maxPossibleScore,
             prepared,
+            selectedSnippets,
           });
 
           results.push({
@@ -531,6 +1060,10 @@ export class AssignmentSubmissionGrader {
             similarityMatches,
             aiGradingResult: grading,
           });
+
+          console.log(
+            `[AssignmentSubmissionGrader] completed grading submission ${submission.id} (student ${submission.authorId}) score=${grading.score}/${grading.maxScore}`,
+          );
         } catch (error: any) {
           const failedResult = {
             rubricUsed: rubric,
@@ -542,7 +1075,7 @@ export class AssignmentSubmissionGrader {
             strengths: [],
             improvements: [],
             confidence: 0,
-            evaluatedFileCount: prepared.snippets.length,
+            evaluatedFileCount: selectedSnippets.length,
             generatedAt: new Date().toISOString(),
             graderProvider: providerName,
             graderModel: modelName,
@@ -558,6 +1091,10 @@ export class AssignmentSubmissionGrader {
             similarityMatches,
             aiGradingResult: failedResult,
           });
+
+          console.log(
+            `[AssignmentSubmissionGrader] failed grading submission ${submission.id} (student ${submission.authorId}): ${error.message}`,
+          );
         }
       }
 
@@ -572,6 +1109,496 @@ export class AssignmentSubmissionGrader {
     }
   }
 
+  private async inferProjectContext(params: {
+    provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'];
+    payload: GradeRequestPayload;
+    prepared: SubmissionPreparedData;
+  }): Promise<InferredProjectContext> {
+    const { provider, payload, prepared } = params;
+    const paths = prepared.snippets
+      .filter((snippet) => snippet.relativePath !== 'submission-content.txt')
+      .map((snippet) => normalizePathForMatch(snippet.relativePath));
+    const heuristic = buildHeuristicProjectContext(paths);
+
+    if (paths.length === 0) {
+      return heuristic;
+    }
+
+    const samplePaths = paths.slice(0, MAX_PATHS_FOR_PROJECT_INFERENCE);
+    provider.init(PROJECT_CONTEXT_SYSTEM_PROMPT, [], []);
+
+    try {
+      const prompt = [
+        `Assignment title: ${payload.assignmentTitle || '(untitled assignment)'}`,
+        `Assignment description: ${payload.assignmentDescription || '(no description provided)'}`,
+        `Heuristic context: ${JSON.stringify(heuristic)}`,
+        'Infer project context and return STRICT JSON schema:',
+        '{"projectType":"string","keyDirectories":["string"],"prioritizePatterns":["string"],"deprioritizePatterns":["string"],"implementationExtensions":[".ext"]}',
+        `File paths: ${JSON.stringify(samplePaths)}`,
+      ].join('\n\n');
+
+      const response = await provider.sendMessage(prompt);
+      if (!response.text || response.toolCalls?.length) {
+        return heuristic;
+      }
+
+      const parsed = extractAnyJsonObject(response.text) as LlmProjectContextJson;
+      return normalizeProjectContext(
+        {
+          projectType:
+            typeof parsed.projectType === 'string' && parsed.projectType.trim()
+              ? parsed.projectType.trim().toLowerCase()
+              : heuristic.projectType,
+          keyDirectories: toStringArray(parsed.keyDirectories),
+          prioritizePatterns: toStringArray(parsed.prioritizePatterns),
+          deprioritizePatterns: toStringArray(parsed.deprioritizePatterns),
+          implementationExtensions: toStringArray(parsed.implementationExtensions),
+          source: 'llm',
+        },
+        heuristic,
+      );
+    } catch {
+      return heuristic;
+    }
+  }
+
+  private async selectSnippetsForGrading(params: {
+    provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'];
+    payload: GradeRequestPayload;
+    rubric: GradingCriterion[];
+    prepared: SubmissionPreparedData;
+    projectContext: InferredProjectContext;
+  }): Promise<SubmissionFileSnippet[]> {
+    const { prepared, projectContext } = params;
+
+    const candidateSnippets = prepared.snippets.filter(
+      (snippet) => snippet.relativePath !== 'submission-content.txt',
+    );
+    if (candidateSnippets.length === 0) {
+      return prepared.snippets.slice(0, 1);
+    }
+
+    const ranked = this.rankSnippets(candidateSnippets, projectContext);
+    const rankedSnippets = ranked.map((item) => item.snippet);
+    const traversalSelection = this.selectByMainFirstTraversal(
+      rankedSnippets,
+      projectContext,
+    );
+
+    return this.enforceSelectionConstraints(
+      traversalSelection,
+      rankedSnippets,
+      projectContext,
+    );
+  }
+
+  private selectByMainFirstTraversal(
+    rankedSnippets: SubmissionFileSnippet[],
+    projectContext: InferredProjectContext,
+  ): SubmissionFileSnippet[] {
+    const snippetByPath = new Map<string, SubmissionFileSnippet>();
+    const allPaths = new Set<string>();
+    for (const snippet of rankedSnippets) {
+      const normalizedPath = normalizePathForMatch(snippet.relativePath);
+      snippetByPath.set(normalizedPath, snippet);
+      allPaths.add(normalizedPath);
+    }
+
+    const entrySnippets = this.findEntrySnippets(rankedSnippets, projectContext);
+    const queue = entrySnippets.map((snippet) =>
+      normalizePathForMatch(snippet.relativePath),
+    );
+    const queued = new Set(queue);
+    const visited = new Set<string>();
+    const selected: SubmissionFileSnippet[] = [];
+
+    while (queue.length > 0 && selected.length < MAX_FILES_FOR_TRAVERSAL) {
+      const currentPath = queue.shift()!;
+      queued.delete(currentPath);
+      if (visited.has(currentPath)) {
+        continue;
+      }
+      visited.add(currentPath);
+
+      const currentSnippet = snippetByPath.get(currentPath);
+      if (!currentSnippet) {
+        continue;
+      }
+      if (!selected.includes(currentSnippet)) {
+        selected.push(currentSnippet);
+      }
+
+      const dependencies = this.extractDependencySpecifiers(
+        currentSnippet.content,
+        currentSnippet.relativePath,
+      );
+      for (const dependency of dependencies) {
+        const resolvedPath = this.resolveDependencyPath({
+          dependency,
+          importerPath: currentPath,
+          allPaths,
+          projectContext,
+        });
+        if (!resolvedPath) {
+          continue;
+        }
+        if (!visited.has(resolvedPath) && !queued.has(resolvedPath)) {
+          queue.push(resolvedPath);
+          queued.add(resolvedPath);
+        }
+      }
+    }
+
+    return selected;
+  }
+
+  private findEntrySnippets(
+    rankedSnippets: SubmissionFileSnippet[],
+    projectContext: InferredProjectContext,
+  ): SubmissionFileSnippet[] {
+    const entrySuffixes = this.getEntryPointSuffixes(projectContext.projectType);
+    const matchedEntries: SubmissionFileSnippet[] = [];
+
+    for (const suffix of entrySuffixes) {
+      const normalizedSuffix = normalizePattern(suffix);
+      const exact = rankedSnippets.find((snippet) =>
+        normalizePathForMatch(snippet.relativePath).endsWith(normalizedSuffix),
+      );
+      if (exact && !matchedEntries.includes(exact)) {
+        matchedEntries.push(exact);
+      }
+    }
+
+    if (matchedEntries.length > 0) {
+      return matchedEntries;
+    }
+
+    const implementationFallback = rankedSnippets.find((snippet) =>
+      isImplementationPath(snippet.relativePath, projectContext),
+    );
+    if (implementationFallback) {
+      return [implementationFallback];
+    }
+
+    return rankedSnippets.slice(0, 1);
+  }
+
+  private getEntryPointSuffixes(projectType: string): string[] {
+    const type = (projectType || '').toLowerCase();
+    if (type === 'flutter') {
+      return ['/lib/main.dart', '/bin/main.dart', '/main.dart'];
+    }
+    if (type === 'angular') {
+      return ['/src/main.ts', '/src/main.js', '/src/app/app.module.ts', '/src/app/app.component.ts'];
+    }
+    if (type === 'nextjs') {
+      return ['/app/page.tsx', '/app/page.jsx', '/pages/index.tsx', '/pages/index.jsx'];
+    }
+    if (type === 'nestjs') {
+      return ['/src/main.ts', '/src/main.js', '/src/app.module.ts'];
+    }
+    if (type === 'node-web') {
+      return [
+        '/src/main.ts',
+        '/src/index.ts',
+        '/src/app.ts',
+        '/main.ts',
+        '/index.ts',
+        '/src/main.js',
+        '/src/index.js',
+        '/main.js',
+        '/index.js',
+      ];
+    }
+    if (type === 'python') {
+      return ['/main.py', '/app.py', '/manage.py', '/__main__.py'];
+    }
+    if (type === 'jvm') {
+      return ['/src/main/java/main.java', '/src/main/kotlin/main.kt', '/main.java', '/main.kt'];
+    }
+    if (type === 'dotnet') {
+      return ['/program.cs'];
+    }
+    if (type === 'go') {
+      return ['/main.go', '/cmd/main.go'];
+    }
+    if (type === 'rust') {
+      return ['/src/main.rs', '/main.rs'];
+    }
+    if (type === 'php') {
+      return ['/public/index.php', '/index.php'];
+    }
+    if (type === 'cpp-c') {
+      return ['/src/main.cpp', '/main.cpp', '/src/main.c', '/main.c'];
+    }
+
+    return [
+      '/src/main.ts',
+      '/src/index.ts',
+      '/src/main.js',
+      '/src/index.js',
+      '/main.py',
+      '/main.java',
+      '/main.cpp',
+      '/main.c',
+      '/main.dart',
+      '/main.rs',
+      '/main.go',
+      '/program.cs',
+      '/index.php',
+    ];
+  }
+
+  private extractDependencySpecifiers(content: string, relativePath: string): string[] {
+    const ext = path.extname(normalizePathForMatch(relativePath));
+    const dependencies: string[] = [];
+    const pushMatches = (regex: RegExp, groupIndex = 1) => {
+      let match: RegExpExecArray | null;
+      while ((match = regex.exec(content)) !== null) {
+        const value = (match[groupIndex] || '').trim();
+        if (value) {
+          dependencies.push(value);
+        }
+      }
+    };
+
+    if (JAVASCRIPT_TYPESCRIPT_EXTENSIONS.has(ext)) {
+      pushMatches(/import\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]/g);
+      pushMatches(/export\s+[^'"]*?\s+from\s+['"]([^'"]+)['"]/g);
+      pushMatches(/require\(\s*['"]([^'"]+)['"]\s*\)/g);
+      pushMatches(/import\(\s*['"]([^'"]+)['"]\s*\)/g);
+    } else if (ext === '.dart') {
+      pushMatches(/(?:import|export|part)\s+['"]([^'"]+)['"]/g);
+    } else if (ext === '.py') {
+      pushMatches(/from\s+([a-zA-Z0-9_\.]+)\s+import\s+/g);
+      pushMatches(/import\s+([a-zA-Z0-9_\.]+)(?:\s+as\s+[a-zA-Z0-9_]+)?/g);
+    } else if (CPP_C_EXTENSIONS.has(ext)) {
+      pushMatches(/#include\s+"([^"]+)"/g);
+    } else if (ext === '.php') {
+      pushMatches(/(?:require|require_once|include|include_once)\s*\(?\s*['"]([^'"]+)['"]/g);
+    }
+
+    return uniqueStrings(dependencies);
+  }
+
+  private resolveDependencyPath(params: {
+    dependency: string;
+    importerPath: string;
+    allPaths: Set<string>;
+    projectContext: InferredProjectContext;
+  }): string | null {
+    const { dependency, importerPath, allPaths, projectContext } = params;
+    const raw = dependency.split('?')[0].split('#')[0].trim();
+    if (!raw) return null;
+
+    const importerDir = path.posix.dirname(importerPath);
+    const candidateBases: string[] = [];
+
+    if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('dart:')) {
+      return null;
+    }
+
+    if (raw.startsWith('package:') && projectContext.projectType === 'flutter') {
+      const afterPackage = raw.replace(/^package:[^/]+\/?/, '');
+      if (afterPackage) {
+        const projectRoot = this.getProjectRootFromPath(importerPath, projectContext);
+        candidateBases.push(path.posix.normalize(path.posix.join(projectRoot, 'lib', afterPackage)));
+      }
+    } else if (raw.startsWith('./') || raw.startsWith('../')) {
+      candidateBases.push(path.posix.normalize(path.posix.join(importerDir, raw)));
+    } else if (raw.startsWith('/')) {
+      const projectRoot = this.getProjectRootFromPath(importerPath, projectContext);
+      candidateBases.push(path.posix.normalize(path.posix.join(projectRoot, raw)));
+    } else {
+      // Root-relative aliases and dotted modules.
+      const projectRoot = this.getProjectRootFromPath(importerPath, projectContext);
+      candidateBases.push(path.posix.normalize(path.posix.join(projectRoot, raw)));
+      if (raw.includes('.')) {
+        candidateBases.push(path.posix.normalize(path.posix.join(projectRoot, raw.replace(/\./g, '/'))));
+      }
+    }
+
+    const resolvableExtensions = uniqueStrings([
+      ...projectContext.implementationExtensions,
+      ...Array.from(CODE_EXTENSIONS),
+      '.json',
+    ]);
+
+    for (const base of candidateBases) {
+      const candidates: string[] = [];
+      const baseExt = path.extname(base);
+      if (baseExt) {
+        candidates.push(base);
+      } else {
+        candidates.push(base);
+        for (const ext of resolvableExtensions) {
+          candidates.push(`${base}${ext}`);
+        }
+        for (const ext of resolvableExtensions) {
+          candidates.push(path.posix.join(base, `index${ext}`));
+        }
+      }
+
+      for (const candidate of candidates) {
+        const normalized = normalizePathForMatch(candidate);
+        if (allPaths.has(normalized)) {
+          return normalized;
+        }
+        const suffix = normalized.replace(/^\/+/, '');
+        const fuzzyMatch = Array.from(allPaths).find(
+          (filePath) =>
+            filePath.endsWith(`/${suffix}`) ||
+            filePath.endsWith(suffix),
+        );
+        if (fuzzyMatch) {
+          return fuzzyMatch;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private getProjectRootFromPath(
+    normalizedFilePath: string,
+    projectContext: InferredProjectContext,
+  ): string {
+    const filePath = normalizePathForMatch(normalizedFilePath);
+    for (const keyDir of projectContext.keyDirectories) {
+      const marker = `/${normalizePattern(keyDir).replace(/^\/+/, '').replace(/\/+$/, '')}/`;
+      const idx = filePath.indexOf(marker);
+      if (idx > 0) {
+        return filePath.slice(0, idx);
+      }
+    }
+    return path.posix.dirname(filePath);
+  }
+
+  private rankSnippets(
+    snippets: SubmissionFileSnippet[],
+    projectContext: InferredProjectContext,
+  ): Array<{ snippet: SubmissionFileSnippet; score: number }> {
+    return snippets
+      .map((snippet) => {
+        const normalizedPath = normalizePathForMatch(snippet.relativePath);
+        const ext = path.extname(normalizedPath);
+        const baseName = path.basename(normalizedPath);
+        const implementation = isImplementationPath(snippet.relativePath, projectContext);
+        let score = 0;
+
+        if (snippet.includeInSimilarity) score += 25;
+        if (implementation) score += 120;
+        if (matchesAnyPattern(snippet.relativePath, projectContext.prioritizePatterns)) score += 35;
+        if (matchesAnyPattern(snippet.relativePath, projectContext.deprioritizePatterns)) score -= 45;
+        if (isLikelyGeneratedPath(snippet.relativePath)) score -= 30;
+        if (snippet.isMetadata) score -= 90;
+        if (baseName.includes('main.') || baseName.includes('app.') || baseName.includes('index.')) score += 8;
+        if (normalizedPath.includes('/src/')) score += 10;
+        if (
+          normalizedPath.includes('/test/') ||
+          normalizedPath.includes('__tests__') ||
+          normalizedPath.includes('.spec.') ||
+          normalizedPath.includes('.test.')
+        ) {
+          score += implementation ? 8 : -4;
+        }
+        if (!projectContext.implementationExtensions.includes(ext) && CODE_EXTENSIONS.has(ext)) {
+          score -= 8;
+        }
+        score += Math.min(10, Math.floor(snippet.content.length / 1200));
+
+        return { snippet, score };
+      })
+      .sort((left, right) => right.score - left.score);
+  }
+
+  private enforceSelectionConstraints(
+    initialSelection: SubmissionFileSnippet[],
+    rankedSnippets: SubmissionFileSnippet[],
+    projectContext: InferredProjectContext,
+  ): SubmissionFileSnippet[] {
+    const selected: SubmissionFileSnippet[] = [];
+    const addIfMissing = (snippet: SubmissionFileSnippet) => {
+      if (!selected.includes(snippet) && selected.length < MAX_FILES_FOR_AI_GRADING) {
+        selected.push(snippet);
+      }
+    };
+
+    for (const snippet of initialSelection) {
+      addIfMissing(snippet);
+    }
+
+    const implementationCandidates = rankedSnippets.filter((snippet) =>
+      isImplementationPath(snippet.relativePath, projectContext),
+    );
+    const requiredImplementationCount = Math.min(
+      MIN_IMPLEMENTATION_FILES_FOR_GRADING,
+      implementationCandidates.length,
+    );
+
+    for (const implSnippet of implementationCandidates) {
+      if (
+        selected.filter((item) => isImplementationPath(item.relativePath, projectContext))
+          .length >= requiredImplementationCount
+      ) {
+        break;
+      }
+      if (!selected.includes(implSnippet)) {
+        if (selected.length >= MAX_FILES_FOR_AI_GRADING) {
+          const replaceIndex = selected.findIndex(
+            (item) => !isImplementationPath(item.relativePath, projectContext),
+          );
+          if (replaceIndex >= 0) {
+            selected.splice(replaceIndex, 1, implSnippet);
+          }
+        } else {
+          selected.push(implSnippet);
+        }
+      }
+    }
+
+    let metadataCount = selected.filter((snippet) => snippet.isMetadata).length;
+    if (
+      implementationCandidates.length > 0 &&
+      metadataCount > MAX_METADATA_FILES_FOR_GRADING
+    ) {
+      const filtered = selected.filter((snippet) => !snippet.isMetadata);
+      const metadataAllowed = selected
+        .filter((snippet) => snippet.isMetadata)
+        .slice(0, MAX_METADATA_FILES_FOR_GRADING);
+      selected.length = 0;
+      selected.push(...filtered, ...metadataAllowed);
+      metadataCount = selected.filter((snippet) => snippet.isMetadata).length;
+      void metadataCount;
+    }
+
+    for (const snippet of rankedSnippets) {
+      addIfMissing(snippet);
+      if (selected.length >= MAX_FILES_FOR_AI_GRADING) break;
+    }
+
+    if (
+      implementationCandidates.length > 0 &&
+      !selected.some((snippet) => isImplementationPath(snippet.relativePath, projectContext))
+    ) {
+      selected.length = 0;
+      for (const snippet of implementationCandidates) {
+        addIfMissing(snippet);
+        if (selected.length >= MAX_FILES_FOR_AI_GRADING) break;
+      }
+      for (const snippet of rankedSnippets) {
+        addIfMissing(snippet);
+        if (selected.length >= MAX_FILES_FOR_AI_GRADING) break;
+      }
+    }
+
+    if (selected.length === 0) {
+      return rankedSnippets.slice(0, Math.min(MAX_FILES_FOR_AI_GRADING, rankedSnippets.length));
+    }
+
+    return selected.slice(0, MAX_FILES_FOR_AI_GRADING);
+  }
+
   private async gradeSingleSubmission(params: {
     provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'];
     providerName: LLMProviderType;
@@ -580,21 +1607,36 @@ export class AssignmentSubmissionGrader {
     rubric: GradingCriterion[];
     maxPossibleScore: number;
     prepared: SubmissionPreparedData;
+    selectedSnippets: SubmissionFileSnippet[];
   }): Promise<BatchGradeResult['results'][number]['aiGradingResult']> {
-    const { provider, providerName, modelName, payload, rubric, maxPossibleScore, prepared } =
-      params;
+    const {
+      provider,
+      providerName,
+      modelName,
+      payload,
+      rubric,
+      maxPossibleScore,
+      prepared,
+      selectedSnippets,
+    } = params;
 
-    if (!prepared.combinedSource.trim()) {
+    const adaptivelyReadSnippets = await this.readSnippetsAdaptively({
+      provider,
+      payload,
+      rubric,
+      prepared,
+      selectedSnippets,
+    });
+
+    const gradingSource = adaptivelyReadSnippets.map((snippet) => snippet.content).join('\n');
+    if (!gradingSource.trim()) {
       throw new Error('Submission has no readable content for AI grading');
     }
 
     provider.init(ASSIGNMENT_GRADING_SYSTEM_PROMPT, [], []);
 
-    const filesSection = prepared.snippets
-      .map(
-        (snippet) =>
-          `FILE: ${snippet.relativePath}\n---\n${snippet.content}`,
-      )
+    const filesSection = adaptivelyReadSnippets
+      .map((snippet) => `FILE: ${snippet.relativePath}\n---\n${snippet.content}`)
       .join('\n\n====================\n\n');
 
     const prompt = [
@@ -603,10 +1645,11 @@ export class AssignmentSubmissionGrader {
       `Submission ID: ${prepared.submission.id}`,
       `Student ID: ${prepared.submission.authorId}`,
       `Rubric: ${JSON.stringify(rubric)}`,
-      `Grade the submission based on the rubric.`,
-      `Return STRICT JSON with schema:`,
-      `{"criterionScores":[{"criterion":"string","score":number,"feedback":"string"}],"totalScore":number,"feedback":"string","strengths":["string"],"improvements":["string"],"confidence":number}`,
-      `Do not include markdown fences.`,
+      `Evaluated files (${adaptivelyReadSnippets.length}/${selectedSnippets.length}): ${adaptivelyReadSnippets.map((snippet) => snippet.relativePath).join(', ')}`,
+      'Grade the submission based on the rubric.',
+      'Return STRICT JSON with schema:',
+      '{"criterionScores":[{"criterion":"string","score":number,"feedback":"string"}],"totalScore":number,"feedback":"string","strengths":["string"],"improvements":["string"],"confidence":number}',
+      'Do not include markdown fences.',
       `Submission content:\n${filesSection}`,
     ].join('\n\n');
 
@@ -618,31 +1661,44 @@ export class AssignmentSubmissionGrader {
       throw new Error('Unexpected tool calls during grading response');
     }
 
-    const parsed = extractJsonObject(llmResponse.text);
+    const parsed = await this.parseGradingJsonWithRepair(provider, llmResponse.text);
+    const parsedCriterionScores = Array.isArray(parsed.criterionScores) ? parsed.criterionScores : [];
 
-    const criterionScores: LlmCriterionScore[] = rubric.map((criterion) => {
-      const matched = parsed.criterionScores?.find(
-        (item) =>
-          item.criterion?.toLowerCase().trim() ===
-          criterion.criterion.toLowerCase().trim(),
-      );
-
-      const rawScore = toNumber(matched?.score, 0);
+    let matchedCriteriaCount = 0;
+    let criterionScores: LlmCriterionScore[] = rubric.map((criterion) => {
+      const matched = findBestCriterionMatch(criterion, parsedCriterionScores);
+      if (matched) matchedCriteriaCount += 1;
       return {
         criterion: criterion.criterion,
         maxScore: criterion.maxScore,
-        score: Number(clamp(rawScore, 0, criterion.maxScore).toFixed(2)),
+        score: Number(clamp(toNumber(matched?.score, 0), 0, criterion.maxScore).toFixed(2)),
         feedback: matched?.feedback,
       };
     });
 
-    const totalScore = Number(
+    let totalScore = Number(
       clamp(
         criterionScores.reduce((sum, item) => sum + item.score, 0),
         0,
         maxPossibleScore,
       ).toFixed(2),
     );
+
+    const parsedTotalScore =
+      typeof parsed.totalScore === 'number' && Number.isFinite(parsed.totalScore)
+        ? Number(clamp(parsed.totalScore, 0, maxPossibleScore).toFixed(2))
+        : null;
+
+    if (parsedTotalScore !== null && parsedTotalScore > 0 && matchedCriteriaCount === 0) {
+      criterionScores = distributeTotalScoreByRubric(rubric, parsedTotalScore, maxPossibleScore);
+      totalScore = Number(
+        clamp(
+          criterionScores.reduce((sum, item) => sum + item.score, 0),
+          0,
+          maxPossibleScore,
+        ).toFixed(2),
+      );
+    }
 
     const feedback =
       typeof parsed.feedback === 'string' && parsed.feedback.trim().length > 0
@@ -653,11 +1709,8 @@ export class AssignmentSubmissionGrader {
       ? parsed.strengths.filter((item) => typeof item === 'string').slice(0, 8)
       : [];
     const improvements = Array.isArray(parsed.improvements)
-      ? parsed.improvements
-          .filter((item) => typeof item === 'string')
-          .slice(0, 8)
+      ? parsed.improvements.filter((item) => typeof item === 'string').slice(0, 8)
       : [];
-
     const confidence = Number(clamp(toNumber(parsed.confidence, 0.7), 0, 1).toFixed(3));
 
     return {
@@ -670,11 +1723,198 @@ export class AssignmentSubmissionGrader {
       strengths,
       improvements,
       confidence,
-      evaluatedFileCount: prepared.snippets.length,
+      evaluatedFileCount: adaptivelyReadSnippets.length,
       generatedAt: new Date().toISOString(),
       graderProvider: providerName,
       graderModel: modelName,
     };
+  }
+
+  private async readSnippetsAdaptively(params: {
+    provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'];
+    payload: GradeRequestPayload;
+    rubric: GradingCriterion[];
+    prepared: SubmissionPreparedData;
+    selectedSnippets: SubmissionFileSnippet[];
+  }): Promise<SubmissionFileSnippet[]> {
+    const { provider, payload, rubric, prepared, selectedSnippets } = params;
+    if (selectedSnippets.length <= 1) {
+      for (const [index, snippet] of selectedSnippets.entries()) {
+        console.log(
+          `[AssignmentSubmissionGrader] reading file ${index + 1}/${selectedSnippets.length} for submission ${prepared.submission.id} (student ${prepared.submission.authorId}): ${snippet.relativePath}`,
+        );
+      }
+      return selectedSnippets;
+    }
+
+    provider.init(ADAPTIVE_READING_SYSTEM_PROMPT, [], []);
+
+    const candidateManifest = selectedSnippets
+      .map((snippet, index) => `${index + 1}. ${snippet.relativePath}`)
+      .join('\n');
+    const bootstrapPrompt = [
+      `Assignment title: ${payload.assignmentTitle || '(untitled assignment)'}`,
+      `Assignment description: ${payload.assignmentDescription || '(no description provided)'}`,
+      `Submission ID: ${prepared.submission.id}`,
+      `Student ID: ${prepared.submission.authorId}`,
+      `Rubric: ${JSON.stringify(rubric)}`,
+      'You will receive files one by one in ranked order.',
+      `Candidate file order (${selectedSnippets.length} files):\n${candidateManifest}`,
+      'Acknowledge with STRICT JSON: {"ack":true}',
+    ].join('\n\n');
+
+    const bootstrapResponse = await provider.sendMessage(bootstrapPrompt);
+    if (!bootstrapResponse.text) {
+      throw new Error('LLM returned no text response for adaptive reading bootstrap');
+    }
+    if (bootstrapResponse.toolCalls && bootstrapResponse.toolCalls.length > 0) {
+      throw new Error('Unexpected tool calls during adaptive reading bootstrap');
+    }
+
+    const readSnippets: SubmissionFileSnippet[] = [];
+
+    for (const [index, snippet] of selectedSnippets.entries()) {
+      console.log(
+        `[AssignmentSubmissionGrader] reading file ${index + 1}/${selectedSnippets.length} for submission ${prepared.submission.id} (student ${prepared.submission.authorId}): ${snippet.relativePath}`,
+      );
+
+      readSnippets.push(snippet);
+      const remainingCount = selectedSnippets.length - readSnippets.length;
+      if (remainingCount === 0) {
+        break;
+      }
+
+      const decisionPrompt = [
+        `FILE ${index + 1}/${selectedSnippets.length}: ${snippet.relativePath}`,
+        `File content:\n${snippet.content}`,
+        `Read files so far: ${readSnippets.map((item) => item.relativePath).join(', ')}`,
+        `Remaining unread files: ${remainingCount}`,
+        'Decide if you need to read more files before grading reliably against the rubric.',
+        'If uncertain, set needsMoreFiles=true.',
+        'If mostly metadata/config/scaffold files were read so far, set needsMoreFiles=true.',
+        'Return STRICT JSON only with schema:',
+        '{"needsMoreFiles":boolean,"reason":"string","confidence":number,"missingEvidence":["string"]}',
+      ].join('\n\n');
+
+      const decisionResponse = await provider.sendMessage(decisionPrompt);
+      if (!decisionResponse.text) {
+        console.log(
+          `[AssignmentSubmissionGrader] adaptive-read decision missing text for submission ${prepared.submission.id}; continue reading`,
+        );
+        continue;
+      }
+      if (decisionResponse.toolCalls && decisionResponse.toolCalls.length > 0) {
+        throw new Error('Unexpected tool calls during adaptive reading decision');
+      }
+
+      let decision: LlmReadDecisionJson;
+      try {
+        decision = await this.parseReadDecisionJsonWithRepair(provider, decisionResponse.text);
+      } catch (error: any) {
+        console.log(
+          `[AssignmentSubmissionGrader] adaptive-read decision parse failed for submission ${prepared.submission.id}: ${error.message}; continue reading`,
+        );
+        continue;
+      }
+
+      const needsMoreFiles = decision.needsMoreFiles !== false;
+      const implementationLikeCount = readSnippets.filter(
+        (item) => !item.isMetadata && !isLikelyGeneratedPath(item.relativePath),
+      ).length;
+      const meetsStopGuards =
+        readSnippets.length >= MIN_FILES_BEFORE_EARLY_STOP &&
+        implementationLikeCount >= MIN_IMPLEMENTATION_FILES_BEFORE_EARLY_STOP;
+
+      if (!needsMoreFiles && meetsStopGuards) {
+        console.log(
+          `[AssignmentSubmissionGrader] adaptive-read stop for submission ${prepared.submission.id} after ${readSnippets.length}/${selectedSnippets.length} files. reason="${decision.reason || 'enough evidence'}" confidence=${Number(clamp(toNumber(decision.confidence, 0.7), 0, 1).toFixed(3))}`,
+        );
+        break;
+      }
+
+      const continueReason = needsMoreFiles
+        ? decision.reason || 'AI requested more evidence'
+        : 'stop request rejected by minimum evidence guard';
+      console.log(
+        `[AssignmentSubmissionGrader] adaptive-read continue for submission ${prepared.submission.id} after ${readSnippets.length}/${selectedSnippets.length} files. reason="${continueReason}"`,
+      );
+    }
+
+    return readSnippets;
+  }
+
+  private async parseGradingJsonWithRepair(
+    provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'],
+    rawResponse: string,
+  ): Promise<LlmGradeJson> {
+    try {
+      return extractAnyJsonObject(rawResponse) as LlmGradeJson;
+    } catch (initialError: any) {
+      const truncatedRaw =
+        rawResponse.length > MAX_RAW_RESPONSE_CHARS_FOR_REPAIR
+          ? `${rawResponse.slice(0, MAX_RAW_RESPONSE_CHARS_FOR_REPAIR)}\n... [truncated]`
+          : rawResponse;
+
+      const repairPrompt = [
+        'Your previous grading response was not valid JSON.',
+        'Rewrite it as STRICT JSON only (no markdown, no code fences, no extra text).',
+        'Required schema:',
+        '{"criterionScores":[{"criterion":"string","score":number,"feedback":"string"}],"totalScore":number,"feedback":"string","strengths":["string"],"improvements":["string"],"confidence":number}',
+        'Previous response:',
+        truncatedRaw,
+      ].join('\n\n');
+
+      const repairResponse = await provider.sendMessage(repairPrompt);
+      if (!repairResponse.text) {
+        throw new Error(`LLM grading response is not valid JSON: ${initialError.message}`);
+      }
+      if (repairResponse.toolCalls && repairResponse.toolCalls.length > 0) {
+        throw new Error('Unexpected tool calls during grading response repair');
+      }
+
+      try {
+        return extractAnyJsonObject(repairResponse.text) as LlmGradeJson;
+      } catch {
+        throw new Error('LLM grading response is not valid JSON');
+      }
+    }
+  }
+
+  private async parseReadDecisionJsonWithRepair(
+    provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'],
+    rawResponse: string,
+  ): Promise<LlmReadDecisionJson> {
+    try {
+      return extractAnyJsonObject(rawResponse) as LlmReadDecisionJson;
+    } catch (initialError: any) {
+      const truncatedRaw =
+        rawResponse.length > MAX_RAW_RESPONSE_CHARS_FOR_REPAIR
+          ? `${rawResponse.slice(0, MAX_RAW_RESPONSE_CHARS_FOR_REPAIR)}\n... [truncated]`
+          : rawResponse;
+
+      const repairPrompt = [
+        'Your previous adaptive-read decision was not valid JSON.',
+        'Rewrite it as STRICT JSON only (no markdown, no code fences, no extra text).',
+        'Required schema:',
+        '{"needsMoreFiles":boolean,"reason":"string","confidence":number,"missingEvidence":["string"]}',
+        'Previous response:',
+        truncatedRaw,
+      ].join('\n\n');
+
+      const repairResponse = await provider.sendMessage(repairPrompt);
+      if (!repairResponse.text) {
+        throw new Error(`LLM adaptive-read decision is not valid JSON: ${initialError.message}`);
+      }
+      if (repairResponse.toolCalls && repairResponse.toolCalls.length > 0) {
+        throw new Error('Unexpected tool calls during adaptive-read decision repair');
+      }
+
+      try {
+        return extractAnyJsonObject(repairResponse.text) as LlmReadDecisionJson;
+      } catch {
+        throw new Error('LLM adaptive-read decision is not valid JSON');
+      }
+    }
   }
 
   private async prepareSubmissionData(params: {
@@ -707,16 +1947,13 @@ export class AssignmentSubmissionGrader {
       if (isZipFile(file)) {
         const unzipTarget = path.join(submissionDir, `unzipped-${i}`);
         await fs.mkdir(unzipTarget, { recursive: true });
-
         try {
           await execFileAsync('unzip', ['-oq', localFilePath, '-d', unzipTarget], {
             maxBuffer: 10 * 1024 * 1024,
           });
           extractedRoots.push(unzipTarget);
         } catch (error: any) {
-          throw new Error(
-            `Unable to extract zip file "${file.fileName}": ${error.message}`,
-          );
+          throw new Error(`Unable to extract zip file "${file.fileName}": ${error.message}`);
         }
       } else {
         extractedRoots.push(localFilePath);
@@ -731,15 +1968,15 @@ export class AssignmentSubmissionGrader {
       snippets.push({
         relativePath: 'submission-content.txt',
         content,
+        includeInSimilarity: false,
+        isMetadata: false,
       });
       totalChars += content.length;
     }
 
     for (const root of extractedRoots) {
       const stat = await fs.stat(root);
-      const candidatePaths = stat.isDirectory()
-        ? await this.collectFiles(root)
-        : [root];
+      const candidatePaths = stat.isDirectory() ? await this.collectFiles(root) : [root];
 
       for (const candidatePath of candidatePaths) {
         if (snippets.length >= MAX_FILES_PER_SUBMISSION) {
@@ -747,44 +1984,41 @@ export class AssignmentSubmissionGrader {
         }
 
         const fileStat = await fs.stat(candidatePath);
-        if (fileStat.size > MAX_FILE_BYTES) {
-          continue;
-        }
-        if (!shouldIncludeFile(candidatePath, fileStat.size)) {
-          continue;
-        }
+        if (fileStat.size > MAX_FILE_BYTES) continue;
+        if (!shouldIncludeFile(candidatePath, fileStat.size)) continue;
 
         const buffer = await fs.readFile(candidatePath);
-        if (!isLikelyText(buffer)) {
-          continue;
-        }
+        if (!isLikelyText(buffer)) continue;
 
         let content = buffer.toString('utf8').replace(/\r\n/g, '\n').trim();
-        if (!content) {
-          continue;
-        }
+        if (!content) continue;
 
         if (content.length > MAX_FILE_CHARS) {
-          content = `${content.slice(
-            0,
-            MAX_FILE_CHARS,
-          )}\n\n/* truncated for grading */`;
+          content = `${content.slice(0, MAX_FILE_CHARS)}\n\n/* truncated for grading */`;
         }
+        if (totalChars + content.length > MAX_TOTAL_CHARS) continue;
 
-        if (totalChars + content.length > MAX_TOTAL_CHARS) {
-          continue;
-        }
+        const relativePath = path.relative(submissionDir, candidatePath);
+        const isMetadata = isMetadataPath(relativePath);
+        const includeInSimilarity =
+          CODE_EXTENSIONS.has(path.extname(normalizePathForMatch(relativePath))) && !isMetadata;
 
         snippets.push({
-          relativePath: path.relative(submissionDir, candidatePath),
+          relativePath,
           content,
+          includeInSimilarity,
+          isMetadata,
         });
         totalChars += content.length;
       }
     }
 
     const combinedSource = snippets.map((item) => item.content).join('\n');
-    const similarityTokens = tokenize(normalizeForSimilarity(combinedSource));
+    const similaritySource = snippets
+      .filter((item) => item.includeInSimilarity)
+      .map((item) => item.content)
+      .join('\n');
+    const similarityTokens = tokenize(normalizeForSimilarity(similaritySource));
 
     return {
       submission,
@@ -803,18 +2037,15 @@ export class AssignmentSubmissionGrader {
       const entries = await fs.readdir(current, { withFileTypes: true });
 
       for (const entry of entries) {
-        if (entry.name.startsWith('.DS_Store')) {
-          continue;
-        }
-
+        if (entry.name.startsWith('.DS_Store')) continue;
         const fullPath = path.join(current, entry.name);
+
         if (entry.isDirectory()) {
           if (!IGNORED_DIRS.has(entry.name.toLowerCase())) {
             queue.push(fullPath);
           }
           continue;
         }
-
         if (entry.isFile()) {
           files.push(fullPath);
         }
@@ -830,25 +2061,17 @@ export class AssignmentSubmissionGrader {
     threshold: number,
   ): Array<{ submissionId: string; authorId: string; similarity: number }> {
     const target = preparedMap.get(targetSubmissionId);
-    if (!target) {
+    if (!target || target.similarityTokens.size < MIN_SIMILARITY_TOKEN_COUNT) {
       return [];
     }
 
-    const matches: Array<{
-      submissionId: string;
-      authorId: string;
-      similarity: number;
-    }> = [];
+    const matches: Array<{ submissionId: string; authorId: string; similarity: number }> = [];
 
     for (const [candidateId, candidate] of preparedMap.entries()) {
-      if (candidateId === targetSubmissionId) {
-        continue;
-      }
+      if (candidateId === targetSubmissionId) continue;
+      if (candidate.similarityTokens.size < MIN_SIMILARITY_TOKEN_COUNT) continue;
 
-      const similarity = jaccardSimilarity(
-        target.similarityTokens,
-        candidate.similarityTokens,
-      );
+      const similarity = jaccardSimilarity(target.similarityTokens, candidate.similarityTokens);
       if (similarity >= threshold) {
         matches.push({
           submissionId: candidateId,
@@ -862,4 +2085,25 @@ export class AssignmentSubmissionGrader {
       .sort((left, right) => right.similarity - left.similarity)
       .slice(0, MAX_SIMILARITY_MATCHES);
   }
+
+  private pruneCommonSimilarityTokens(preparedMap: Map<string, SubmissionPreparedData>): void {
+    if (preparedMap.size <= 1) return;
+
+    const tokenFrequency = new Map<string, number>();
+    for (const prepared of preparedMap.values()) {
+      for (const token of prepared.similarityTokens) {
+        tokenFrequency.set(token, (tokenFrequency.get(token) || 0) + 1);
+      }
+    }
+
+    const maxCommonCount = Math.max(1, Math.floor(preparedMap.size * 0.8));
+    for (const prepared of preparedMap.values()) {
+      prepared.similarityTokens = new Set(
+        Array.from(prepared.similarityTokens).filter(
+          (token) => (tokenFrequency.get(token) || 0) <= maxCommonCount,
+        ),
+      );
+    }
+  }
+
 }

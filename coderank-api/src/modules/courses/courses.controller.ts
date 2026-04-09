@@ -1421,7 +1421,7 @@ export class CoursesController {
       await this.assignmentSubmissionsService.getSubmissionsForAiGrading({
         assignmentId,
         submissionIds: dto.submissionIds,
-        forceRegrade: dto.forceRegrade,
+        forceRegrade: dto.forceRegrade ?? true,
       });
 
     if (submissions.length === 0) {
