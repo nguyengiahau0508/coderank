@@ -337,10 +337,35 @@
                   @if (selectedAssignment(); as sa) {
                     <!-- Submissions view -->
                     <div class="space-y-3">
-                      <div class="flex items-center gap-2">
-                        <p-button icon="pi pi-arrow-left" [text]="true" size="small" severity="secondary" (onClick)="deselectAssignment()" pTooltip="Quay lại danh sách" />
-                        <h4 class="text-base font-semibold" style="color: var(--cr-text-primary);">{{ sa.title }} — Bài nộp</h4>
+                      <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <div class="flex items-center gap-2">
+                          <p-button icon="pi pi-arrow-left" [text]="true" size="small" severity="secondary" (onClick)="deselectAssignment()" pTooltip="Quay lại danh sách" />
+                          <h4 class="text-base font-semibold" style="color: var(--cr-text-primary);">{{ sa.title }} — Bài nộp</h4>
+                        </div>
+                        <p-button
+                          label="Chấm AI toàn bộ"
+                          icon="pi pi-sparkles"
+                          severity="contrast"
+                          size="small"
+                          [loading]="gradingAllWithAi()"
+                          [disabled]="gradingAllWithAi() || submissions().length === 0"
+                          (onClick)="runAiGrading()"
+                        />
                       </div>
+
+                      @if (aiGradingSummary(); as summary) {
+                        <div class="rounded-xl p-3 text-sm" style="background: rgba(88, 166, 255, 0.08); border: 1px solid rgba(88, 166, 255, 0.3); color: var(--cr-accent-blue);">
+                          <div class="font-medium">
+                            Đã chấm AI {{ summary.gradedCount }} bài
+                            @if ((summary.flaggedCount || 0) > 0) {
+                              · Cảnh báo giống nhau: {{ summary.flaggedCount }}
+                            }
+                          </div>
+                          @if (summary.message) {
+                            <div class="text-xs mt-1" style="color: var(--cr-text-muted);">{{ summary.message }}</div>
+                          }
+                        </div>
+                      }
 
                       @if (loadingSubmissions()) {
                         <div class="space-y-2 animate-pulse">
@@ -374,6 +399,51 @@
                                     <span class="text-sm font-bold" style="color: var(--cr-accent-blue);">{{ sub.score }}/{{ sa.maxScore }} điểm</span>
                                   }
                                 </div>
+                                <div>
+                                  <p class="text-sm font-medium" style="color: var(--cr-text-primary);">
+                                    {{ getSubmissionDisplayName(sub) }}
+                                  </p>
+                                  @if (sub.author?.email) {
+                                    <p class="text-xs" style="color: var(--cr-text-subtle);">{{ sub.author?.email }}</p>
+                                  }
+                                </div>
+                                @if (sub.isSimilarityFlagged) {
+                                  <div class="mt-2 p-2 rounded text-sm" style="background: rgba(248, 81, 73, 0.1); color: var(--cr-accent-red); border: 1px solid rgba(248, 81, 73, 0.3);">
+                                    <div class="font-semibold mb-1">
+                                      <i class="pi pi-exclamation-triangle mr-1"></i>Cảnh báo giống bài
+                                      @if (sub.maxSimilarityScore !== null && sub.maxSimilarityScore !== undefined) {
+                                        <span>({{ formatSimilarityPercent(sub.maxSimilarityScore) }})</span>
+                                      }
+                                    </div>
+                                    @if (sub.similarityMatches && sub.similarityMatches.length > 0) {
+                                      <div class="text-xs space-y-0.5">
+                                        @for (match of sub.similarityMatches.slice(0, 3); track match.submissionId) {
+                                          <div>- {{ getSimilarityMatchLabel(match) }}: {{ formatSimilarityPercent(match.similarity) }}</div>
+                                        }
+                                      </div>
+                                    }
+                                  </div>
+                                }
+                                @if (sub.aiGradingResult) {
+                                  <div class="mt-2 p-2 rounded text-sm" style="background: rgba(63, 185, 80, 0.08); border: 1px solid rgba(63, 185, 80, 0.3); color: var(--cr-accent-green);">
+                                    <div class="font-semibold mb-1">
+                                      <i class="pi pi-sparkles mr-1"></i>Nhận xét AI
+                                      @if (sub.aiGradingResult.confidence !== undefined && sub.aiGradingResult.confidence !== null) {
+                                        <span class="text-xs">· Độ tin cậy {{ formatSimilarityPercent(sub.aiGradingResult.confidence) }}</span>
+                                      }
+                                    </div>
+                                    <div class="text-xs" style="color: var(--cr-text-secondary);">
+                                      {{ sub.aiGradingResult.feedback || 'AI không trả về nhận xét chi tiết.' }}
+                                    </div>
+                                    @if (sub.aiGradingResult.criterionScores && sub.aiGradingResult.criterionScores.length > 0) {
+                                      <div class="text-xs mt-2 space-y-0.5">
+                                        @for (criterion of sub.aiGradingResult.criterionScores; track criterion.criterion) {
+                                          <div>• {{ criterion.criterion }}: {{ criterion.score }}/{{ criterion.maxScore }}</div>
+                                        }
+                                      </div>
+                                    }
+                                  </div>
+                                }
                                 @if (sub.submissionFiles && sub.submissionFiles.length > 0) {
                                   <div class="space-y-0.5">
                                     @for (file of sub.submissionFiles; track file.fileId) {
@@ -394,9 +464,6 @@
                                 }
                                 <p class="text-xs" style="color: var(--cr-text-subtle);">
                                   Nộp lúc: {{ sub.submittedAt | date:'dd/MM/yyyy HH:mm' }}
-                                  @if (sub.authorId) {
-                                    · ID: {{ sub.authorId }}
-                                  }
                                 </p>
                               </div>
                               <div class="flex items-center gap-1">
@@ -897,6 +964,20 @@
     </div>
 
     <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-medium" style="color: var(--cr-text-muted);">Tiêu chí chấm AI (tùy chọn)</label>
+      <textarea
+        pTextarea
+        [(ngModel)]="assignmentForm.gradingCriteriaText"
+        rows="4"
+        class="w-full"
+        placeholder="Mỗi dòng: Tên tiêu chí|max điểm|mô tả&#10;Ví dụ: Kiến trúc|30|Cấu trúc dự án rõ ràng"
+      ></textarea>
+      <p class="text-xs" style="color: var(--cr-text-subtle);">
+        Nếu để trống, AI sẽ tự tạo rubric để chấm.
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-1.5">
       <label class="text-xs font-medium" style="color: var(--cr-text-muted);">File đính kèm (đề bài / yêu cầu)</label>
       @if (editingAssignment()?.attachmentFileName && !assignmentFile) {
         <div class="flex items-center gap-2 text-sm mb-2" style="color: var(--cr-text-secondary);">
@@ -955,6 +1036,12 @@
         @if (gs.content) {
           <p class="text-sm" style="color: var(--cr-text-muted);">{{ gs.content }}</p>
         }
+        <p class="text-xs" style="color: var(--cr-text-subtle);">
+          {{ getSubmissionDisplayName(gs) }}
+          @if (gs.author?.email) {
+            · {{ gs.author?.email }}
+          }
+        </p>
         <p class="text-xs" style="color: var(--cr-text-subtle);">Nộp lúc: {{ gs.submittedAt | date:'dd/MM/yyyy HH:mm' }} · Lần nộp #{{ gs.attemptNumber }}</p>
       </div>
     }

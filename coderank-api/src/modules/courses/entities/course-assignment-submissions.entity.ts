@@ -1,6 +1,7 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { CourseAssignmentsEntity } from './course-assignments.entity';
+import { UsersEntity } from 'src/modules/users/entities/user.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum SubmissionStatusEnum {
@@ -131,4 +132,8 @@ export class CourseAssignmentSubmissionsEntity extends BaseEntity {
   })
   @JoinColumn({ name: 'assignmentId' })
   assignment: CourseAssignmentsEntity;
+
+  @ManyToOne(() => UsersEntity, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'authorId' })
+  author?: UsersEntity;
 }

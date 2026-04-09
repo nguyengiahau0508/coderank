@@ -180,8 +180,15 @@ export interface CourseAssignmentsModel extends BaseModel {
   isPublished: boolean;
   allowedFileTypes: string | null;
   maxFileSizeMb: number;
+  gradingCriteria: AssignmentGradingCriterion[] | null;
   lesson?: CourseLessonsModel;
   submissions?: CourseAssignmentSubmissionsModel[];
+}
+
+export interface AssignmentGradingCriterion {
+  criterion: string;
+  description?: string;
+  maxScore: number;
 }
 
 export interface SubmissionFileInfo {
@@ -190,6 +197,36 @@ export interface SubmissionFileInfo {
   fileName: string;
   mimeType: string;
   fileSize: number;
+}
+
+export interface AssignmentAiGradingCriterionScore {
+  criterion: string;
+  maxScore: number;
+  score: number;
+  feedback?: string;
+}
+
+export interface AssignmentAiGradingResult {
+  rubricUsed: AssignmentGradingCriterion[];
+  criterionScores?: AssignmentAiGradingCriterionScore[];
+  score: number;
+  maxScore: number;
+  percentageScore: number;
+  feedback: string;
+  strengths: string[];
+  improvements: string[];
+  confidence: number;
+  evaluatedFileCount: number;
+  generatedAt: string;
+  graderProvider?: string;
+  graderModel?: string;
+  error?: string;
+}
+
+export interface SubmissionSimilarityMatch {
+  submissionId: string;
+  authorId: string;
+  similarity: number;
 }
 
 export interface CourseAssignmentSubmissionsModel extends BaseModel {
@@ -202,5 +239,10 @@ export interface CourseAssignmentSubmissionsModel extends BaseModel {
   gradedAt: string | null;
   attemptNumber: number;
   submittedAt: string;
+  aiGradingResult: AssignmentAiGradingResult | null;
+  isSimilarityFlagged: boolean;
+  similarityMatches: SubmissionSimilarityMatch[] | null;
+  maxSimilarityScore: number | null;
   assignment?: CourseAssignmentsModel;
+  author?: Pick<UsersModel, 'id' | 'fullName' | 'username' | 'email'> | null;
 }

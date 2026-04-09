@@ -1359,17 +1359,16 @@ export class CoursesController {
   }
 
   @Get(':courseId/lessons/:lessonId/assignments/:assignmentId/submissions')
+  @Roles(RolesEnum.Admin, RolesEnum.Instructor)
   @ApiBearerAuth('JWT-auth')
   async getSubmissions(
     @Param('assignmentId') assignmentId: string,
     @Query('authorId') authorId?: string,
   ) {
-    const where: any = { assignmentId };
-    if (authorId) where.authorId = authorId;
-    return this.assignmentSubmissionsService.find({
-      where,
-      order: { submittedAt: 'DESC' },
-    });
+    return this.assignmentSubmissionsService.getSubmissionsByAssignmentId(
+      assignmentId,
+      authorId,
+    );
   }
 
   @Get(':courseId/lessons/:lessonId/assignments/:assignmentId/submissions/me')
@@ -1450,26 +1449,31 @@ export class CoursesController {
             currentUser.userId,
             dto.provider,
           )
-        : null;
+        : await this.userAiConfigService.findFirstConfiguredByUserIdWithApiKey(
+            currentUser.userId,
+          );
 
-      if (
-        dto.provider &&
-        !providerConfig?.apiKey &&
-        dto.provider !== AiProviderEnum.Ollama
-      ) {
+      if (!providerConfig) {
         throw new BadRequestException(
-          `Missing API key configuration for provider ${dto.provider}`,
+          'No AI provider configuration found. Please configure provider in Settings first.',
         );
       }
 
-      const aiConfig = dto.provider
-        ? {
-            provider: dto.provider,
-            modelName: dto.modelName || providerConfig?.modelName,
-            apiKey: providerConfig?.apiKey,
-            baseHost: providerConfig?.baseHost,
-          }
-        : undefined;
+      if (
+        !providerConfig.apiKey &&
+        providerConfig.provider !== AiProviderEnum.Ollama
+      ) {
+        throw new BadRequestException(
+          `Missing API key configuration for provider ${providerConfig.provider}`,
+        );
+      }
+
+      const aiConfig = {
+        provider: providerConfig.provider,
+        modelName: dto.modelName || providerConfig.modelName,
+        apiKey: providerConfig.apiKey,
+        baseHost: providerConfig.baseHost,
+      };
 
       const gradingResponse =
         await this.agentService.gradeAssignmentSubmissions(

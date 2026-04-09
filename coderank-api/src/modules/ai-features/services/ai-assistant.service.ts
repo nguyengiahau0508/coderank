@@ -35,7 +35,14 @@ export class AiAssistantService {
   ) {
     const problem = await this.problemsService.findOne({
       where: { id: problemId },
-      select: ['id', 'title', 'description', 'inputDescription', 'outputDescription', 'difficulty'],
+      select: [
+        'id',
+        'title',
+        'description',
+        'inputDescription',
+        'outputDescription',
+        'difficulty',
+      ],
     });
 
     if (!problem) {
@@ -76,7 +83,14 @@ export class AiAssistantService {
   ) {
     const problem = await this.problemsService.findOne({
       where: { id: problemId },
-      select: ['id', 'title', 'description', 'inputDescription', 'outputDescription', 'difficulty'],
+      select: [
+        'id',
+        'title',
+        'description',
+        'inputDescription',
+        'outputDescription',
+        'difficulty',
+      ],
     });
 
     if (!problem) {
@@ -189,7 +203,14 @@ export class AiAssistantService {
     const submission = await this.submissionsRepository.findOne({
       where: { id: submissionId },
       relations: ['problem'],
-      select: ['id', 'code', 'language', 'status', 'executionTimeMs', 'memoryUsedMb'],
+      select: [
+        'id',
+        'code',
+        'language',
+        'status',
+        'executionTimeMs',
+        'memoryUsedMb',
+      ],
     });
 
     if (!submission) {
@@ -273,10 +294,7 @@ export class AiAssistantService {
     };
   }
 
-  private async resolveAiConfig(
-    userId: string,
-    provider?: AiProviderEnum,
-  ) {
+  private async resolveAiConfig(userId: string, provider?: AiProviderEnum) {
     if (!provider) {
       return null;
     }

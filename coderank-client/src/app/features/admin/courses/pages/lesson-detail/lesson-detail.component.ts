@@ -22,9 +22,24 @@ import { FileUpload } from 'primeng/fileupload';
 import { TextEditorComponent } from '../../../../../shared/components/text-editor/text-editor.component';
 import { HighlightCodeDirective } from '../../../../../shared/directives/highlight-code.directive';
 import { CoursesService } from '../../../../../shared/services/courses/courses.service';
+import { AiUserPreferencesService } from '../../../../../core/services/ai-user-preferences.service';
 import { ChatContextService } from '../../../../../core/services/chat-context.service';
 import { LessonChatContext } from '../../../../../core/models/chat-context.model';
-import { AssignmentSubmissionStatusEnum, AssignmentTypeEnum, CourseAssignmentsModel, CourseAssignmentSubmissionsModel, CourseLessonProblemsModel, CourseLessonsModel, CourseQuizQuestionsModel, CourseQuizzesModel, LessonTypeEnum, ProblemsModel, QuizQuestionTypeEnum } from '../../../../../data';
+import {
+  AssignmentGradingCriterion,
+  AssignmentSubmissionStatusEnum,
+  AssignmentTypeEnum,
+  CourseAssignmentsModel,
+  CourseAssignmentSubmissionsModel,
+  CourseLessonProblemsModel,
+  CourseLessonsModel,
+  CourseQuizQuestionsModel,
+  CourseQuizzesModel,
+  LessonTypeEnum,
+  ProblemsModel,
+  SubmissionSimilarityMatch,
+  QuizQuestionTypeEnum,
+} from '../../../../../data';
 
 @Component({
   selector: 'app-admin-lesson-detail',
@@ -56,6 +71,7 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly coursesService = inject(CoursesService);
+  private readonly aiPreferences = inject(AiUserPreferencesService);
   private readonly messageService = inject(MessageService);
   private readonly confirmService = inject(ConfirmationService);
   private readonly chatContextService = inject(ChatContextService);
@@ -117,6 +133,8 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
   readonly selectedAssignment = signal<CourseAssignmentsModel | null>(null);
   readonly submissions = signal<CourseAssignmentSubmissionsModel[]>([]);
   readonly loadingSubmissions = signal<boolean>(false);
+  readonly gradingAllWithAi = signal<boolean>(false);
+  readonly aiGradingSummary = signal<{ gradedCount: number; flaggedCount?: number; queued?: boolean; message?: string } | null>(null);
   readonly showGradeDialog = signal<boolean>(false);
   readonly gradingSubmission = signal<CourseAssignmentSubmissionsModel | null>(null);
   readonly savingGrade = signal<boolean>(false);
@@ -804,6 +822,7 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
       isPublished: false,
       allowedFileTypes: '.pdf,.docx,.zip,.rar',
       maxFileSizeMb: 10,
+      gradingCriteriaText: '',
     };
     this.showAssignmentDialog.set(true);
   }
@@ -821,6 +840,7 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
       isPublished: a.isPublished,
       allowedFileTypes: a.allowedFileTypes || '',
       maxFileSizeMb: a.maxFileSizeMb,
+      gradingCriteriaText: this.formatGradingCriteriaInput(a.gradingCriteria),
     };
     this.showAssignmentDialog.set(true);
   }
@@ -838,9 +858,19 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
     this.savingAssignment.set(true);
     const editing = this.editingAssignment();
     const dto: any = { ...this.assignmentForm };
+    const criteriaParse = this.parseGradingCriteriaInput(this.assignmentForm.gradingCriteriaText || '');
+    if (criteriaParse.error) {
+      this.messageService.add({ severity: 'warn', summary: 'Cảnh báo', detail: criteriaParse.error });
+      this.savingAssignment.set(false);
+      return;
+    }
+
+    dto.gradingCriteria = criteriaParse.criteria;
     if (!dto.description) delete dto.description;
     if (!dto.dueDate) delete dto.dueDate;
     if (!dto.allowedFileTypes) delete dto.allowedFileTypes;
+    if (!dto.gradingCriteria || dto.gradingCriteria.length === 0) delete dto.gradingCriteria;
+    delete dto.gradingCriteriaText;
 
     if (editing) {
       this.coursesService.updateAssignment(this.courseId(), this.lessonId(), editing.id.toString(), dto, this.assignmentFile ?? undefined).subscribe({
@@ -922,12 +952,14 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
 
   selectAssignment(a: CourseAssignmentsModel): void {
     this.selectedAssignment.set(a);
+    this.aiGradingSummary.set(null);
     this.loadSubmissions(a.id.toString());
   }
 
   deselectAssignment(): void {
     this.selectedAssignment.set(null);
     this.submissions.set([]);
+    this.aiGradingSummary.set(null);
   }
 
   loadSubmissions(assignmentId: string): void {
@@ -941,6 +973,43 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
       error: () => {
         this.submissions.set([]);
         this.loadingSubmissions.set(false);
+      },
+    });
+  }
+
+  runAiGrading(): void {
+    const assignment = this.selectedAssignment();
+    if (!assignment || this.gradingAllWithAi()) return;
+
+    this.gradingAllWithAi.set(true);
+    this.coursesService.triggerAiGradeSubmissions(
+      this.courseId(),
+      this.lessonId(),
+      assignment.id.toString(),
+      {
+        similarityThreshold: 0.85,
+        provider: this.aiPreferences.preferredProvider() ?? undefined,
+      },
+      true,
+    ).subscribe({
+      next: (response) => {
+        const result = response.data ?? (response as any);
+        this.aiGradingSummary.set(result);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Đã chấm AI',
+          detail: `Đã xử lý ${result?.gradedCount ?? 0} bài${result?.flaggedCount ? `, cảnh báo ${result.flaggedCount} bài giống nhau` : ''}`,
+        });
+        this.gradingAllWithAi.set(false);
+        this.loadSubmissions(assignment.id.toString());
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Lỗi',
+          detail: 'Không thể chấm AI cho bài tập này',
+        });
+        this.gradingAllWithAi.set(false);
       },
     });
   }
@@ -993,6 +1062,69 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
       case AssignmentSubmissionStatusEnum.Late: return 'danger';
       default: return 'secondary';
     }
+  }
+
+  getSubmissionDisplayName(submission: CourseAssignmentSubmissionsModel): string {
+    return submission.author?.fullName || submission.author?.username || `Học viên #${submission.authorId}`;
+  }
+
+  getSimilarityMatchLabel(match: SubmissionSimilarityMatch): string {
+    const found = this.submissions().find((item) => item.id.toString() === match.submissionId);
+    if (found) {
+      return this.getSubmissionDisplayName(found);
+    }
+    return `Học viên #${match.authorId}`;
+  }
+
+  formatSimilarityPercent(score: number | null | undefined): string {
+    if (score === null || score === undefined || Number.isNaN(score)) {
+      return '0%';
+    }
+    return `${Math.round(score * 100)}%`;
+  }
+
+  private formatGradingCriteriaInput(criteria?: AssignmentGradingCriterion[] | null): string {
+    if (!criteria || criteria.length === 0) return '';
+    return criteria
+      .map((item) => `${item.criterion}|${item.maxScore}${item.description ? `|${item.description}` : ''}`)
+      .join('\n');
+  }
+
+  private parseGradingCriteriaInput(rawText: string): { criteria: AssignmentGradingCriterion[]; error?: string } {
+    const text = rawText.trim();
+    if (!text) {
+      return { criteria: [] };
+    }
+
+    const lines = text.split('\n').map((line) => line.trim()).filter((line) => line.length > 0);
+    const criteria: AssignmentGradingCriterion[] = [];
+
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
+      const [criterion, maxScoreText, ...descParts] = line.split('|').map((part) => part.trim());
+      if (!criterion || !maxScoreText) {
+        return {
+          criteria: [],
+          error: `Tiêu chí dòng ${index + 1} không hợp lệ. Định dạng đúng: Tên tiêu chí|max điểm|mô tả`,
+        };
+      }
+
+      const maxScore = Number(maxScoreText);
+      if (!Number.isFinite(maxScore) || maxScore < 0) {
+        return {
+          criteria: [],
+          error: `Điểm tối đa ở dòng ${index + 1} không hợp lệ`,
+        };
+      }
+
+      criteria.push({
+        criterion,
+        maxScore,
+        description: descParts.length > 0 ? descParts.join('|') : undefined,
+      });
+    }
+
+    return { criteria };
   }
 
   confirmDeleteSubmission(sub: CourseAssignmentSubmissionsModel): void {

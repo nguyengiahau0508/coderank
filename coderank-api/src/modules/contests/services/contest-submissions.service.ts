@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { BaseService } from 'src/common/services/base.service';
 import { ContestSubmissionsEntity } from '../entities/contest-submissions.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -49,5 +45,16 @@ export class ContestSubmissionsService extends BaseService<ContestSubmissionsEnt
       totalTestcases: 0,
       submittedAt: new Date(),
     });
+  }
+
+  async getAllSubmissionsByContestId(contestId: string) {
+    return this.repository
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.user', 'user')
+      .leftJoinAndSelect('submission.problem', 'problem')
+      .where('submission.contestId = :contestId', { contestId })
+      .addSelect('user.email')
+      .orderBy('submission.submittedAt', 'DESC')
+      .getMany();
   }
 }

@@ -59,4 +59,19 @@ export class CourseAssignmentSubmissionsService extends BaseService<CourseAssign
 
     return qb.orderBy('s.submittedAt', 'DESC').getMany();
   }
+
+  async getSubmissionsByAssignmentId(assignmentId: string, authorId?: string) {
+    const qb = this.repository
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.author', 'author')
+      .where('submission.assignmentId = :assignmentId', { assignmentId })
+      .addSelect('author.email')
+      .orderBy('submission.submittedAt', 'DESC');
+
+    if (authorId) {
+      qb.andWhere('submission.authorId = :authorId', { authorId });
+    }
+
+    return qb.getMany();
+  }
 }

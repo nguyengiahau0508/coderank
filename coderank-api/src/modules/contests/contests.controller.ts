@@ -415,10 +415,8 @@ export class ContestsController {
     description: 'Get all submissions in contest (owner only)',
   })
   async getAllContestSubmissions(@Param('contestId') contestId: string) {
-    return this.contestSubmissionsService.find({
-      where: { contestId: contestId },
-      relations: { user: true, problem: true },
-      order: { submittedAt: 'DESC' },
-    });
+    return this.contestSubmissionsService.getAllSubmissionsByContestId(
+      contestId,
+    );
   }
 }

@@ -293,7 +293,12 @@
             @for (s of submissions(); track s.id) {
               <div class="grid grid-cols-12 gap-2 px-5 py-3.5 border-t border-surface-100 dark:border-surface-800 items-center hover:bg-surface-50 dark:hover:bg-surface-900 transition-colors">
                 <div class="col-span-3">
-                  <p class="text-sm font-medium text-surface-900 dark:text-surface-0">{{ s.user?.username || s.userId }}</p>
+                  <p class="text-sm font-medium text-surface-900 dark:text-surface-0">
+                    {{ s.user?.fullName || s.user?.username || s.userId }}
+                  </p>
+                  @if (s.user?.email) {
+                    <p class="text-xs text-surface-400">{{ s.user?.email }}</p>
+                  }
                 </div>
                 <div class="col-span-2">
                   <p class="text-sm text-surface-600 dark:text-surface-400">{{ s.problem?.title || s.problemId }}</p>

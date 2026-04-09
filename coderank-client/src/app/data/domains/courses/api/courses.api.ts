@@ -39,6 +39,7 @@ import {
   CreateAssignmentSubmissionDto,
   UpdateAssignmentSubmissionDto,
   GradeSubmissionDto,
+  TriggerAiGradeAssignmentSubmissionsDto,
 } from '../dto';
 import { ApiResponse, BaseApi, PaginatedResponse} from '../../../shared';
 
@@ -294,6 +295,31 @@ export class CoursesApi extends BaseApi {
 
   gradeSubmission(courseId: string, lessonId: string, assignmentId: string, submissionId: string, dto: GradeSubmissionDto): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> {
     return this.apiService.patch<ApiResponse<CourseAssignmentSubmissionsModel>>(this.getUrl(`/${courseId}/lessons/${lessonId}/assignments/${assignmentId}/submissions/${submissionId}/grade`), dto);
+  }
+
+  triggerAiGradeSubmissions(
+    courseId: string,
+    lessonId: string,
+    assignmentId: string,
+    dto: TriggerAiGradeAssignmentSubmissionsDto = {},
+    sync = true,
+  ): Observable<ApiResponse<{
+    assignmentId: string;
+    queued?: boolean;
+    gradedCount: number;
+    flaggedCount?: number;
+    message?: string;
+  }>> {
+    return this.apiService.post<ApiResponse<{
+      assignmentId: string;
+      queued?: boolean;
+      gradedCount: number;
+      flaggedCount?: number;
+      message?: string;
+    }>>(
+      this.getUrl(`/${courseId}/lessons/${lessonId}/assignments/${assignmentId}/submissions/ai-grade?sync=${sync}`),
+      dto,
+    );
   }
 
   updateSubmission(courseId: string, lessonId: string, assignmentId: string, submissionId: string, dto: UpdateAssignmentSubmissionDto, files?: File[]): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> {

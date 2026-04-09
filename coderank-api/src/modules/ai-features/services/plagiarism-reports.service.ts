@@ -49,7 +49,9 @@ export class PlagiarismReportsService extends BaseService<PlagiarismReportsEntit
 
     const candidates = await this.submissionsRepository
       .createQueryBuilder('sub')
-      .where('sub.problemId = :problemId', { problemId: sourceSubmission.problemId })
+      .where('sub.problemId = :problemId', {
+        problemId: sourceSubmission.problemId,
+      })
       .andWhere('sub.id != :submissionId', { submissionId })
       .select(['sub.id', 'sub.code'])
       .getMany();
@@ -62,7 +64,10 @@ export class PlagiarismReportsService extends BaseService<PlagiarismReportsEntit
       const similarity = this.jaccardSimilarity(sourceTokens, targetTokens);
 
       if (similarity >= threshold) {
-        const matchedLines = this.matchLines(sourceLines, this.normalizeLines(candidate.code));
+        const matchedLines = this.matchLines(
+          sourceLines,
+          this.normalizeLines(candidate.code),
+        );
         matches.push({
           submissionId: candidate.id,
           similarity: Number(similarity.toFixed(4)),

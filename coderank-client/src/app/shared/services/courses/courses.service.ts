@@ -35,6 +35,7 @@ import {
   UpdateAssignmentDto,
   CreateAssignmentSubmissionDto,
   GradeSubmissionDto,
+  TriggerAiGradeAssignmentSubmissionsDto,
 } from '../../../data';
 
 @Injectable({ providedIn: 'root' })
@@ -105,5 +106,8 @@ export class CoursesService {
   getSubmissions(courseId: string, lessonId: string, assignmentId: string, authorId?: string): Observable<ApiResponse<CourseAssignmentSubmissionsModel[]>> { return this.coursesApi.getSubmissions(courseId, lessonId, assignmentId, authorId); }
   getMySubmissions(courseId: string, lessonId: string, assignmentId: string): Observable<ApiResponse<CourseAssignmentSubmissionsModel[]>> { return this.coursesApi.getMySubmissions(courseId, lessonId, assignmentId); }
   gradeSubmission(courseId: string, lessonId: string, assignmentId: string, submissionId: string, dto: GradeSubmissionDto): Observable<ApiResponse<CourseAssignmentSubmissionsModel>> { return this.coursesApi.gradeSubmission(courseId, lessonId, assignmentId, submissionId, dto); }
+  triggerAiGradeSubmissions(courseId: string, lessonId: string, assignmentId: string, dto?: TriggerAiGradeAssignmentSubmissionsDto, sync = true): Observable<ApiResponse<{ assignmentId: string; queued?: boolean; gradedCount: number; flaggedCount?: number; message?: string }>> {
+    return this.coursesApi.triggerAiGradeSubmissions(courseId, lessonId, assignmentId, dto, sync);
+  }
   deleteSubmission(courseId: string, lessonId: string, assignmentId: string, submissionId: string): Observable<ApiResponse<void>> { return this.coursesApi.deleteSubmission(courseId, lessonId, assignmentId, submissionId); }
 }

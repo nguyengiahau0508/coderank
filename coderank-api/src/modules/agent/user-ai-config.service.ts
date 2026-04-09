@@ -35,6 +35,23 @@ export class UserAiConfigService {
       .getOne();
   }
 
+  async findFirstConfiguredByUserIdWithApiKey(
+    userId: string,
+  ): Promise<UserAiConfigEntity | null> {
+    return this.repo
+      .createQueryBuilder('config')
+      .addSelect('config.apiKey')
+      .where('config.authorId = :userId', { userId })
+      .andWhere(
+        `(config.provider = :ollama OR (config.apiKey IS NOT NULL AND config.apiKey != ''))`,
+        { ollama: AiProviderEnum.Ollama },
+      )
+      .orderBy(
+        `FIELD(config.provider, '${AiProviderEnum.Gemini}', '${AiProviderEnum.OpenAI}', '${AiProviderEnum.Anthropic}', '${AiProviderEnum.Groq}', '${AiProviderEnum.Ollama}')`,
+      )
+      .getOne();
+  }
+
   async upsert(
     userId: string,
     dto: UpsertAiConfigDto,

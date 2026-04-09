@@ -1,4 +1,12 @@
-import { AssignmentSubmissionStatusEnum, AssignmentTypeEnum, CourseLevelEnum, CourseStatusEnum, LessonTypeEnum, QuizQuestionTypeEnum } from "../../../shared/enums/enums";
+import {
+  AiProviderEnum,
+  AssignmentSubmissionStatusEnum,
+  AssignmentTypeEnum,
+  CourseLevelEnum,
+  CourseStatusEnum,
+  LessonTypeEnum,
+  QuizQuestionTypeEnum,
+} from "../../../shared/enums/enums";
 
 // ==================== COURSE ====================
 export interface CreateCourseDto {
@@ -126,9 +134,16 @@ export interface CreateAssignmentDto {
   isPublished?: boolean;
   allowedFileTypes?: string;
   maxFileSizeMb?: number;
+  gradingCriteria?: AssignmentGradingCriterionDto[];
 }
 
 export interface UpdateAssignmentDto extends Partial<CreateAssignmentDto> {}
+
+export interface AssignmentGradingCriterionDto {
+  criterion: string;
+  description?: string;
+  maxScore: number;
+}
 
 // ==================== ASSIGNMENT SUBMISSION ====================
 export interface CreateAssignmentSubmissionDto {
@@ -143,4 +158,12 @@ export interface GradeSubmissionDto {
   score?: number;
   feedback?: string;
   status?: AssignmentSubmissionStatusEnum;
+}
+
+export interface TriggerAiGradeAssignmentSubmissionsDto {
+  submissionIds?: string[];
+  similarityThreshold?: number;
+  forceRegrade?: boolean;
+  provider?: AiProviderEnum;
+  modelName?: string;
 }

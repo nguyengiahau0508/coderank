@@ -123,7 +123,9 @@ export class AiFeaturesController {
 
   @Post('submissions/:submissionId/plagiarism-check')
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
-  @ApiOperation({ summary: 'Run plagiarism check for a submission (Instructor+)' })
+  @ApiOperation({
+    summary: 'Run plagiarism check for a submission (Instructor+)',
+  })
   @ApiParam({ name: 'submissionId', description: 'Submission ID' })
   async checkPlagiarism(
     @Param('submissionId', ParseUUIDPipe) submissionId: string,
@@ -137,12 +139,16 @@ export class AiFeaturesController {
 
   @Get('submissions/:submissionId/plagiarism-report')
   @Roles(RolesEnum.Admin, RolesEnum.Instructor)
-  @ApiOperation({ summary: 'Get latest plagiarism report for a submission (Instructor+)' })
+  @ApiOperation({
+    summary: 'Get latest plagiarism report for a submission (Instructor+)',
+  })
   @ApiParam({ name: 'submissionId', description: 'Submission ID' })
   async getPlagiarismReport(
     @Param('submissionId', ParseUUIDPipe) submissionId: string,
   ) {
-    return this.plagiarismReportsService.getLatestReportForSubmission(submissionId);
+    return this.plagiarismReportsService.getLatestReportForSubmission(
+      submissionId,
+    );
   }
 
   @Get('users/me/review-stats')
@@ -377,7 +383,10 @@ export class AiFeaturesController {
     @CurrentUser() user: IJwtPayload,
     @Req() req: Request,
   ) {
-    const userToken = (req.headers.authorization as string)?.replace('Bearer ', '');
+    const userToken = (req.headers.authorization as string)?.replace(
+      'Bearer ',
+      '',
+    );
     return this.aiAssistantService.suggestAlgorithm(
       problemId,
       user.userId,
@@ -396,7 +405,10 @@ export class AiFeaturesController {
     @CurrentUser() user: IJwtPayload,
     @Req() req: Request,
   ) {
-    const userToken = (req.headers.authorization as string)?.replace('Bearer ', '');
+    const userToken = (req.headers.authorization as string)?.replace(
+      'Bearer ',
+      '',
+    );
     return this.aiAssistantService.suggestDataStructure(
       problemId,
       user.userId,
@@ -417,7 +429,10 @@ export class AiFeaturesController {
     @CurrentUser() user: IJwtPayload,
     @Req() req: Request,
   ) {
-    const userToken = (req.headers.authorization as string)?.replace('Bearer ', '');
+    const userToken = (req.headers.authorization as string)?.replace(
+      'Bearer ',
+      '',
+    );
     return this.aiAssistantService.debugSubmission(
       submissionId,
       user.userId,
@@ -437,7 +452,10 @@ export class AiFeaturesController {
     @CurrentUser() user: IJwtPayload,
     @Req() req: Request,
   ) {
-    const userToken = (req.headers.authorization as string)?.replace('Bearer ', '');
+    const userToken = (req.headers.authorization as string)?.replace(
+      'Bearer ',
+      '',
+    );
     return this.aiAssistantService.explainSubmissionSolution(
       submissionId,
       user.userId,
@@ -458,7 +476,10 @@ export class AiFeaturesController {
     @CurrentUser() user: IJwtPayload,
     @Req() req: Request,
   ) {
-    const userToken = (req.headers.authorization as string)?.replace('Bearer ', '');
+    const userToken = (req.headers.authorization as string)?.replace(
+      'Bearer ',
+      '',
+    );
     return this.aiAssistantService.suggestOptimization(
       submissionId,
       user.userId,
@@ -470,13 +491,18 @@ export class AiFeaturesController {
   }
 
   @Post('code/translate')
-  @ApiOperation({ summary: 'Translate code between programming languages using AI' })
+  @ApiOperation({
+    summary: 'Translate code between programming languages using AI',
+  })
   async translateCode(
     @Body() dto: TranslateCodeDto,
     @CurrentUser() user: IJwtPayload,
     @Req() req: Request,
   ) {
-    const userToken = (req.headers.authorization as string)?.replace('Bearer ', '');
+    const userToken = (req.headers.authorization as string)?.replace(
+      'Bearer ',
+      '',
+    );
     return this.aiAssistantService.translateCode(
       dto.sourceCode,
       dto.sourceLanguage,
@@ -496,7 +522,10 @@ export class AiFeaturesController {
     @CurrentUser() user: IJwtPayload,
     @Req() req: Request,
   ) {
-    const userToken = (req.headers.authorization as string)?.replace('Bearer ', '');
+    const userToken = (req.headers.authorization as string)?.replace(
+      'Bearer ',
+      '',
+    );
     return this.aiAssistantService.generateProblemDraft(
       dto.topic,
       dto.difficulty,
