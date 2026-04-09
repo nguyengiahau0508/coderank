@@ -1,18 +1,21 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiFeaturesController } from './ai-features.controller';
-import { 
-  AiHintsService, 
+import {
+  AiHintsService,
   CodeReviewsService,
   UserSkillProfilesService,
   LearningPathsService,
   TestcaseGeneratorService,
   ClassAnalyticsService,
   AiGradingService,
+  ErrorExplanationService,
+  AiAssistantService,
+  PlagiarismReportsService,
 } from './services';
-import { 
-  AiHintsEntity, 
-  CodeReviewsEntity, 
+import {
+  AiHintsEntity,
+  CodeReviewsEntity,
   PlagiarismReportsEntity,
   UserSkillProfilesEntity,
   LearningPathsEntity,
@@ -48,22 +51,28 @@ import { CoursesEntity } from '../courses/entities/courses.entity';
   ],
   controllers: [AiFeaturesController],
   providers: [
-    AiHintsService, 
+    AiHintsService,
     CodeReviewsService,
     UserSkillProfilesService,
     LearningPathsService,
     TestcaseGeneratorService,
     ClassAnalyticsService,
     AiGradingService,
+    ErrorExplanationService,
+    AiAssistantService,
+    PlagiarismReportsService,
   ],
   exports: [
-    AiHintsService, 
+    AiHintsService,
     CodeReviewsService,
     UserSkillProfilesService,
     LearningPathsService,
     TestcaseGeneratorService,
     ClassAnalyticsService,
     AiGradingService,
+    ErrorExplanationService,
+    AiAssistantService,
+    PlagiarismReportsService,
   ],
 })
 export class AiFeaturesModule {}

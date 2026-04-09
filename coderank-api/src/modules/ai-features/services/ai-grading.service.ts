@@ -39,8 +39,16 @@ export class AiGradingService extends BaseService<AiGradingsEntity> {
     { criterion: 'Correctness', criterionVi: 'Tính đúng đắn', maxScore: 40 },
     { criterion: 'Code Quality', criterionVi: 'Chất lượng code', maxScore: 20 },
     { criterion: 'Efficiency', criterionVi: 'Hiệu quả', maxScore: 20 },
-    { criterion: 'Style & Readability', criterionVi: 'Style & Dễ đọc', maxScore: 10 },
-    { criterion: 'Documentation', criterionVi: 'Tài liệu/Comment', maxScore: 10 },
+    {
+      criterion: 'Style & Readability',
+      criterionVi: 'Style & Dễ đọc',
+      maxScore: 10,
+    },
+    {
+      criterion: 'Documentation',
+      criterionVi: 'Tài liệu/Comment',
+      maxScore: 10,
+    },
   ];
 
   constructor(
@@ -74,7 +82,7 @@ export class AiGradingService extends BaseService<AiGradingsEntity> {
 
     // Analyze code and generate grades
     const result = await this.analyzeAndGrade(
-      submission.sourceCode || '',
+      submission.code || '',
       submission.language,
       submission.problem?.description || '',
       activeRubric,
@@ -109,9 +117,13 @@ export class AiGradingService extends BaseService<AiGradingsEntity> {
     // Analyze code for each criterion
     for (const criterion of rubric) {
       maxPossibleScore += criterion.maxScore;
-      
-      const analysis = this.analyzeCriterion(criterion.criterion, code, language);
-      
+
+      const analysis = this.analyzeCriterion(
+        criterion.criterion,
+        code,
+        language,
+      );
+
       const score = Math.round(criterion.maxScore * analysis.score);
       totalScore += score;
 
@@ -128,11 +140,21 @@ export class AiGradingService extends BaseService<AiGradingsEntity> {
     const percentageScore = (totalScore / maxPossibleScore) * 100;
 
     // Generate overall assessment
-    const { strengths, strengthsVi, improvements, improvementsVi } = 
+    const { strengths, strengthsVi, improvements, improvementsVi } =
       this.identifyStrengthsAndImprovements(rubricScores);
 
-    const overallFeedback = this.generateOverallFeedback(percentageScore, strengths, improvements, 'en');
-    const overallFeedbackVi = this.generateOverallFeedback(percentageScore, strengthsVi, improvementsVi, 'vi');
+    const overallFeedback = this.generateOverallFeedback(
+      percentageScore,
+      strengths,
+      improvements,
+      'en',
+    );
+    const overallFeedbackVi = this.generateOverallFeedback(
+      percentageScore,
+      strengthsVi,
+      improvementsVi,
+      'vi',
+    );
 
     // Calculate confidence based on code complexity
     const confidenceScore = this.calculateConfidence(code);
@@ -161,32 +183,39 @@ export class AiGradingService extends BaseService<AiGradingsEntity> {
     language: string,
   ): { score: number; feedback: string; feedbackVi: string } {
     const lines = code.split('\n');
-    const nonEmptyLines = lines.filter(l => l.trim().length > 0);
+    const nonEmptyLines = lines.filter((l) => l.trim().length > 0);
 
     switch (criterion.toLowerCase()) {
       case 'correctness':
         // Heuristic: check for common patterns
-        const hasReturnOrPrint = /return|print|console\.|System\.out/i.test(code);
+        const hasReturnOrPrint = /return|print|console\.|System\.out/i.test(
+          code,
+        );
         const hasMainLogic = nonEmptyLines.length > 5;
         const score1 = (hasReturnOrPrint ? 0.5 : 0) + (hasMainLogic ? 0.5 : 0);
         return {
           score: score1,
-          feedback: hasReturnOrPrint && hasMainLogic 
-            ? 'Code appears to have proper output logic'
-            : 'Code may be missing output or main logic',
-          feedbackVi: hasReturnOrPrint && hasMainLogic
-            ? 'Code có logic output hợp lý'
-            : 'Code có thể thiếu output hoặc logic chính',
+          feedback:
+            hasReturnOrPrint && hasMainLogic
+              ? 'Code appears to have proper output logic'
+              : 'Code may be missing output or main logic',
+          feedbackVi:
+            hasReturnOrPrint && hasMainLogic
+              ? 'Code có logic output hợp lý'
+              : 'Code có thể thiếu output hoặc logic chính',
         };
 
       case 'code quality':
         // Check naming conventions, structure
         const hasGoodNaming = /[a-z][a-zA-Z]+|[a-z]+_[a-z]+/.test(code);
-        const hasSmallFunctions = (code.match(/function|def |void |public |private /g) || []).length > 1;
-        const score2 = (hasGoodNaming ? 0.5 : 0.3) + (hasSmallFunctions ? 0.5 : 0.2);
+        const hasSmallFunctions =
+          (code.match(/function|def |void |public |private /g) || []).length >
+          1;
+        const score2 =
+          (hasGoodNaming ? 0.5 : 0.3) + (hasSmallFunctions ? 0.5 : 0.2);
         return {
           score: Math.min(1, score2),
-          feedback: hasGoodNaming 
+          feedback: hasGoodNaming
             ? 'Good naming conventions used'
             : 'Consider using more descriptive variable names',
           feedbackVi: hasGoodNaming
@@ -199,41 +228,58 @@ export class AiGradingService extends BaseService<AiGradingsEntity> {
         const nestedLoops = (code.match(/for.*for|while.*while/s) || []).length;
         const hasEarlyReturn = /return.*if|break|continue/.test(code);
         const score3 = nestedLoops > 1 ? 0.4 : nestedLoops === 1 ? 0.7 : 0.9;
-        const adjustedScore3 = hasEarlyReturn ? Math.min(1, score3 + 0.1) : score3;
+        const adjustedScore3 = hasEarlyReturn
+          ? Math.min(1, score3 + 0.1)
+          : score3;
         return {
           score: adjustedScore3,
-          feedback: nestedLoops > 1
-            ? 'Multiple nested loops detected - consider optimization'
-            : 'Code efficiency appears reasonable',
-          feedbackVi: nestedLoops > 1
-            ? 'Phát hiện nhiều vòng lặp lồng nhau - cân nhắc tối ưu'
-            : 'Hiệu quả code hợp lý',
+          feedback:
+            nestedLoops > 1
+              ? 'Multiple nested loops detected - consider optimization'
+              : 'Code efficiency appears reasonable',
+          feedbackVi:
+            nestedLoops > 1
+              ? 'Phát hiện nhiều vòng lặp lồng nhau - cân nhắc tối ưu'
+              : 'Hiệu quả code hợp lý',
         };
 
       case 'style & readability':
         // Check indentation, line length, spacing
-        const hasConsistentIndent = lines.every(l => 
-          l.startsWith('  ') || l.startsWith('\t') || l.trim() === '' || l === l.trim()
+        const hasConsistentIndent = lines.every(
+          (l) =>
+            l.startsWith('  ') ||
+            l.startsWith('\t') ||
+            l.trim() === '' ||
+            l === l.trim(),
         );
-        const avgLineLength = nonEmptyLines.reduce((s, l) => s + l.length, 0) / Math.max(1, nonEmptyLines.length);
+        const avgLineLength =
+          nonEmptyLines.reduce((s, l) => s + l.length, 0) /
+          Math.max(1, nonEmptyLines.length);
         const goodLineLength = avgLineLength < 100;
-        const score4 = (hasConsistentIndent ? 0.5 : 0.3) + (goodLineLength ? 0.5 : 0.3);
+        const score4 =
+          (hasConsistentIndent ? 0.5 : 0.3) + (goodLineLength ? 0.5 : 0.3);
         return {
           score: Math.min(1, score4),
-          feedback: hasConsistentIndent && goodLineLength
-            ? 'Good code formatting and readability'
-            : 'Consider improving code formatting',
-          feedbackVi: hasConsistentIndent && goodLineLength
-            ? 'Format code và dễ đọc tốt'
-            : 'Cân nhắc cải thiện format code',
+          feedback:
+            hasConsistentIndent && goodLineLength
+              ? 'Good code formatting and readability'
+              : 'Consider improving code formatting',
+          feedbackVi:
+            hasConsistentIndent && goodLineLength
+              ? 'Format code và dễ đọc tốt'
+              : 'Cân nhắc cải thiện format code',
         };
 
       case 'documentation':
         // Check for comments
         const commentPatterns = /\/\/|\/\*|#.*|"""|'''|<!--/;
         const hasComments = commentPatterns.test(code);
-        const commentRatio = (code.match(commentPatterns) || []).length / Math.max(1, nonEmptyLines.length);
-        const score5 = hasComments ? 0.5 + Math.min(0.5, commentRatio * 2) : 0.2;
+        const commentRatio =
+          (code.match(commentPatterns) || []).length /
+          Math.max(1, nonEmptyLines.length);
+        const score5 = hasComments
+          ? 0.5 + Math.min(0.5, commentRatio * 2)
+          : 0.2;
         return {
           score: score5,
           feedback: hasComments
@@ -268,7 +314,7 @@ export class AiGradingService extends BaseService<AiGradingsEntity> {
 
     for (const item of rubricScores) {
       const percentage = (item.score / item.maxScore) * 100;
-      
+
       if (percentage >= 80) {
         strengths.push(`Strong ${item.criterion.toLowerCase()}`);
         strengthsVi.push(`${item.criterionVi || item.criterion} tốt`);
@@ -312,11 +358,11 @@ export class AiGradingService extends BaseService<AiGradingsEntity> {
 
   private calculateConfidence(code: string): number {
     // Higher confidence for simpler, more analyzable code
-    const lines = code.split('\n').filter(l => l.trim().length > 0);
-    
+    const lines = code.split('\n').filter((l) => l.trim().length > 0);
+
     if (lines.length < 5) return 0.5; // Too short to analyze well
     if (lines.length > 500) return 0.6; // Very long code is harder to analyze
-    
+
     // Moderate length code has higher confidence
     return 0.8;
   }
@@ -349,7 +395,9 @@ export class AiGradingService extends BaseService<AiGradingsEntity> {
   /**
    * Get grading for a submission.
    */
-  async getGradingForSubmission(submissionId: string): Promise<AiGradingsEntity | null> {
+  async getGradingForSubmission(
+    submissionId: string,
+  ): Promise<AiGradingsEntity | null> {
     return this.gradingRepository.findOne({
       where: { submissionId },
       order: { createdAt: 'DESC' },

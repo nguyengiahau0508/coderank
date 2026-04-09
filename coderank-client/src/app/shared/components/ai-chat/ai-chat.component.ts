@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import hljs from 'highlight.js';
@@ -29,10 +30,14 @@ import {
 import { AiProviderEnum } from '../../../data/shared/enums/enums';
 import { environment } from '../../../../environments/environment';
 import { ChatContextService } from '../../../core/services/chat-context.service';
+import { AiUserPreferencesService } from '../../../core/services/ai-user-preferences.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 /** Provider display metadata */
 const PROVIDER_META: Record<AiProviderEnum, { label: string; icon: string; color: string }> = {
   [AiProviderEnum.Gemini]: { label: 'Gemini', icon: 'pi pi-sparkles', color: '#4285F4' },
+  [AiProviderEnum.OpenAI]: { label: 'OpenAI', icon: 'pi pi-star', color: '#10A37F' },
+  [AiProviderEnum.Anthropic]: { label: 'Anthropic', icon: 'pi pi-compass', color: '#D97706' },
   [AiProviderEnum.Groq]: { label: 'Groq', icon: 'pi pi-bolt', color: '#F55036' },
   [AiProviderEnum.Ollama]: { label: 'Ollama', icon: 'pi pi-server', color: '#7C3AED' },
 };
@@ -48,8 +53,10 @@ export class AiChatComponent {
   private readonly agentApi = inject(AgentApi);
   private readonly ngZone = inject(NgZone);
   private readonly chatContextService = inject(ChatContextService);
+  private readonly aiPreferences = inject(AiUserPreferencesService);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly messagesEl = viewChild<ElementRef<HTMLElement>>('messagesContainer');
-  private readonly configPanelEl = viewChild<ElementRef<HTMLElement>>('configPanel');
 
   // UI state
   isOpen = signal(false);
@@ -100,7 +107,7 @@ export class AiChatComponent {
   newModelName = signal('');
 
   // Context toggle - user chooses to include context or not
-  includeContext = signal(false);
+  readonly includeContext = this.aiPreferences.includeContext;
 
   providers = Object.values(AiProviderEnum);
 
@@ -525,14 +532,27 @@ export class AiChatComponent {
 
   onProviderCardClick(provider: AiProviderEnum) {
     if (this.isProviderConfigured(provider)) {
-      this.activeProvider.set(provider);
+      this.setActiveProvider(provider);
     } else {
       this.openEditProvider(provider);
     }
   }
 
   toggleContext() {
-    this.includeContext.update(v => !v);
+    this.aiPreferences.setIncludeContext(!this.includeContext());
+  }
+
+  openAiSettings() {
+    const role = this.authService.getPrimaryRole();
+    if (role === 'admin') {
+      this.router.navigate(['/admin/settings']);
+      return;
+    }
+    if (role === 'instructor') {
+      this.router.navigate(['/lecturer/settings']);
+      return;
+    }
+    this.router.navigate(['/student/settings']);
   }
 
   openEditProvider(provider: AiProviderEnum, event?: Event) {
@@ -543,7 +563,6 @@ export class AiChatComponent {
     this.editModel.set(existing?.modelName || models[0] || '');
     this.editApiKey.set('');
     this.editBaseHost.set(existing?.baseHost || '');
-    setTimeout(() => this.scrollConfigToBottom(), 50);
   }
 
   saveProviderConfig() {
@@ -571,7 +590,7 @@ export class AiChatComponent {
           return [...configs, saved];
         });
         if (!this.activeProvider()) {
-          this.activeProvider.set(provider);
+          this.setActiveProvider(provider);
         }
         this.editingProvider.set(null);
         this.isSavingConfig.set(false);
@@ -587,7 +606,7 @@ export class AiChatComponent {
         this.providerConfigs.update(configs => configs.filter(c => c.provider !== provider));
         if (this.activeProvider() === provider) {
           const remaining = this.providerConfigs();
-          this.activeProvider.set(remaining.length > 0 ? remaining[0].provider : null);
+          this.setActiveProvider(remaining.length > 0 ? remaining[0].provider : null);
         }
         if (this.editingProvider() === provider) {
           this.editingProvider.set(null);
@@ -603,10 +622,12 @@ export class AiChatComponent {
       next: (response) => {
         const configs = response.data ?? [];
         this.providerConfigs.set(configs);
-        if (configs.length > 0 && !this.activeProvider()) {
-          this.activeProvider.set(configs[0].provider);
-        } else if (configs.length === 0) {
-          this.showConfig.set(true);
+        const preferred = this.aiPreferences.preferredProvider();
+        const preferredValid = preferred && configs.some(item => item.provider === preferred);
+        if (preferredValid && preferred) {
+          this.setActiveProvider(preferred);
+        } else if (configs.length > 0 && !this.activeProvider()) {
+          this.setActiveProvider(configs[0].provider);
         }
       },
     });
@@ -627,11 +648,9 @@ export class AiChatComponent {
     }
   }
 
-  private scrollConfigToBottom() {
-    const el = this.configPanelEl()?.nativeElement;
-    if (el) {
-      el.scrollTop = el.scrollHeight;
-    }
+  private setActiveProvider(provider: AiProviderEnum | null) {
+    this.activeProvider.set(provider);
+    this.aiPreferences.setPreferredProvider(provider);
   }
 
   private configureMarked() {

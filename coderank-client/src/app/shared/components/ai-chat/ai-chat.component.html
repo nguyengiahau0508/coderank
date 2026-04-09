@@ -113,11 +113,11 @@
         <!-- Sidebar footer -->
         <div class="sidebar-footer p-3 border-t" style="border-color: var(--cr-border-light);">
           <button
-            (click)="showConfig.set(true)"
+            (click)="openAiSettings()"
             class="settings-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all cursor-pointer"
           >
             <i class="pi pi-cog text-sm"></i>
-            <span class="flex-1 text-left">Settings</span>
+            <span class="flex-1 text-left">AI Settings</span>
             @if (!activeProviderConfigured()) {
               <span class="status-dot w-2 h-2 rounded-full" style="background: var(--cr-accent-yellow);"></span>
             }
@@ -152,7 +152,7 @@
           <!-- Model selector -->
           @if (activeProvider()) {
             <button
-              (click)="showConfig.set(true)"
+              (click)="openAiSettings()"
               class="model-badge flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
             >
               <i
@@ -166,7 +166,7 @@
             </button>
           } @else {
             <button
-              (click)="showConfig.set(true)"
+              (click)="openAiSettings()"
               class="model-badge flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
             >
               <i class="pi pi-sparkles text-xs" style="color: var(--cr-accent-purple);"></i>
@@ -217,10 +217,10 @@
       @if (!activeProviderConfigured()) {
         <div
           class="setup-banner px-4 py-2.5 flex items-center gap-2.5 shrink-0 cursor-pointer transition-all"
-          (click)="showConfig.set(true)"
+          (click)="openAiSettings()"
         >
           <i class="pi pi-info-circle text-sm"></i>
-          <span class="text-sm flex-1">Configure an AI provider to start chatting</span>
+          <span class="text-sm flex-1">Go to Settings to configure an AI provider</span>
           <i class="pi pi-arrow-right text-xs"></i>
         </div>
       }
@@ -440,227 +440,5 @@
         </div>
       }
     </main>
-  </div>
-}
-
-<!-- ====== Config Modal ====== -->
-@if (showConfig()) {
-  <div
-    class="config-modal-overlay fixed inset-0 z-[9999] flex items-center justify-center"
-    (click)="showConfig.set(false)"
-  >
-    <div
-      #configPanel
-      class="config-modal w-[500px] max-h-[85vh] rounded-2xl overflow-hidden border flex flex-col animate-slide-up"
-      (click)="$event.stopPropagation()"
-    >
-      <!-- Modal header -->
-      <div class="config-modal-header flex items-center justify-between px-5 py-4 border-b">
-        <div class="flex items-center gap-3">
-          <div class="config-header-icon w-9 h-9 rounded-xl flex items-center justify-center">
-            <i class="pi pi-cog text-sm text-white"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-semibold" style="color: var(--cr-text-primary);">Model Settings</h3>
-            <p class="text-xs" style="color: var(--cr-text-muted);">Configure your AI provider</p>
-          </div>
-        </div>
-        <button
-          (click)="showConfig.set(false)"
-          class="header-btn w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer"
-        >
-          <i class="pi pi-times text-sm"></i>
-        </button>
-      </div>
-
-      <!-- Provider list -->
-      <div class="flex-1 overflow-y-auto px-5 py-4 space-y-3 thin-scrollbar">
-        @for (p of providers; track p) {
-          <div
-            class="provider-card rounded-xl border p-4 transition-all cursor-pointer"
-            [class.active]="activeProvider() === p"
-            [class.configured]="isProviderConfigured(p)"
-            (click)="onProviderCardClick(p)"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div
-                  class="provider-icon w-11 h-11 rounded-xl flex items-center justify-center"
-                  [style.background-color]="getProviderMeta(p).color + '15'"
-                >
-                  <i [class]="getProviderMeta(p).icon" class="text-lg" [style.color]="getProviderMeta(p).color"></i>
-                </div>
-                <div>
-                  <div class="text-sm font-medium" style="color: var(--cr-text-primary);">
-                    {{ getProviderMeta(p).label }}
-                  </div>
-                  @if (isProviderConfigured(p)) {
-                    <div class="flex items-center gap-1.5 text-xs" style="color: var(--cr-accent-green);">
-                      <i class="pi pi-check-circle text-[10px]"></i>
-                      <span>{{ getProviderModel(p) || 'Configured' }}</span>
-                    </div>
-                  } @else {
-                    <div class="text-xs" style="color: var(--cr-text-muted);">Click to configure</div>
-                  }
-                </div>
-              </div>
-              <div class="flex items-center gap-1.5">
-                @if (isProviderConfigured(p)) {
-                  @if (activeProvider() === p) {
-                    <span class="active-badge px-2.5 py-1 rounded-full text-xs font-medium">
-                      Active
-                    </span>
-                  }
-                  <button
-                    (click)="openEditProvider(p, $event)"
-                    class="provider-action-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer"
-                    title="Edit"
-                  >
-                    <i class="pi pi-pencil text-xs"></i>
-                  </button>
-                  <button
-                    (click)="deleteProviderConfig(p, $event)"
-                    class="provider-action-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer"
-                    title="Remove"
-                  >
-                    <i class="pi pi-trash text-xs"></i>
-                  </button>
-                } @else {
-                  <button
-                    (click)="openEditProvider(p, $event)"
-                    class="configure-btn px-4 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer"
-                  >
-                    Setup
-                  </button>
-                }
-              </div>
-            </div>
-          </div>
-        }
-
-        <!-- Inline edit form -->
-        @if (editingProvider()) {
-          <div class="config-form rounded-xl border p-5 space-y-4 mt-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i [class]="getProviderMeta(editingProvider()!).icon" [style.color]="getProviderMeta(editingProvider()!).color"></i>
-                <span class="text-sm font-semibold" style="color: var(--cr-text-primary);">
-                  Configure {{ getProviderMeta(editingProvider()!).label }}
-                </span>
-              </div>
-              <button
-                (click)="editingProvider.set(null)"
-                class="header-btn w-7 h-7 rounded-md flex items-center justify-center cursor-pointer"
-              >
-                <i class="pi pi-times text-xs"></i>
-              </button>
-            </div>
-
-            <div class="config-field">
-              <label class="config-label">Model</label>
-              <div class="flex gap-2">
-                <select
-                  [ngModel]="editModel()"
-                  (ngModelChange)="editModel.set($event)"
-                  class="config-select flex-1"
-                >
-                  @for (m of getProviderModels(editingProvider()!); track m) {
-                    <option [value]="m">{{ m }}{{ isCustomModel(editingProvider()!, m) ? ' ✦' : '' }}</option>
-                  }
-                </select>
-                <button
-                  (click)="openAddModel()"
-                  class="config-icon-btn"
-                  title="Add custom model"
-                >
-                  <i class="pi pi-plus text-xs"></i>
-                </button>
-                @if (isCustomModel(editingProvider()!, editModel())) {
-                  <button
-                    (click)="removeModel(editModel())"
-                    class="config-icon-btn delete"
-                    title="Remove this custom model"
-                  >
-                    <i class="pi pi-trash text-xs"></i>
-                  </button>
-                }
-              </div>
-              <p class="config-hint">✦ = Custom model</p>
-            </div>
-
-            <!-- Add custom model form -->
-            @if (showAddModel()) {
-              <div class="add-model-form p-4 rounded-xl">
-                <label class="config-label">New Model Name</label>
-                <div class="flex gap-2">
-                  <input
-                    type="text"
-                    [ngModel]="newModelName()"
-                    (ngModelChange)="newModelName.set($event)"
-                    (keydown.enter)="addNewModel()"
-                    (keydown.escape)="closeAddModel()"
-                    placeholder="e.g. gpt-4o, claude-3-opus..."
-                    class="config-input flex-1"
-                  />
-                  <button
-                    (click)="addNewModel()"
-                    [disabled]="!newModelName().trim()"
-                    class="save-btn px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    Add
-                  </button>
-                  <button
-                    (click)="closeAddModel()"
-                    class="cancel-btn px-4 py-2 rounded-xl text-sm transition-all cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            }
-
-            @if (editingProvider() !== 'ollama') {
-              <div class="config-field">
-                <label class="config-label">API Key</label>
-                <input
-                  type="password"
-                  [ngModel]="editApiKey()"
-                  (ngModelChange)="editApiKey.set($event)"
-                  placeholder="Enter your API key..."
-                  class="config-input w-full"
-                />
-              </div>
-            }
-
-            @if (editingProvider() === 'ollama') {
-              <div class="config-field">
-                <label class="config-label">Host URL</label>
-                <input
-                  type="text"
-                  [ngModel]="editBaseHost()"
-                  (ngModelChange)="editBaseHost.set($event)"
-                  placeholder="http://localhost:11434"
-                  class="config-input w-full"
-                />
-              </div>
-            }
-
-            <button
-              (click)="saveProviderConfig()"
-              [disabled]="isSavingConfig()"
-              class="save-btn w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer disabled:opacity-60"
-            >
-              @if (isSavingConfig()) {
-                <i class="pi pi-spin pi-spinner text-xs mr-2"></i>
-                Saving...
-              } @else {
-                <i class="pi pi-check text-xs mr-2"></i>
-                Save Configuration
-              }
-            </button>
-          </div>
-        }
-      </div>
-    </div>
   </div>
 }

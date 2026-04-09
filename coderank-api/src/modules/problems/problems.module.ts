@@ -47,6 +47,6 @@ import { SubmissionGateway } from './gateways/submission.gateway';
     SolutionsService,
     SubmissionGateway,
   ],
-  exports: [],
+  exports: [ProblemsService],
 })
 export class ProblemsModule {}

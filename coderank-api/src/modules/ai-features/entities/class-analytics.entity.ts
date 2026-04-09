@@ -63,11 +63,14 @@ export class ClassAnalyticsEntity extends BaseEntity {
 
   // Topic analysis
   @Column({ type: 'json', nullable: true })
-  topicPerformance?: Record<string, {
-    totalProblems: number;
-    averageAcceptance: number;
-    averageAttempts: number;
-  }>;
+  topicPerformance?: Record<
+    string,
+    {
+      totalProblems: number;
+      averageAcceptance: number;
+      averageAttempts: number;
+    }
+  >;
 
   // Common mistakes identified by AI
   @Column({ type: 'json', nullable: true })

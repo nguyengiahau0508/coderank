@@ -65,6 +65,17 @@ export const DEFAULT_AI_PROVIDER_MODELS: Record<AiProviderEnum, string[]> = {
     'mixtral-8x7b-32768',
     'openai/gpt-oss-120b'
   ],
+  [AiProviderEnum.OpenAI]: [
+    'gpt-4o',
+    'gpt-4.1',
+    'gpt-4.1-mini',
+    'gpt-5-mini',
+  ],
+  [AiProviderEnum.Anthropic]: [
+    'claude-sonnet-4-20250514',
+    'claude-opus-4-20250514',
+    'claude-3-7-sonnet-20250219',
+  ],
   [AiProviderEnum.Ollama]: [
     'qwen2.5',
     'llama3.1',

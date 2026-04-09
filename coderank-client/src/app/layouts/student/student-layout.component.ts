@@ -84,7 +84,7 @@ export class StudentLayoutComponent {
     {
       label: 'Settings',
       icon: 'pi pi-cog',
-      command: () => this.router.navigate(['/settings']),
+      command: () => this.router.navigate(['/student/settings']),
     },
     {
       separator: true,

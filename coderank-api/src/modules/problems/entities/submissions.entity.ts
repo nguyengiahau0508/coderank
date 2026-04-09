@@ -54,6 +54,15 @@ export class SubmissionsEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   output?: string;
 
+  @Column({ type: 'text', nullable: true })
+  aiErrorExplanation?: string;
+
+  @Column({ type: 'text', nullable: true })
+  aiErrorExplanationVi?: string;
+
+  @Column({ type: 'json', nullable: true })
+  aiFixSuggestions?: string[];
+
   @ManyToOne(() => ProblemsEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'problemId' })
   problem: ProblemsEntity;

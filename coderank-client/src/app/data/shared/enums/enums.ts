@@ -123,7 +123,8 @@ export enum AssignmentSubmissionStatusEnum {
 
 export enum AiProviderEnum {
   Gemini = 'gemini',
+  OpenAI = 'openai',
+  Anthropic = 'anthropic',
   Ollama = 'ollama',
   Groq = 'groq',
 }
-

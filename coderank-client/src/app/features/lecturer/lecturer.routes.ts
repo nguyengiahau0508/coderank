@@ -33,5 +33,9 @@ export const lecturerRoutes: Routes = [
   {
     path: 'analytics',
     loadComponent: () => import('./pages/analytics/analytics.component').then(m => m.LecturerAnalyticsComponent)
+  },
+  {
+    path: 'settings',
+    loadComponent: () => import('../settings/user-settings.component').then(m => m.UserSettingsComponent)
   }
 ];

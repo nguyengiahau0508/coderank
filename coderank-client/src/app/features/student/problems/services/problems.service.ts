@@ -27,4 +27,12 @@ export class ProblemsService {
   getProblem(problemId: string): Observable<ApiResponse<ProblemsModel>> {
     return this.problemsApi.getProblem(problemId);
   }
+
+  getRecommendedProblems(limit: number = 6): Observable<ApiResponse<ProblemsModel[]>> {
+    return this.problemsApi.getRecommendedProblems(limit);
+  }
+
+  getActiveLearningPath(): Observable<ApiResponse<any>> {
+    return this.problemsApi.getActiveLearningPath();
+  }
 }

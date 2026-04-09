@@ -66,8 +66,12 @@ export class StudentProblemListComponent implements OnInit {
   // State
   readonly problems = signal<ProblemsModel[]>([]);
   readonly loading = signal<boolean>(false);
+  readonly recommendationLoading = signal<boolean>(false);
+  readonly learningPathLoading = signal<boolean>(false);
   readonly totalRecords = signal<number>(0);
   readonly tags = signal<TagsModel[]>([]);
+  readonly recommendedProblems = signal<ProblemsModel[]>([]);
+  readonly activeLearningPath = signal<any | null>(null);
   readonly showAdvancedFilters = signal<boolean>(false);
   readonly quickStatus = signal<ProblemListQuickStatus>('all');
   readonly viewMode = signal<ProblemListViewMode>('list');
@@ -156,6 +160,8 @@ export class StudentProblemListComponent implements OnInit {
     this.sortBy.set(prefs.sort);
     this.loadTags();
     this.loadProblems();
+    this.loadRecommendedProblems();
+    this.loadActiveLearningPath();
   }
 
   /**
@@ -224,6 +230,32 @@ export class StudentProblemListComponent implements OnInit {
       error: () => {
         this.loading.set(false);
       }
+    });
+  }
+
+  loadRecommendedProblems(): void {
+    this.recommendationLoading.set(true);
+    this.problemsService.getRecommendedProblems(6).subscribe({
+      next: (response) => {
+        this.recommendedProblems.set(response.data || []);
+        this.recommendationLoading.set(false);
+      },
+      error: () => {
+        this.recommendationLoading.set(false);
+      },
+    });
+  }
+
+  loadActiveLearningPath(): void {
+    this.learningPathLoading.set(true);
+    this.problemsService.getActiveLearningPath().subscribe({
+      next: (response) => {
+        this.activeLearningPath.set(response.data || null);
+        this.learningPathLoading.set(false);
+      },
+      error: () => {
+        this.learningPathLoading.set(false);
+      },
     });
   }
 
@@ -343,6 +375,10 @@ export class StudentProblemListComponent implements OnInit {
   }
 
   openRecent(problemId: number): void {
+    this.router.navigate([problemId], { relativeTo: this.route });
+  }
+
+  openRecommended(problemId: number): void {
     this.router.navigate([problemId], { relativeTo: this.route });
   }
 

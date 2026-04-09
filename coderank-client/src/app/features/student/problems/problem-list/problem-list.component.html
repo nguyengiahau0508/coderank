@@ -89,6 +89,48 @@
   <div class="grid lg:grid-cols-2 gap-3">
     <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
       <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold" style="color: var(--cr-text-primary);">AI đề xuất cho bạn</h3>
+        <span class="text-xs" style="color: var(--cr-text-muted);">Cá nhân hóa</span>
+      </div>
+      @if (recommendationLoading()) {
+        <p class="text-xs" style="color: var(--cr-text-muted);">Đang tải đề xuất...</p>
+      } @else if (recommendedProblems().length > 0) {
+        <div class="space-y-2">
+          @for (problem of recommendedProblems(); track problem.id) {
+            <button
+              type="button"
+              class="w-full text-left px-3 py-2 rounded-lg transition-colors"
+              style="border: 1px solid var(--cr-border); background: var(--cr-bg-tertiary);"
+              (click)="openRecommended(problem.id)"
+            >
+              <p class="text-xs font-medium line-clamp-1" style="color: var(--cr-text-secondary);">{{ problem.title }}</p>
+            </button>
+          }
+        </div>
+      } @else {
+        <p class="text-xs" style="color: var(--cr-text-muted);">Chưa có đề xuất phù hợp lúc này.</p>
+      }
+    </div>
+
+    <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold" style="color: var(--cr-text-primary);">Learning Path đang học</h3>
+        <span class="text-xs" style="color: var(--cr-text-muted);">AI coach</span>
+      </div>
+      @if (learningPathLoading()) {
+        <p class="text-xs" style="color: var(--cr-text-muted);">Đang tải lộ trình...</p>
+      } @else if (activeLearningPath()) {
+        <p class="text-xs font-medium mb-1" style="color: var(--cr-text-secondary);">{{ activeLearningPath()?.title || activeLearningPath()?.goalTopic }}</p>
+        <p class="text-xs" style="color: var(--cr-text-muted);">
+          Bước {{ (activeLearningPath()?.currentStepIndex ?? 0) + 1 }} / {{ activeLearningPath()?.steps?.length || 0 }}
+        </p>
+      } @else {
+        <p class="text-xs" style="color: var(--cr-text-muted);">Bạn chưa có learning path đang hoạt động.</p>
+      }
+    </div>
+
+    <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-semibold" style="color: var(--cr-text-primary);">Recent</h3>
         <span class="text-xs" style="color: var(--cr-text-muted);">Local</span>
       </div>

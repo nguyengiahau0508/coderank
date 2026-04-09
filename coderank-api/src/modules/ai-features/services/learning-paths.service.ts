@@ -52,11 +52,16 @@ export class LearningPathsService extends BaseService<LearningPathsEntity> {
   async generateLearningPath(
     userId: string,
     goalTopic: string,
-    targetLevel: 'beginner' | 'intermediate' | 'advanced' | 'expert' = 'intermediate',
+    targetLevel:
+      | 'beginner'
+      | 'intermediate'
+      | 'advanced'
+      | 'expert' = 'intermediate',
   ): Promise<LearningPathsEntity> {
     // Get user's current skill profile
-    const profile = await this.skillProfilesService.analyzeAndUpdateProfile(userId);
-    
+    const profile =
+      await this.skillProfilesService.analyzeAndUpdateProfile(userId);
+
     // Determine current level in the goal topic
     const currentSkill = profile.topicSkills?.[goalTopic];
     const currentLevel = currentSkill?.level || 0;
@@ -76,7 +81,10 @@ export class LearningPathsService extends BaseService<LearningPathsEntity> {
       completedSteps: 0,
       progressPercent: 0,
       status: 'active',
-      estimatedTotalMinutes: steps.reduce((sum, s) => sum + (s.estimatedTime || 30), 0),
+      estimatedTotalMinutes: steps.reduce(
+        (sum, s) => sum + (s.estimatedTime || 30),
+        0,
+      ),
       generatedBy: 'system',
       startedAt: new Date(),
     });
@@ -89,7 +97,10 @@ export class LearningPathsService extends BaseService<LearningPathsEntity> {
   /**
    * Mark a step as completed.
    */
-  async completeStep(pathId: string, stepIndex: number): Promise<LearningPathsEntity> {
+  async completeStep(
+    pathId: string,
+    stepIndex: number,
+  ): Promise<LearningPathsEntity> {
     const path = await this.learningPathRepository.findOne({
       where: { id: pathId },
     });
@@ -107,11 +118,14 @@ export class LearningPathsService extends BaseService<LearningPathsEntity> {
     path.steps[stepIndex].completedAt = new Date().toISOString();
 
     // Update progress
-    path.completedSteps = path.steps.filter(s => s.isCompleted).length;
+    path.completedSteps = path.steps.filter((s) => s.isCompleted).length;
     path.progressPercent = (path.completedSteps / path.totalSteps) * 100;
 
     // Move to next step
-    if (stepIndex === path.currentStepIndex && stepIndex < path.steps.length - 1) {
+    if (
+      stepIndex === path.currentStepIndex &&
+      stepIndex < path.steps.length - 1
+    ) {
       path.currentStepIndex = stepIndex + 1;
     }
 
@@ -171,7 +185,10 @@ export class LearningPathsService extends BaseService<LearningPathsEntity> {
     }
 
     // Intermediate level
-    if (targetLevel !== 'beginner' && (currentLevel < 70 || targetLevel === 'intermediate')) {
+    if (
+      targetLevel !== 'beginner' &&
+      (currentLevel < 70 || targetLevel === 'intermediate')
+    ) {
       steps.push({
         order: order++,
         title: `Intermediate ${topic} Techniques`,

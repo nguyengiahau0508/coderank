@@ -42,7 +42,7 @@ export class AiHintsService extends BaseService<AiHintsEntity> {
     const hints = await query.getMany();
 
     // Return with the appropriate language content
-    return hints.map(hint => ({
+    return hints.map((hint) => ({
       id: hint.id,
       level: hint.level,
       content: lang === 'vi' ? hint.contentVi : hint.contentEn,
@@ -71,7 +71,14 @@ export class AiHintsService extends BaseService<AiHintsEntity> {
     // Get problem details
     const problem = await this.problemsService.findOne({
       where: { id: problemId },
-      select: ['id', 'title', 'description', 'inputDescription', 'outputDescription', 'difficulty'],
+      select: [
+        'id',
+        'title',
+        'description',
+        'inputDescription',
+        'outputDescription',
+        'difficulty',
+      ],
     });
 
     if (!problem) {
@@ -87,7 +94,7 @@ export class AiHintsService extends BaseService<AiHintsEntity> {
 
     for (let i = 0; i < levelsToGenerate.length; i++) {
       const level = levelsToGenerate[i];
-      
+
       // In a real implementation, this would call the AI agent
       // For now, create placeholder that will be filled by AI
       const hint = this.aiHintsRepository.create({
@@ -115,7 +122,7 @@ export class AiHintsService extends BaseService<AiHintsEntity> {
     return {
       generated: true,
       count: generatedHints.length,
-      hints: generatedHints.map(h => ({
+      hints: generatedHints.map((h) => ({
         id: h.id,
         level: h.level,
         order: h.order,

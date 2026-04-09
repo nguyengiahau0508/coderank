@@ -1,5 +1,5 @@
 import { ILLMProvider, ILLMConfig } from '../llm/llm.interface';
-import { LLMFactory } from '../llm/llm.factory';
+import { LLMFactory, LLMProviderType } from '../llm/llm.factory';
 import { ToolRegistry, registerAllTools } from '../tools';
 import { createInternalClient } from '../../api/api-client';
 import { STUDENT_SYSTEM_PROMPT,LECTURER_SYSTEM_PROMPT,ADMIN_SYSTEM_PROMPT, SYSTEM_PROMPT } from '../../prompts/system.prompt';
@@ -41,6 +41,10 @@ export class Agent {
   private hookRunner: HookRunner;
   private readonly LLM_RETRY_ATTEMPTS = 2;
   private readonly LLM_RETRY_BASE_DELAY_MS = 700;
+  private readonly systemPrompt: string;
+  private readonly providerConfig?: ILLMConfig;
+  private readonly initialHistory: ILLMConfig['initialHistory'];
+  private currentProviderType: LLMProviderType;
 
   constructor(role: RolesEnum, providerName?: string, modelName?: string, providerConfig?: ILLMConfig) {
     const contextPolicy = this.buildContextPolicy(providerConfig?.contextPolicy);
@@ -52,7 +56,10 @@ export class Agent {
     this.hookRunner = new HookRunner();
     this.registerDefaultHooks();
 
-    this.llm = LLMFactory.createProvider(providerName, modelName, providerConfig);
+    this.providerConfig = providerConfig;
+    this.initialHistory = providerConfig?.initialHistory;
+    this.currentProviderType = LLMFactory.normalizeProviderType(providerName);
+    this.llm = LLMFactory.createProvider(this.currentProviderType, modelName, providerConfig);
     
     this.toolRegistry = new ToolRegistry();
     this.registerDefaultTools();
@@ -69,6 +76,7 @@ export class Agent {
         systemPrompt = STUDENT_SYSTEM_PROMPT;
         break;
     }
+    this.systemPrompt = systemPrompt;
     this.llm.init(systemPrompt, this.toolRegistry.getAll(), providerConfig?.initialHistory);
   }
 
@@ -145,34 +153,112 @@ export class Agent {
     return status === 503 || msg.includes('Service Temporarily Unavailable');
   }
 
+  private isProviderAuthError(error: any): boolean {
+    const status = Number(error?.status_code ?? error?.status ?? 0);
+    const msg = String(error?.message ?? error?.error ?? '').toLowerCase();
+
+    const hasAuthKeyword =
+      msg.includes('api key not valid') ||
+      msg.includes('api_key_invalid') ||
+      msg.includes('invalid api key') ||
+      msg.includes('authentication failed') ||
+      msg.includes('unauthorized') ||
+      msg.includes('invalid token') ||
+      msg.includes('forbidden');
+
+    return status === 401 || status === 403 || hasAuthKeyword;
+  }
+
+  private async trySwitchProvider(
+    attemptedProviders: Set<LLMProviderType>,
+    logPrefix: string,
+    onEvent?: (event: { type: string; content?: string }) => void,
+  ): Promise<boolean> {
+    const fallbackProviders = LLMFactory.getFallbackProviders(this.currentProviderType)
+      .filter(provider => !attemptedProviders.has(provider));
+
+    if (fallbackProviders.length === 0) {
+      return false;
+    }
+
+    for (const providerType of fallbackProviders) {
+      try {
+        const fallbackConfig: ILLMConfig = {
+          contextPolicy: this.providerConfig?.contextPolicy,
+          initialHistory: this.initialHistory,
+        };
+
+        const fallbackProvider = LLMFactory.createProvider(
+          providerType,
+          undefined,
+          fallbackConfig,
+        );
+        fallbackProvider.init(
+          this.systemPrompt,
+          this.toolRegistry.getAll(),
+          this.initialHistory,
+        );
+
+        this.llm = fallbackProvider;
+        this.currentProviderType = providerType;
+        attemptedProviders.add(providerType);
+
+        console.warn(`${logPrefix}:LLMFallback] Switched to provider '${providerType}'.`);
+        if (onEvent) {
+          onEvent({ type: 'status', content: `Đang chuyển sang provider ${providerType}...` });
+        }
+        return true;
+      } catch (error: any) {
+        console.warn(
+          `${logPrefix}:LLMFallback] Provider '${providerType}' is not available: ${error?.message ?? 'unknown error'}`,
+        );
+        attemptedProviders.add(providerType);
+      }
+    }
+
+    return false;
+  }
+
   private async sendMessageWithRetry(
     message: any,
     logPrefix: string,
     onEvent?: (event: { type: string; content?: string }) => void,
   ) {
-    for (let attempt = 0; attempt <= this.LLM_RETRY_ATTEMPTS; attempt++) {
+    const attemptedProviders = new Set<LLMProviderType>([this.currentProviderType]);
+    let retryAttempt = 0;
+
+    while (true) {
       try {
         return await this.llm.sendMessage(message);
       } catch (error: any) {
         const retryable = this.isRetryableLlmError(error);
-        const canRetry = retryable && attempt < this.LLM_RETRY_ATTEMPTS;
+        const canRetry = retryable && retryAttempt < this.LLM_RETRY_ATTEMPTS;
 
-        if (!canRetry) {
-          throw error;
+        if (canRetry) {
+          const delay = this.LLM_RETRY_BASE_DELAY_MS * (retryAttempt + 1);
+          retryAttempt += 1;
+          console.warn(
+            `${logPrefix}:LLMRetry] Service unavailable (attempt ${retryAttempt}/${this.LLM_RETRY_ATTEMPTS + 1}). Retrying in ${delay}ms...`,
+          );
+          if (onEvent) {
+            onEvent({ type: 'status', content: 'LLM tạm thời quá tải, đang thử lại...' });
+          }
+          await this.wait(delay);
+          continue;
         }
 
-        const delay = this.LLM_RETRY_BASE_DELAY_MS * (attempt + 1);
-        console.warn(
-          `${logPrefix}:LLMRetry] Service unavailable (attempt ${attempt + 1}/${this.LLM_RETRY_ATTEMPTS + 1}). Retrying in ${delay}ms...`,
-        );
-        if (onEvent) {
-          onEvent({ type: 'status', content: 'LLM tạm thời quá tải, đang thử lại...' });
+        const shouldFallback = typeof message === 'string' && (this.isProviderAuthError(error) || retryable);
+        if (shouldFallback) {
+          const switched = await this.trySwitchProvider(attemptedProviders, logPrefix, onEvent);
+          if (switched) {
+            retryAttempt = 0;
+            continue;
+          }
         }
-        await this.wait(delay);
+
+        throw error;
       }
     }
-
-    throw new Error('Unexpected retry flow');
   }
 
   private extractValidationIssues(error: any): Array<{ code?: string; expected?: string; path?: Array<string | number> }> {

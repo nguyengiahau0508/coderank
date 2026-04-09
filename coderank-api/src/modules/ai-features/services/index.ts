@@ -5,3 +5,6 @@ export { LearningPathsService } from './learning-paths.service';
 export { TestcaseGeneratorService } from './testcase-generator.service';
 export { ClassAnalyticsService } from './class-analytics.service';
 export { AiGradingService } from './ai-grading.service';
+export { ErrorExplanationService } from './error-explanation.service';
+export { AiAssistantService } from './ai-assistant.service';
+export { PlagiarismReportsService } from './plagiarism-reports.service';

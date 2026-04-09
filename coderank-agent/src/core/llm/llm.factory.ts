@@ -15,11 +15,25 @@ export type LLMProviderType = 'gemini' | 'openai' | 'anthropic' | 'groq' | 'olla
 const PROVIDER_FALLBACK_ORDER: LLMProviderType[] = ['gemini', 'openai', 'anthropic', 'groq', 'ollama'];
 
 export class LLMFactory {
+  static normalizeProviderType(providerType?: string): LLMProviderType {
+    const candidate = (providerType || config.DEFAULT_MODEL_PROVIDER).toLowerCase();
+    if (
+      candidate === 'gemini' ||
+      candidate === 'openai' ||
+      candidate === 'anthropic' ||
+      candidate === 'groq' ||
+      candidate === 'ollama'
+    ) {
+      return candidate;
+    }
+    return 'gemini';
+  }
+
   /**
    * Creates an instance of ILLMProvider based on the provider type.
    */
   static createProvider(providerType?: string, modelName?: string, providerConfig?: ILLMConfig): ILLMProvider {
-    const type = (providerType || config.DEFAULT_MODEL_PROVIDER).toLowerCase() as LLMProviderType;
+    const type = this.normalizeProviderType(providerType);
     return this.instantiateProvider(type, modelName, providerConfig);
   }
 
@@ -32,7 +46,7 @@ export class LLMFactory {
     modelName?: string,
     providerConfig?: ILLMConfig
   ): { provider: ILLMProvider; actualType: LLMProviderType } {
-    const primaryType = (providerType || config.DEFAULT_MODEL_PROVIDER).toLowerCase() as LLMProviderType;
+    const primaryType = this.normalizeProviderType(providerType);
     
     // Try primary provider first
     try {
@@ -74,6 +88,13 @@ export class LLMFactory {
     return available;
   }
 
+  static getFallbackProviders(currentType: LLMProviderType): LLMProviderType[] {
+    const available = new Set(this.getAvailableProviders());
+    return PROVIDER_FALLBACK_ORDER.filter(
+      (provider) => provider !== currentType && available.has(provider),
+    );
+  }
+
   private static instantiateProvider(
     type: LLMProviderType,
     modelName?: string,
@@ -96,4 +117,3 @@ export class LLMFactory {
     }
   }
 }
-

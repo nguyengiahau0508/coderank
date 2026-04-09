@@ -29,6 +29,7 @@ import { TestcasesService } from '../services/testcases.service';
 import { HintsService } from '../services/hints.service';
 import { SubmissionsService } from '../services/submissions.service';
 import { SolutionsService } from '../services/solutions.service';
+import { AiAssistantService, AiHintItem } from '../services/ai-assistant.service';
 import { ProblemsModel } from '../../../../data';
 import { TestcasesModel } from '../../../../data';
 import { HintsModel } from '../../../../data';
@@ -91,6 +92,7 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
   private readonly hintsService = inject(HintsService);
   private readonly submissionsService = inject(SubmissionsService);
   private readonly solutionsService = inject(SolutionsService);
+  private readonly aiAssistantService = inject(AiAssistantService);
   private readonly messageService = inject(MessageService);
   private readonly workspaceService = inject(ProblemsWorkspaceService);
   private readonly runnerApi = inject(RunnerApi);
@@ -100,6 +102,7 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
   readonly problem = signal<ProblemsModel | null>(null);
   readonly sampleTestcases = signal<TestcasesModel[]>([]);
   readonly hints = signal<HintsModel[]>([]);
+  readonly aiHints = signal<AiHintItem[]>([]);
   readonly submissionHistory = signal<SubmissionsModel[]>([]);
   readonly solutions = signal<SolutionsModel[]>([]);
   readonly mySolutions = signal<SolutionsModel[]>([]);
@@ -128,6 +131,7 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
   readonly editorTabIndex = signal<number>(0); // 0 = Code Editor, 1 = Chạy thử
   readonly customTestcases = signal<CustomTestcase[]>([]);
   private nextCustomId = 1;
+  readonly programmingLanguages = Object.values(ProgrammingLanguageEnum);
 
   readonly runPassedCount = computed(() =>
     this.runResults().filter(r =>
@@ -141,6 +145,27 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
 
   // UI State
   readonly visibleHints = signal<Set<number>>(new Set());
+  readonly revealedAiHintCount = signal<number>(1);
+  readonly revealedHintCount = signal<number>(1);
+  readonly aiLanguage = signal<'vi' | 'en'>('vi');
+  readonly aiReviewLoading = signal<boolean>(false);
+  readonly aiReview = signal<string>('');
+  readonly aiErrorLoading = signal<boolean>(false);
+  readonly aiErrorExplanation = signal<string>('');
+  readonly aiErrorSuggestions = signal<string[]>([]);
+  readonly aiDebugLoading = signal<boolean>(false);
+  readonly aiDebugGuidance = signal<string>('');
+  readonly aiExplainLoading = signal<boolean>(false);
+  readonly aiSolutionExplanation = signal<string>('');
+  readonly aiOptimizeLoading = signal<boolean>(false);
+  readonly aiOptimizationSuggestions = signal<string>('');
+  readonly aiTranslateLoading = signal<boolean>(false);
+  readonly aiTranslatedResult = signal<string>('');
+  readonly aiTranslateTargetLanguage = signal<ProgrammingLanguageEnum>(
+    ProgrammingLanguageEnum.JavaScript,
+  );
+  readonly aiAutocompleteLoading = signal<boolean>(false);
+  readonly aiAutocompleteSuggestion = signal<string>('');
   readonly activeTabIndex = signal<number>(0);
 
   readonly tabs: DetailTabItem[] = [
@@ -199,6 +224,7 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
       this.loadProblem(problemId);
       this.loadTestcases(problemId);
       this.loadHints(problemId);
+      this.loadAiHints(problemId);
       this.loadSubmissionHistory(problemId);
       this.loadSolutions(problemId);
       this.loadMySolutions(problemId);
@@ -289,6 +315,7 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
           .filter((h: any) => h.isPublic)
           .sort((a, b) => a.hintOrder - b.hintOrder);
         this.hints.set(publicHints);
+        this.revealedHintCount.set(Math.min(1, publicHints.length));
       },
       error: () => {
         this.messageService.add({
@@ -296,6 +323,19 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
           summary: 'Lỗi',
           detail: 'Không thể tải gợi ý',
         });
+      },
+    });
+  }
+
+  private loadAiHints(problemId: string): void {
+    this.aiAssistantService.getAiHints(problemId, this.aiLanguage()).subscribe({
+      next: (response) => {
+        const hints = (response.data || []).sort((a, b) => a.order - b.order);
+        this.aiHints.set(hints);
+        this.revealedAiHintCount.set(Math.min(1, hints.length));
+      },
+      error: () => {
+        this.aiHints.set([]);
       },
     });
   }
@@ -330,6 +370,13 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
    */
   viewSubmissionDetail(submission: SubmissionsModel): void {
     this.selectedSubmission.set(submission);
+    this.aiReview.set('');
+    this.aiErrorExplanation.set('');
+    this.aiErrorSuggestions.set([]);
+    this.aiDebugGuidance.set('');
+    this.aiSolutionExplanation.set('');
+    this.aiOptimizationSuggestions.set('');
+    this.aiTranslatedResult.set('');
   }
 
   /**
@@ -337,6 +384,51 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
    */
   backToSubmissionList(): void {
     this.selectedSubmission.set(null);
+  }
+
+  getVisibleAiHints(): AiHintItem[] {
+    return this.aiHints().slice(0, this.revealedAiHintCount());
+  }
+
+  getVisibleHints(): HintsModel[] {
+    return this.hints().slice(0, this.revealedHintCount());
+  }
+
+  canRevealNextHint(): boolean {
+    return (
+      this.revealedAiHintCount() < this.aiHints().length ||
+      this.revealedHintCount() < this.hints().length
+    );
+  }
+
+  revealNextAiHint(): void {
+    const currentAi = this.revealedAiHintCount();
+    if (currentAi < this.aiHints().length) {
+      this.revealedAiHintCount.set(currentAi + 1);
+      return;
+    }
+
+    const currentHint = this.revealedHintCount();
+    if (currentHint < this.hints().length) {
+      this.revealedHintCount.set(currentHint + 1);
+      const nextHint = this.hints()[currentHint];
+      if (nextHint) {
+        const nextVisible = new Set(this.visibleHints());
+        nextVisible.add(nextHint.id);
+        this.visibleHints.set(nextVisible);
+      }
+    }
+  }
+
+  getAiHintLevelLabel(level: AiHintItem['level']): string {
+    return this.aiAssistantService.getHintLevelLabel(level);
+  }
+
+  refreshAiHintsLanguage(): void {
+    const problem = this.problem();
+    if (problem) {
+      this.loadAiHints(problem.id.toString());
+    }
   }
 
   /**
@@ -780,6 +872,171 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
    */
   private pollSubmissionResult(submissionId: string): void {
     // TODO: Implement polling or WebSocket for real-time updates
+  }
+
+  loadAiCodeReview(submission: SubmissionsModel): void {
+    this.aiReviewLoading.set(true);
+    this.aiAssistantService.getCodeReview(submission.id.toString()).subscribe({
+      next: (response) => {
+        const data = response.data;
+        if (!data) {
+          this.aiReview.set('Chưa có AI review cho submission này.');
+        } else {
+          const issues = Array.isArray(data.issues)
+            ? data.issues
+                .slice(0, 6)
+                .map((issue: { severity?: string; message?: string }) => `- [${issue.severity || 'info'}] ${issue.message || ''}`)
+                .join('\n')
+            : '';
+          const suggestions = Array.isArray(data.suggestions)
+            ? data.suggestions.slice(0, 6).map((s: string) => `- ${s}`).join('\n')
+            : '';
+          this.aiReview.set(
+            `### Tổng quan\n${data.summaryVi || data.summary || ''}\n\n` +
+              `### Điểm số\n- Overall: ${data.overallScore ?? '-'}\n- Readability: ${data.readabilityScore ?? '-'}\n- Maintainability: ${data.maintainabilityScore ?? '-'}\n- Efficiency: ${data.efficiencyScore ?? '-'}\n- Best Practices: ${data.bestPracticesScore ?? '-'}\n\n` +
+              `### Vấn đề\n${issues || '- Không có'}\n\n` +
+              `### Gợi ý cải thiện\n${suggestions || '- Không có'}`,
+          );
+        }
+        this.aiReviewLoading.set(false);
+      },
+      error: () => {
+        this.aiReview.set('Không thể tải AI code review.');
+        this.aiReviewLoading.set(false);
+      },
+    });
+  }
+
+  loadAiErrorExplanation(submission: SubmissionsModel): void {
+    this.aiErrorLoading.set(true);
+    this.aiAssistantService
+      .getErrorExplanation(submission.id.toString(), this.aiLanguage())
+      .subscribe({
+        next: (response) => {
+          const data = response.data;
+          this.aiErrorExplanation.set(data?.explanation || 'Không có giải thích lỗi.');
+          this.aiErrorSuggestions.set(
+            Array.isArray(data?.suggestions) ? data.suggestions : [],
+          );
+          this.aiErrorLoading.set(false);
+        },
+        error: () => {
+          this.aiErrorExplanation.set('Không thể phân tích lỗi.');
+          this.aiErrorSuggestions.set([]);
+          this.aiErrorLoading.set(false);
+        },
+      });
+  }
+
+  loadAiDebugAssist(submission: SubmissionsModel): void {
+    this.aiDebugLoading.set(true);
+    this.aiAssistantService
+      .getDebugAssist(submission.id.toString(), this.aiLanguage())
+      .subscribe({
+        next: (response) => {
+          this.aiDebugGuidance.set(response.data?.debugGuidance || 'Không có hướng dẫn debug.');
+          this.aiDebugLoading.set(false);
+        },
+        error: () => {
+          this.aiDebugGuidance.set('Không thể lấy hướng dẫn debug.');
+          this.aiDebugLoading.set(false);
+        },
+      });
+  }
+
+  loadAiSolutionExplanation(submission: SubmissionsModel): void {
+    this.aiExplainLoading.set(true);
+    this.aiAssistantService
+      .getSolutionExplanation(submission.id.toString(), this.aiLanguage(), 'detailed')
+      .subscribe({
+        next: (response) => {
+          this.aiSolutionExplanation.set(response.data?.explanation || 'Không có giải thích.');
+          this.aiExplainLoading.set(false);
+        },
+        error: () => {
+          this.aiSolutionExplanation.set('Không thể giải thích lời giải.');
+          this.aiExplainLoading.set(false);
+        },
+      });
+  }
+
+  loadAiOptimizationSuggestions(submission: SubmissionsModel): void {
+    this.aiOptimizeLoading.set(true);
+    this.aiAssistantService
+      .getOptimizationSuggestions(submission.id.toString(), this.aiLanguage())
+      .subscribe({
+        next: (response) => {
+          this.aiOptimizationSuggestions.set(
+            response.data?.optimization || 'Không có gợi ý tối ưu.',
+          );
+          this.aiOptimizeLoading.set(false);
+        },
+        error: () => {
+          this.aiOptimizationSuggestions.set('Không thể phân tích tối ưu.');
+          this.aiOptimizeLoading.set(false);
+        },
+      });
+  }
+
+  loadAiTranslation(submission: SubmissionsModel): void {
+    this.aiTranslateLoading.set(true);
+    this.aiAssistantService
+      .translateCode(
+        submission.code,
+        submission.language,
+        this.aiTranslateTargetLanguage(),
+      )
+      .subscribe({
+        next: (response) => {
+          this.aiTranslatedResult.set(response.data?.result || 'Không có kết quả dịch.');
+          this.aiTranslateLoading.set(false);
+        },
+        error: () => {
+          this.aiTranslatedResult.set('Không thể dịch code.');
+          this.aiTranslateLoading.set(false);
+        },
+      });
+  }
+
+  generateAutocompleteSuggestion(): void {
+    const prob = this.problem();
+    if (!prob) return;
+    if (!this.currentCode().trim()) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Thiếu code',
+        detail: 'Nhập code trước khi dùng AI autocomplete.',
+      });
+      return;
+    }
+
+    this.aiAutocompleteLoading.set(true);
+    this.aiAssistantService
+      .getAlgorithmSuggestion(prob.id.toString(), {
+        code: this.currentCode(),
+        language: this.currentLanguage(),
+        lang: this.aiLanguage(),
+      } as any)
+      .subscribe({
+        next: (response) => {
+          const suggestion =
+            response.data?.suggestion ||
+            'Không có gợi ý autocomplete phù hợp cho đoạn code hiện tại.';
+          this.aiAutocompleteSuggestion.set(suggestion);
+          this.aiAutocompleteLoading.set(false);
+        },
+        error: () => {
+          this.aiAutocompleteSuggestion.set('Không thể tạo AI autocomplete.');
+          this.aiAutocompleteLoading.set(false);
+        },
+      });
+  }
+
+  appendAutocompleteToCode(): void {
+    if (!this.aiAutocompleteSuggestion()) return;
+    const appended =
+      `${this.currentCode()}\n\n/* AI Autocomplete Suggestion */\n${this.aiAutocompleteSuggestion()}`;
+    this.currentCode.set(appended);
   }
 
   /**

@@ -156,7 +156,7 @@ export class HeaderComponent {
     {
       label: 'Settings',
       icon: 'pi pi-cog',
-      command: () => this.router.navigate(['/settings'])
+      command: () => this.navigateSettings()
     },
     {
       separator: true
@@ -173,5 +173,18 @@ export class HeaderComponent {
     if (primaryRole) {
       this.router.navigate([`/${primaryRole}/dashboard`]);
     }
+  }
+
+  private navigateSettings(): void {
+    const role = this.authService.getPrimaryRole();
+    if (role === 'admin') {
+      this.router.navigate(['/admin/settings']);
+      return;
+    }
+    if (role === 'instructor') {
+      this.router.navigate(['/lecturer/settings']);
+      return;
+    }
+    this.router.navigate(['/student/settings']);
   }
 }

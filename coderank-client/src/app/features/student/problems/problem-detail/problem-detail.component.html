@@ -361,7 +361,45 @@
           <!-- TAB 2: Hints -->
           @if (activeTabIndex() === 2) {
             <div class="space-y-2.5">
-              @for (hint of hints(); track hint.id; let idx = $index) {
+              <div class="rounded-lg p-3" style="border: 1px solid var(--cr-border); background: var(--cr-bg-tertiary);">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                  <div class="text-xs font-semibold" style="color: var(--cr-text-primary);">AI Progressive Hints</div>
+                  <div class="inline-flex items-center gap-2">
+                    <select
+                      class="text-xs rounded px-2 py-1"
+                      style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border); color: var(--cr-text-primary);"
+                      [ngModel]="aiLanguage()"
+                      (ngModelChange)="aiLanguage.set($event); refreshAiHintsLanguage()"
+                      aria-label="Ngôn ngữ gợi ý AI"
+                    >
+                      <option value="vi">Tiếng Việt</option>
+                      <option value="en">English</option>
+                    </select>
+                    <button
+                      type="button"
+                      class="text-xs px-2 py-1 rounded"
+                      style="background: var(--cr-accent-blue); color: #fff;"
+                      (click)="revealNextAiHint()"
+                      [disabled]="!canRevealNextHint()"
+                    >
+                      Mở gợi ý tiếp theo
+                    </button>
+                  </div>
+                </div>
+
+                @for (aiHint of getVisibleAiHints(); track aiHint.id; let idx = $index) {
+                  <div class="rounded-md p-2.5 mb-2" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+                    <div class="text-[11px] font-semibold mb-1" style="color: var(--cr-accent-yellow);">
+                      {{ idx + 1 }}. {{ getAiHintLevelLabel(aiHint.level) }}
+                    </div>
+                    <app-markdown-view [content]="aiHint.content" format="markdown" />
+                  </div>
+                } @empty {
+                  <div class="text-xs" style="color: var(--cr-text-muted);">Chưa có AI hints.</div>
+                }
+              </div>
+
+              @for (hint of getVisibleHints(); track hint.id; let idx = $index) {
                 <div class="rounded-lg overflow-hidden" style="border: 1px solid var(--cr-border);">
                   <button
                     type="button"
@@ -486,6 +524,115 @@
                   </div>
                 }
 
+                <div class="rounded-lg p-3 space-y-3" style="background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border);">
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <div class="text-xs font-semibold" style="color: var(--cr-text-primary);">AI Assistant</div>
+                    <div class="inline-flex items-center gap-2">
+                      <select
+                        class="text-xs rounded px-2 py-1"
+                        style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border); color: var(--cr-text-primary);"
+                        [ngModel]="aiLanguage()"
+                        (ngModelChange)="aiLanguage.set($event)"
+                        aria-label="AI language"
+                      >
+                        <option value="vi">Tiếng Việt</option>
+                        <option value="en">English</option>
+                      </select>
+                      <select
+                        class="text-xs rounded px-2 py-1"
+                        style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border); color: var(--cr-text-primary);"
+                        [ngModel]="aiTranslateTargetLanguage()"
+                        (ngModelChange)="aiTranslateTargetLanguage.set($event)"
+                        aria-label="Translate target language"
+                      >
+                        @for (lang of programmingLanguages; track lang) {
+                          <option [value]="lang">{{ getLanguageLabel(lang) }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2">
+                    <button type="button" class="text-[11px] px-2.5 py-1.5 rounded"
+                      style="background: rgba(88,166,255,0.15); color: var(--cr-accent-blue);" (click)="loadAiCodeReview(sub)">
+                      AI Review
+                    </button>
+                    <button type="button" class="text-[11px] px-2.5 py-1.5 rounded"
+                      style="background: rgba(248,81,73,0.15); color: var(--cr-accent-red);" (click)="loadAiErrorExplanation(sub)">
+                      Error Explain
+                    </button>
+                    <button type="button" class="text-[11px] px-2.5 py-1.5 rounded"
+                      style="background: rgba(210,153,34,0.15); color: var(--cr-accent-yellow);" (click)="loadAiDebugAssist(sub)">
+                      Debug Assist
+                    </button>
+                    <button type="button" class="text-[11px] px-2.5 py-1.5 rounded"
+                      style="background: rgba(63,185,80,0.15); color: var(--cr-accent-green);" (click)="loadAiSolutionExplanation(sub)">
+                      Explain Solution
+                    </button>
+                    <button type="button" class="text-[11px] px-2.5 py-1.5 rounded"
+                      style="background: rgba(63,185,80,0.15); color: var(--cr-accent-green);" (click)="loadAiOptimizationSuggestions(sub)">
+                      Optimize
+                    </button>
+                    <button type="button" class="text-[11px] px-2.5 py-1.5 rounded"
+                      style="background: rgba(88,166,255,0.15); color: var(--cr-accent-blue);" (click)="loadAiTranslation(sub)">
+                      Translate
+                    </button>
+                  </div>
+
+                  @if (aiReviewLoading() || aiErrorLoading() || aiDebugLoading() || aiExplainLoading() || aiOptimizeLoading() || aiTranslateLoading()) {
+                    <div class="text-xs" style="color: var(--cr-text-muted);">Đang xử lý AI...</div>
+                  }
+
+                  @if (aiReview()) {
+                    <div class="rounded-md p-2.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+                      <div class="text-[10px] font-semibold uppercase mb-1.5" style="color: var(--cr-accent-blue);">AI Review</div>
+                      <app-markdown-view [content]="aiReview()" format="markdown" />
+                    </div>
+                  }
+
+                  @if (aiErrorExplanation()) {
+                    <div class="rounded-md p-2.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+                      <div class="text-[10px] font-semibold uppercase mb-1.5" style="color: var(--cr-accent-red);">Error Explanation</div>
+                      <app-markdown-view [content]="aiErrorExplanation()" format="markdown" />
+                      @if (aiErrorSuggestions().length > 0) {
+                        <ul class="mt-2 text-xs pl-4 list-disc" style="color: var(--cr-text-secondary);">
+                          @for (suggestion of aiErrorSuggestions(); track suggestion) {
+                            <li>{{ suggestion }}</li>
+                          }
+                        </ul>
+                      }
+                    </div>
+                  }
+
+                  @if (aiDebugGuidance()) {
+                    <div class="rounded-md p-2.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+                      <div class="text-[10px] font-semibold uppercase mb-1.5" style="color: var(--cr-accent-yellow);">Debug Assist</div>
+                      <app-markdown-view [content]="aiDebugGuidance()" format="markdown" />
+                    </div>
+                  }
+
+                  @if (aiSolutionExplanation()) {
+                    <div class="rounded-md p-2.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+                      <div class="text-[10px] font-semibold uppercase mb-1.5" style="color: var(--cr-accent-green);">Solution Walkthrough</div>
+                      <app-markdown-view [content]="aiSolutionExplanation()" format="markdown" />
+                    </div>
+                  }
+
+                  @if (aiOptimizationSuggestions()) {
+                    <div class="rounded-md p-2.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+                      <div class="text-[10px] font-semibold uppercase mb-1.5" style="color: var(--cr-accent-green);">Optimization Suggestions</div>
+                      <app-markdown-view [content]="aiOptimizationSuggestions()" format="markdown" />
+                    </div>
+                  }
+
+                  @if (aiTranslatedResult()) {
+                    <div class="rounded-md p-2.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+                      <div class="text-[10px] font-semibold uppercase mb-1.5" style="color: var(--cr-accent-blue);">Translated Code</div>
+                      <app-markdown-view [content]="aiTranslatedResult()" format="markdown" />
+                    </div>
+                  }
+                </div>
+
                 <!-- Source code -->
                 <div>
                   <div class="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style="color: var(--cr-text-subtle);">Source Code</div>
@@ -592,6 +739,20 @@
               type="button"
               class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-colors hover:opacity-80"
               style="background: var(--cr-bg-elevated); color: var(--cr-text-subtle); border: 1px solid var(--cr-border);"
+              [disabled]="aiAutocompleteLoading()"
+              (click)="generateAutocompleteSuggestion()"
+            >
+              @if (aiAutocompleteLoading()) {
+                <i class="pi pi-spin pi-spinner text-[9px]"></i>
+              } @else {
+                <i class="pi pi-magic text-[9px]"></i>
+              }
+              AI Autocomplete
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-colors hover:opacity-80"
+              style="background: var(--cr-bg-elevated); color: var(--cr-text-subtle); border: 1px solid var(--cr-border);"
               [disabled]="isRunning()"
               (click)="runCode()"
             >
@@ -630,6 +791,22 @@
               (languageChange)="onLanguageChange($event)"
             />
           </div>
+          @if (aiAutocompleteSuggestion()) {
+            <div class="p-3 space-y-2" style="border-top: 1px solid var(--cr-border); background: var(--cr-bg-tertiary);">
+              <div class="flex items-center justify-between">
+                <div class="text-[11px] font-semibold" style="color: var(--cr-accent-blue);">AI Autocomplete Suggestion</div>
+                <button
+                  type="button"
+                  class="text-[10px] px-2 py-1 rounded"
+                  style="background: rgba(88,166,255,0.15); color: var(--cr-accent-blue);"
+                  (click)="appendAutocompleteToCode()"
+                >
+                  Chèn vào editor
+                </button>
+              </div>
+              <app-markdown-view [content]="aiAutocompleteSuggestion()" format="markdown" />
+            </div>
+          }
         } @else {
           <!-- Run Results Tab -->
           <div class="flex-1 min-h-[400px] overflow-y-auto p-4 space-y-4">

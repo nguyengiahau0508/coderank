@@ -61,7 +61,7 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
     );
 
     // Save generated testcases
-    const entities = testcases.map(tc =>
+    const entities = testcases.map((tc) =>
       this.testcaseRepository.create({
         problemId,
         ...tc,
@@ -86,7 +86,7 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
   ): Promise<GeneratedTestcase[]> {
     const testcases: GeneratedTestcase[] = [];
     const description = problem.description || '';
-    
+
     // Detect problem type from description
     const patterns = this.detectPatterns(description);
 
@@ -137,7 +137,7 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
     maxLength?: number;
   } {
     const lower = description.toLowerCase();
-    
+
     // Detect data types
     const hasArray = /array|danh sách|mảng|list/i.test(lower);
     const hasString = /string|chuỗi|xâu|text/i.test(lower);
@@ -146,8 +146,12 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
     const hasTree = /tree|cây|node|root|gốc/i.test(lower);
 
     // Detect constraints
-    const valueMatch = description.match(/\b(\d+)\s*[≤<]=?\s*\w+\s*[≤<]=?\s*(\d+)/);
-    const lengthMatch = description.match(/length|độ dài|kích thước|n\s*[≤<]=?\s*(\d+)/i);
+    const valueMatch = description.match(
+      /\b(\d+)\s*[≤<]=?\s*\w+\s*[≤<]=?\s*(\d+)/,
+    );
+    const lengthMatch = description.match(
+      /length|độ dài|kích thước|n\s*[≤<]=?\s*(\d+)/i,
+    );
 
     return {
       hasArray,
@@ -161,11 +165,15 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
     };
   }
 
-  private generateNormalTestcase(patterns: any, index: number): GeneratedTestcase {
+  private generateNormalTestcase(
+    patterns: any,
+    index: number,
+  ): GeneratedTestcase {
     if (patterns.hasArray) {
       const size = 5 + index * 2;
-      const arr = Array.from({ length: size }, () => 
-        Math.floor(Math.random() * 100) + 1
+      const arr = Array.from(
+        { length: size },
+        () => Math.floor(Math.random() * 100) + 1,
       );
       return {
         input: `${size}\n${arr.join(' ')}`,
@@ -179,8 +187,9 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
     if (patterns.hasString) {
       const length = 10 + index * 5;
       const chars = 'abcdefghijklmnopqrstuvwxyz';
-      const str = Array.from({ length }, () => 
-        chars[Math.floor(Math.random() * chars.length)]
+      const str = Array.from(
+        { length },
+        () => chars[Math.floor(Math.random() * chars.length)],
       ).join('');
       return {
         input: str,
@@ -202,7 +211,10 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
     };
   }
 
-  private generateEdgeTestcase(patterns: any, index: number): GeneratedTestcase {
+  private generateEdgeTestcase(
+    patterns: any,
+    index: number,
+  ): GeneratedTestcase {
     const edgeCases = [
       { input: '0', desc: 'Zero input', descVi: 'Input bằng 0' },
       { input: '1', desc: 'Single element', descVi: 'Một phần tử' },
@@ -211,15 +223,27 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
 
     if (patterns.hasArray) {
       edgeCases.push(
-        { input: '1\n1', desc: 'Single element array', descVi: 'Mảng một phần tử' },
-        { input: '2\n1 1', desc: 'Two same elements', descVi: 'Hai phần tử giống nhau' },
+        {
+          input: '1\n1',
+          desc: 'Single element array',
+          descVi: 'Mảng một phần tử',
+        },
+        {
+          input: '2\n1 1',
+          desc: 'Two same elements',
+          descVi: 'Hai phần tử giống nhau',
+        },
       );
     }
 
     if (patterns.hasString) {
       edgeCases.push(
         { input: 'a', desc: 'Single character', descVi: 'Một ký tự' },
-        { input: 'aa', desc: 'Two same characters', descVi: 'Hai ký tự giống nhau' },
+        {
+          input: 'aa',
+          desc: 'Two same characters',
+          descVi: 'Hai ký tự giống nhau',
+        },
       );
     }
 
@@ -233,14 +257,28 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
     };
   }
 
-  private generateCornerTestcase(patterns: any, index: number): GeneratedTestcase {
+  private generateCornerTestcase(
+    patterns: any,
+    index: number,
+  ): GeneratedTestcase {
     const cornerCases = [
-      { input: String(Number.MAX_SAFE_INTEGER), desc: 'Maximum integer', descVi: 'Số nguyên lớn nhất' },
-      { input: String(Number.MIN_SAFE_INTEGER), desc: 'Minimum integer', descVi: 'Số nguyên nhỏ nhất' },
+      {
+        input: String(Number.MAX_SAFE_INTEGER),
+        desc: 'Maximum integer',
+        descVi: 'Số nguyên lớn nhất',
+      },
+      {
+        input: String(Number.MIN_SAFE_INTEGER),
+        desc: 'Minimum integer',
+        descVi: 'Số nguyên nhỏ nhất',
+      },
     ];
 
     if (patterns.hasArray && patterns.maxLength) {
-      const bigArr = Array.from({ length: Math.min(patterns.maxLength, 100) }, () => 1);
+      const bigArr = Array.from(
+        { length: Math.min(patterns.maxLength, 100) },
+        () => 1,
+      );
       cornerCases.push({
         input: `${bigArr.length}\n${bigArr.join(' ')}`,
         desc: 'Maximum length array',
@@ -251,7 +289,11 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
     if (patterns.hasString) {
       cornerCases.push(
         { input: '', desc: 'Empty string', descVi: 'Chuỗi rỗng' },
-        { input: 'a'.repeat(100), desc: 'Same character repeated', descVi: 'Cùng ký tự lặp lại' },
+        {
+          input: 'a'.repeat(100),
+          desc: 'Same character repeated',
+          descVi: 'Cùng ký tự lặp lại',
+        },
       );
     }
 
@@ -265,12 +307,15 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
     };
   }
 
-  private generatePerformanceTestcase(patterns: any, index: number): GeneratedTestcase {
+  private generatePerformanceTestcase(
+    patterns: any,
+    index: number,
+  ): GeneratedTestcase {
     const size = 1000 * (index + 1);
 
     if (patterns.hasArray) {
       const arr = Array.from({ length: size }, () =>
-        Math.floor(Math.random() * 1000000)
+        Math.floor(Math.random() * 1000000),
       );
       return {
         input: `${size}\n${arr.join(' ')}`,
@@ -283,8 +328,9 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
 
     if (patterns.hasString) {
       const chars = 'abcdefghijklmnopqrstuvwxyz';
-      const str = Array.from({ length: size }, () =>
-        chars[Math.floor(Math.random() * chars.length)]
+      const str = Array.from(
+        { length: size },
+        () => chars[Math.floor(Math.random() * chars.length)],
       ).join('');
       return {
         input: str,
@@ -317,8 +363,12 @@ export class TestcaseGeneratorService extends BaseService<AiGeneratedTestcasesEn
   /**
    * Get generated testcases for a problem.
    */
-  async getTestcasesForProblem(problemId: string, approvedOnly: boolean = false) {
-    const query = this.testcaseRepository.createQueryBuilder('tc')
+  async getTestcasesForProblem(
+    problemId: string,
+    approvedOnly: boolean = false,
+  ) {
+    const query = this.testcaseRepository
+      .createQueryBuilder('tc')
       .where('tc.problemId = :problemId', { problemId });
 
     if (approvedOnly) {

@@ -22,5 +22,6 @@ import { ConversationMessageEntity } from './entities/conversation-message.entit
   ],
   providers: [AgentService, UserAiConfigService, ConversationService],
   controllers: [AgentController],
+  exports: [AgentService, UserAiConfigService, ConversationService],
 })
 export class AgentModule {}

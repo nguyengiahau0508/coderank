@@ -1,0 +1,159 @@
+<div class="max-w-5xl mx-auto space-y-4">
+  <div>
+    <h1 class="text-2xl font-semibold" style="color: var(--cr-text-primary);">User Settings</h1>
+    <p class="text-sm" style="color: var(--cr-text-muted);">
+      Bạn tự quyết định cách AI hoạt động cho tài khoản của mình.
+    </p>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="rounded-lg px-3 py-2 text-sm" style="background: rgba(248,81,73,0.12); color: var(--cr-accent-red); border: 1px solid rgba(248,81,73,0.3);">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="rounded-lg px-3 py-2 text-sm" style="background: rgba(63,185,80,0.12); color: var(--cr-accent-green); border: 1px solid rgba(63,185,80,0.3);">
+      {{ successMessage() }}
+    </div>
+  }
+
+  <div class="rounded-xl p-4 space-y-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <p class="text-sm font-medium" style="color: var(--cr-text-primary);">Sử dụng context khi chat AI</p>
+        <p class="text-xs" style="color: var(--cr-text-muted);">Bật để AI dùng ngữ cảnh trang hiện tại.</p>
+      </div>
+      <button
+        type="button"
+        class="px-3 py-1.5 rounded-lg text-xs font-medium"
+        [style]="includeContext() ? 'background:#238636;color:#fff;' : 'background:var(--cr-bg-tertiary);color:var(--cr-text-secondary);border:1px solid var(--cr-border);'"
+        (click)="toggleContextPreference()"
+      >
+        {{ includeContext() ? 'Đang bật' : 'Đang tắt' }}
+      </button>
+    </div>
+
+    <div class="space-y-2">
+      <label class="text-sm font-medium" style="color: var(--cr-text-primary);" for="preferred-provider">Provider mặc định</label>
+      <select
+        id="preferred-provider"
+        class="w-full px-3 py-2 rounded-lg text-sm"
+        style="background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border); color: var(--cr-text-secondary);"
+        [value]="preferredProvider() || ''"
+        (change)="onPreferredProviderChange($event)"
+      >
+        <option value="">Chưa chọn</option>
+        @for (provider of providers; track provider) {
+          <option [value]="provider">
+            {{ provider }} @if (!isConfigured(provider)) { (chưa cấu hình) }
+          </option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="rounded-xl p-4 space-y-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+    <div class="flex items-center justify-between">
+      <h2 class="text-base font-semibold" style="color: var(--cr-text-primary);">AI Provider Configuration</h2>
+      @if (loading()) {
+        <span class="text-xs" style="color: var(--cr-text-muted);">Đang tải...</span>
+      }
+    </div>
+
+    <div class="grid sm:grid-cols-3 gap-2">
+      @for (provider of providers; track provider) {
+        <button
+          type="button"
+          class="text-left rounded-lg p-3 text-sm"
+          [style]="selectedProvider() === provider ? 'background: rgba(88,166,255,0.15); border:1px solid var(--cr-accent-blue); color: var(--cr-text-primary);' : 'background: var(--cr-bg-tertiary); border:1px solid var(--cr-border); color: var(--cr-text-secondary);'"
+          (click)="selectProvider(provider)"
+        >
+          <p class="font-medium">{{ provider }}</p>
+          <p class="text-xs" style="color: var(--cr-text-muted);">
+            {{ isConfigured(provider) ? (getConfiguredModel(provider) || 'Đã cấu hình') : 'Chưa cấu hình' }}
+          </p>
+        </button>
+      }
+    </div>
+
+    <form class="space-y-3" [formGroup]="form">
+      <div>
+        <label class="block text-xs mb-1" style="color: var(--cr-text-muted);" for="model-name">Model</label>
+        <select
+          id="model-name"
+          class="w-full px-3 py-2 rounded-lg text-sm"
+          style="background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border); color: var(--cr-text-secondary);"
+          formControlName="modelName"
+        >
+          @for (model of modelOptions(); track model) {
+            <option [value]="model">{{ model }}{{ isCustomModel(selectedProvider(), model) ? ' ✦' : '' }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="flex gap-2">
+        <input
+          type="text"
+          class="flex-1 px-3 py-2 rounded-lg text-sm"
+          style="background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border); color: var(--cr-text-secondary);"
+          placeholder="Thêm custom model..."
+          [value]="newModelName()"
+          (input)="onNewModelInput($event)"
+          (keydown.enter)="$event.preventDefault(); addModel()"
+        />
+        <button type="button" class="px-3 py-2 rounded-lg text-xs" style="background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border); color: var(--cr-text-secondary);" (click)="addModel()">Thêm</button>
+        <button type="button" class="px-3 py-2 rounded-lg text-xs" style="background: rgba(248,81,73,0.15); color: var(--cr-accent-red);" (click)="deleteCurrentCustomModel()">Xóa model custom</button>
+      </div>
+
+      @if (selectedProvider() !== 'ollama') {
+        <div>
+          <label class="block text-xs mb-1" style="color: var(--cr-text-muted);" for="api-key">API Key</label>
+          <input
+            id="api-key"
+            type="password"
+            formControlName="apiKey"
+            class="w-full px-3 py-2 rounded-lg text-sm"
+            style="background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border); color: var(--cr-text-secondary);"
+            placeholder="Nhập API key mới (để trống nếu giữ nguyên)"
+          />
+        </div>
+      }
+
+      @if (selectedProvider() === 'ollama') {
+        <div>
+          <label class="block text-xs mb-1" style="color: var(--cr-text-muted);" for="base-host">Host URL</label>
+          <input
+            id="base-host"
+            type="text"
+            formControlName="baseHost"
+            class="w-full px-3 py-2 rounded-lg text-sm"
+            style="background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border); color: var(--cr-text-secondary);"
+            placeholder="http://localhost:11434"
+          />
+        </div>
+      }
+    </form>
+
+    <div class="flex gap-2">
+      <button
+        type="button"
+        class="px-3 py-2 rounded-lg text-xs font-semibold"
+        style="background: #238636; color: #fff;"
+        [disabled]="saving() || loading()"
+        (click)="saveProviderConfig()"
+      >
+        {{ saving() ? 'Đang lưu...' : 'Lưu cấu hình' }}
+      </button>
+      <button
+        type="button"
+        class="px-3 py-2 rounded-lg text-xs font-semibold"
+        style="background: rgba(248,81,73,0.15); color: var(--cr-accent-red);"
+        [disabled]="loading()"
+        (click)="removeProviderConfig(selectedProvider())"
+      >
+        Xóa cấu hình provider này
+      </button>
+    </div>
+  </div>
+</div>

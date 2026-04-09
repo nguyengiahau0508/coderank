@@ -11,6 +11,7 @@ import {
   CodeQualityTool,
   AlgorithmSuggestionTool,
   DataStructureSuggestionTool,
+  ProblemGeneratorTool,
 } from './ai-analysis';
 
 // AI Analysis tools
@@ -20,6 +21,7 @@ const aiAnalysisTools = [
   new CodeQualityTool(),
   new AlgorithmSuggestionTool(),
   new DataStructureSuggestionTool(),
+  new ProblemGeneratorTool(),
 ];
 
 /**

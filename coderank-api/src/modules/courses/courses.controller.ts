@@ -292,10 +292,14 @@ export class CoursesController {
 
     // Filter by enrollment status (active, completed, dropped)
     if (enrollmentStatus) {
-      queryBuilder.andWhere('enrollment.status = :enrollmentStatus', { enrollmentStatus });
+      queryBuilder.andWhere('enrollment.status = :enrollmentStatus', {
+        enrollmentStatus,
+      });
     } else {
       // Default: only show active enrollments
-      queryBuilder.andWhere('enrollment.status = :status', { status: EnrollmentStatusEnum.Active });
+      queryBuilder.andWhere('enrollment.status = :status', {
+        status: EnrollmentStatusEnum.Active,
+      });
     }
 
     if (level) {
@@ -309,7 +313,12 @@ export class CoursesController {
     }
 
     // Sort by enrollment fields or course fields
-    const enrollmentFields = ['enrolledAt', 'completedAt', 'progressPercent', 'lastAccessedAt'];
+    const enrollmentFields = [
+      'enrolledAt',
+      'completedAt',
+      'progressPercent',
+      'lastAccessedAt',
+    ];
     if (enrollmentFields.includes(sortBy)) {
       queryBuilder.orderBy(`enrollment.${sortBy}`, sortOrder);
     } else {

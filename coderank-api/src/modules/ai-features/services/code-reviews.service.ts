@@ -81,7 +81,11 @@ export class CodeReviewsService extends BaseService<CodeReviewsEntity> {
 
     try {
       // Perform code review (would call AI agent in real implementation)
-      const result = await this.analyzeCode(submission.code, submission.language, lang);
+      const result = await this.analyzeCode(
+        submission.code,
+        submission.language,
+        lang,
+      );
 
       // Update review with results
       review.status = CodeReviewStatusEnum.Completed;
@@ -120,8 +124,8 @@ export class CodeReviewsService extends BaseService<CodeReviewsEntity> {
   ): Promise<CodeReviewResult> {
     // Basic heuristic analysis (would be replaced by AI)
     const lines = code.split('\n');
-    const linesOfCode = lines.filter(l => l.trim().length > 0).length;
-    
+    const linesOfCode = lines.filter((l) => l.trim().length > 0).length;
+
     const issues: CodeReviewResult['issues'] = [];
     const suggestions: string[] = [];
 
@@ -145,7 +149,7 @@ export class CodeReviewsService extends BaseService<CodeReviewsEntity> {
     }
 
     // Check line length
-    const longLines = lines.filter(l => l.length > 100);
+    const longLines = lines.filter((l) => l.length > 100);
     if (longLines.length > 0) {
       issues.push({
         severity: 'info',
@@ -162,9 +166,9 @@ export class CodeReviewsService extends BaseService<CodeReviewsEntity> {
     let bestPracticesScore = 75;
 
     // Deduct for issues
-    const errorCount = issues.filter(i => i.severity === 'error').length;
-    const warningCount = issues.filter(i => i.severity === 'warning').length;
-    
+    const errorCount = issues.filter((i) => i.severity === 'error').length;
+    const warningCount = issues.filter((i) => i.severity === 'warning').length;
+
     readabilityScore -= errorCount * 10 + warningCount * 5;
     bestPracticesScore -= errorCount * 10 + warningCount * 5;
 
@@ -175,7 +179,11 @@ export class CodeReviewsService extends BaseService<CodeReviewsEntity> {
     bestPracticesScore = Math.max(0, Math.min(100, bestPracticesScore));
 
     const overallScore = Math.round(
-      (readabilityScore + maintainabilityScore + efficiencyScore + bestPracticesScore) / 4
+      (readabilityScore +
+        maintainabilityScore +
+        efficiencyScore +
+        bestPracticesScore) /
+        4,
     );
 
     // Estimate complexity (simplified)
@@ -206,7 +214,9 @@ export class CodeReviewsService extends BaseService<CodeReviewsEntity> {
       .createQueryBuilder('review')
       .innerJoin('review.submission', 'submission')
       .where('submission.authorId = :userId', { userId })
-      .andWhere('review.status = :status', { status: CodeReviewStatusEnum.Completed })
+      .andWhere('review.status = :status', {
+        status: CodeReviewStatusEnum.Completed,
+      })
       .select([
         'AVG(review.overallScore) as avgOverall',
         'AVG(review.readabilityScore) as avgReadability',

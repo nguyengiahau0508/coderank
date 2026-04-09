@@ -41,7 +41,9 @@ export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntit
   /**
    * Analyze user submissions and update skill profile.
    */
-  async analyzeAndUpdateProfile(userId: string): Promise<UserSkillProfilesEntity> {
+  async analyzeAndUpdateProfile(
+    userId: string,
+  ): Promise<UserSkillProfilesEntity> {
     const profile = await this.getOrCreateProfile(userId);
 
     // Get all submissions for the user
@@ -59,21 +61,24 @@ export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntit
     // Calculate metrics
     const totalSubmissions = submissions.length;
     const acceptedSubmissions = submissions.filter(
-      s => s.status === SubmissionStatusEnum.Accepted
+      (s) => s.status === SubmissionStatusEnum.Accepted,
     );
-    
+
     // Group by problem to count unique problems solved
-    const problemStats = new Map<string, {
-      solved: boolean;
-      attempts: number;
-      difficulty: string;
-      tags: string[];
-    }>();
+    const problemStats = new Map<
+      string,
+      {
+        solved: boolean;
+        attempts: number;
+        difficulty: string;
+        tags: string[];
+      }
+    >();
 
     for (const sub of submissions) {
       const problemId = sub.problemId;
       const existing = problemStats.get(problemId);
-      
+
       if (existing) {
         existing.attempts++;
         if (sub.status === SubmissionStatusEnum.Accepted) {
@@ -84,14 +89,14 @@ export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntit
           solved: sub.status === SubmissionStatusEnum.Accepted,
           attempts: 1,
           difficulty: sub.problem?.difficulty || 'medium',
-          tags: sub.problem?.tags?.map(t => t.name) || [],
+          tags: sub.problem?.tags?.map((t) => t.name) || [],
         });
       }
     }
 
     // Calculate topic skills
     const topicSkills: Record<string, any> = {};
-    
+
     for (const [_, stats] of problemStats) {
       for (const tag of stats.tags) {
         if (!topicSkills[tag]) {
@@ -103,7 +108,7 @@ export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntit
             attempts: [],
           };
         }
-        
+
         topicSkills[tag].totalProblems++;
         if (stats.solved) {
           topicSkills[tag].problemsSolved++;
@@ -115,14 +120,15 @@ export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntit
     // Calculate levels and averages
     for (const tag of Object.keys(topicSkills)) {
       const skill = topicSkills[tag];
-      skill.averageAttempts = 
-        skill.attempts.reduce((a: number, b: number) => a + b, 0) / skill.attempts.length;
-      
+      skill.averageAttempts =
+        skill.attempts.reduce((a: number, b: number) => a + b, 0) /
+        skill.attempts.length;
+
       // Calculate level (0-100) based on problems solved and attempts
       const solveRate = skill.problemsSolved / Math.max(1, skill.totalProblems);
       const attemptBonus = Math.max(0, 1 - (skill.averageAttempts - 1) * 0.1);
       skill.level = Math.round(solveRate * attemptBonus * 100);
-      
+
       delete skill.attempts; // Remove temporary data
       delete skill.totalProblems;
     }
@@ -133,16 +139,27 @@ export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntit
       .sort(([, a]: any, [, b]: any) => b.level - a.level);
 
     const strengths = sortedSkills.slice(0, 5).map(([tag]) => tag);
-    const weaknesses = sortedSkills.slice(-5).reverse().map(([tag]) => tag);
+    const weaknesses = sortedSkills
+      .slice(-5)
+      .reverse()
+      .map(([tag]) => tag);
 
     // Difficulty counts
-    let easySolved = 0, mediumSolved = 0, hardSolved = 0;
+    let easySolved = 0,
+      mediumSolved = 0,
+      hardSolved = 0;
     for (const [_, stats] of problemStats) {
       if (stats.solved) {
         switch (stats.difficulty) {
-          case 'easy': easySolved++; break;
-          case 'medium': mediumSolved++; break;
-          case 'hard': hardSolved++; break;
+          case 'easy':
+            easySolved++;
+            break;
+          case 'medium':
+            mediumSolved++;
+            break;
+          case 'hard':
+            hardSolved++;
+            break;
         }
       }
     }
@@ -151,11 +168,15 @@ export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntit
     profile.topicSkills = topicSkills;
     profile.strengths = strengths;
     profile.weaknesses = weaknesses;
-    profile.totalProblemsSolved = [...problemStats.values()].filter(s => s.solved).length;
+    profile.totalProblemsSolved = [...problemStats.values()].filter(
+      (s) => s.solved,
+    ).length;
     profile.totalSubmissions = totalSubmissions;
-    profile.averageAccuracy = (acceptedSubmissions.length / totalSubmissions) * 100;
-    profile.averageAttemptsPerProblem = 
-      [...problemStats.values()].reduce((sum, s) => sum + s.attempts, 0) / problemStats.size;
+    profile.averageAccuracy =
+      (acceptedSubmissions.length / totalSubmissions) * 100;
+    profile.averageAttemptsPerProblem =
+      [...problemStats.values()].reduce((sum, s) => sum + s.attempts, 0) /
+      problemStats.size;
     profile.easySolved = easySolved;
     profile.mediumSolved = mediumSolved;
     profile.hardSolved = hardSolved;
@@ -196,10 +217,12 @@ export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntit
       .createQueryBuilder('sub')
       .select('DISTINCT sub.problemId', 'problemId')
       .where('sub.authorId = :userId', { userId })
-      .andWhere('sub.status = :status', { status: SubmissionStatusEnum.Accepted })
+      .andWhere('sub.status = :status', {
+        status: SubmissionStatusEnum.Accepted,
+      })
       .getRawMany();
 
-    const solvedIds = solvedProblemIds.map(r => r.problemId);
+    const solvedIds = solvedProblemIds.map((r) => r.problemId);
 
     // Build recommendation query
     // Prioritize: weaknesses > appropriate difficulty > variety
@@ -218,7 +241,7 @@ export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntit
     if (profile.weaknesses && profile.weaknesses.length > 0) {
       query.orderBy(
         `CASE WHEN tags.name IN (:...weaknesses) THEN 0 ELSE 1 END`,
-        'ASC'
+        'ASC',
       );
       query.setParameter('weaknesses', profile.weaknesses);
     }

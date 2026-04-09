@@ -21,4 +21,9 @@ export const studentRoutes: Routes = [
     loadChildren: () =>
       import('./contests/contests.routes').then(m => m.studentContestsRoutes),
   },
+  {
+    path: 'settings',
+    loadComponent: () =>
+      import('../settings/user-settings.component').then(m => m.UserSettingsComponent),
+  },
 ];

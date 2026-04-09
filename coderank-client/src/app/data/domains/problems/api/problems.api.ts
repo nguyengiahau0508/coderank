@@ -19,6 +19,7 @@ import {
   UpdateSolutionDto,
 } from '../dto';
 import { TagsModel } from '../models/tags.model';
+import { AiProviderEnum } from '../../../shared/enums/enums';
 
 /**
  * Problems API Service
@@ -29,6 +30,16 @@ import { TagsModel } from '../models/tags.model';
 })
 export class ProblemsApi extends BaseApi {
   protected readonly endpoint = '/problems';
+
+  private getPreferredAiProvider(): AiProviderEnum | undefined {
+    const value = localStorage.getItem('ai_preferred_provider_v1');
+    if (!value) {
+      return undefined;
+    }
+    return Object.values(AiProviderEnum).includes(value as AiProviderEnum)
+      ? (value as AiProviderEnum)
+      : undefined;
+  }
 
   // ==================== Problems ====================
 
@@ -308,5 +319,199 @@ export class ProblemsApi extends BaseApi {
       this.getUrl(`/${problemId}/solutions/${solutionId}`)
     );
   }
-}
 
+  // ==================== AI Features ====================
+
+  getAiHints(problemId: string, lang: 'vi' | 'en' = 'vi'): Observable<ApiResponse<any[]>> {
+    return this.apiService.get<ApiResponse<any[]>>(`/ai/problems/${problemId}/hints`, {
+      lang,
+    });
+  }
+
+  getAlgorithmSuggestion(
+    problemId: string,
+    body: {
+      code?: string;
+      language?: string;
+      lang?: 'vi' | 'en';
+      provider?: AiProviderEnum;
+    } = {},
+  ): Observable<ApiResponse<any>> {
+    const provider = body.provider ?? this.getPreferredAiProvider();
+    return this.apiService.post<ApiResponse<any>>(
+      `/ai/problems/${problemId}/algorithm-suggestion`,
+      { ...body, provider },
+    );
+  }
+
+  getAiCodeReview(submissionId: string): Observable<ApiResponse<any>> {
+    return this.apiService.get<ApiResponse<any>>(`/ai/submissions/${submissionId}/review`);
+  }
+
+  getAiErrorExplanation(
+    submissionId: string,
+    lang: 'vi' | 'en' = 'vi',
+  ): Observable<ApiResponse<any>> {
+    const provider = this.getPreferredAiProvider();
+    return this.apiService.post<ApiResponse<any>>(
+      `/ai/submissions/${submissionId}/error-explanation`,
+      { lang, provider },
+    );
+  }
+
+  getAiDebugAssist(
+    submissionId: string,
+    lang: 'vi' | 'en' = 'vi',
+  ): Observable<ApiResponse<any>> {
+    const provider = this.getPreferredAiProvider();
+    return this.apiService.post<ApiResponse<any>>(
+      `/ai/submissions/${submissionId}/debug-assist`,
+      { lang, provider },
+    );
+  }
+
+  getAiExplainSolution(
+    submissionId: string,
+    lang: 'vi' | 'en' = 'vi',
+    detail: 'brief' | 'detailed' = 'detailed',
+  ): Observable<ApiResponse<any>> {
+    const provider = this.getPreferredAiProvider();
+    return this.apiService.post<ApiResponse<any>>(
+      `/ai/submissions/${submissionId}/explain-solution`,
+      { lang, detail, provider },
+    );
+  }
+
+  getAiOptimizationSuggestions(
+    submissionId: string,
+    lang: 'vi' | 'en' = 'vi',
+  ): Observable<ApiResponse<any>> {
+    const provider = this.getPreferredAiProvider();
+    return this.apiService.post<ApiResponse<any>>(
+      `/ai/submissions/${submissionId}/optimize-suggestions`,
+      { lang, provider },
+    );
+  }
+
+  translateCode(
+    sourceCode: string,
+    sourceLanguage: string,
+    targetLanguage: string,
+  ): Observable<ApiResponse<any>> {
+    const provider = this.getPreferredAiProvider();
+    return this.apiService.post<ApiResponse<any>>('/ai/code/translate', {
+      sourceCode,
+      sourceLanguage,
+      targetLanguage,
+      provider,
+    });
+  }
+
+  getRecommendedProblems(limit: number = 10): Observable<ApiResponse<any[]>> {
+    return this.apiService.get<ApiResponse<any[]>>('/ai/users/me/recommended-problems', {
+      limit,
+    });
+  }
+
+  getLearningPaths(): Observable<ApiResponse<any[]>> {
+    return this.apiService.get<ApiResponse<any[]>>('/ai/learning-paths');
+  }
+
+  getActiveLearningPath(): Observable<ApiResponse<any>> {
+    return this.apiService.get<ApiResponse<any>>('/ai/learning-paths/active');
+  }
+
+  generateLearningPath(goalTopic: string, targetLevel: string): Observable<ApiResponse<any>> {
+    return this.apiService.post<ApiResponse<any>>('/ai/learning-paths/generate', {
+      goalTopic,
+      targetLevel,
+    });
+  }
+
+  completeLearningPathStep(pathId: string, stepIndex: number): Observable<ApiResponse<any>> {
+    return this.apiService.post<ApiResponse<any>>(
+      `/ai/learning-paths/${pathId}/steps/${stepIndex}/complete`,
+      {},
+    );
+  }
+
+  generateCourseAnalytics(
+    courseId: string,
+    periodStart: string,
+    periodEnd: string,
+  ): Observable<ApiResponse<any>> {
+    return this.apiService.post<ApiResponse<any>>(
+      `/ai/courses/${courseId}/analytics/generate`,
+      { periodStart, periodEnd },
+    );
+  }
+
+  getLatestCourseAnalytics(courseId: string): Observable<ApiResponse<any>> {
+    return this.apiService.get<ApiResponse<any>>(`/ai/courses/${courseId}/analytics/latest`);
+  }
+
+  gradeSubmissionAi(
+    submissionId: string,
+    rubric?: Array<{ criterion: string; criterionVi?: string; maxScore: number }>,
+  ): Observable<ApiResponse<any>> {
+    return this.apiService.post<ApiResponse<any>>(`/ai/submissions/${submissionId}/grade`, {
+      rubric,
+    });
+  }
+
+  getSubmissionAiGrading(submissionId: string): Observable<ApiResponse<any>> {
+    return this.apiService.get<ApiResponse<any>>(`/ai/submissions/${submissionId}/grading`);
+  }
+
+  runPlagiarismCheck(
+    submissionId: string,
+    threshold: number = 0.75,
+  ): Observable<ApiResponse<any>> {
+    return this.apiService.post<ApiResponse<any>>(
+      `/ai/submissions/${submissionId}/plagiarism-check`,
+      { threshold },
+    );
+  }
+
+  getPlagiarismReport(submissionId: string): Observable<ApiResponse<any>> {
+    return this.apiService.get<ApiResponse<any>>(`/ai/submissions/${submissionId}/plagiarism-report`);
+  }
+
+  generateProblemDraftAi(
+    topic: string,
+    difficulty: 'easy' | 'medium' | 'hard',
+    constraints?: string,
+    lang: 'vi' | 'en' = 'vi',
+  ): Observable<ApiResponse<any>> {
+    const provider = this.getPreferredAiProvider();
+    return this.apiService.post<ApiResponse<any>>('/ai/problems/generate', {
+      topic,
+      difficulty,
+      constraints,
+      lang,
+      provider,
+    });
+  }
+
+  generateAiTestcases(
+    problemId: string,
+    payload: {
+      includeEdgeCases?: boolean;
+      includeCornerCases?: boolean;
+      includePerformance?: boolean;
+      count?: number;
+    } = {},
+  ): Observable<ApiResponse<any[]>> {
+    return this.apiService.post<ApiResponse<any[]>>(
+      `/ai/problems/${problemId}/testcases/generate`,
+      payload,
+    );
+  }
+
+  getAiTestcases(problemId: string, approvedOnly = false): Observable<ApiResponse<any[]>> {
+    return this.apiService.get<ApiResponse<any[]>>(
+      `/ai/problems/${problemId}/testcases`,
+      { approvedOnly },
+    );
+  }
+}

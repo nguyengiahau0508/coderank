@@ -119,9 +119,9 @@ export enum AiProviderEnum {
 }
 
 export enum AiHintLevelEnum {
-  Approach = 'approach',      // Level 1: General approach
-  Algorithm = 'algorithm',    // Level 2: Specific algorithm
-  Pseudocode = 'pseudocode',  // Level 3: Step-by-step pseudocode
+  Approach = 'approach', // Level 1: General approach
+  Algorithm = 'algorithm', // Level 2: Specific algorithm
+  Pseudocode = 'pseudocode', // Level 3: Step-by-step pseudocode
   PartialCode = 'partial_code', // Level 4: Partial code snippet
 }
 

@@ -13,12 +13,15 @@ export class UserSkillProfilesEntity extends BaseEntity {
 
   // Skill levels by topic (stored as JSON)
   @Column({ type: 'json', nullable: true })
-  topicSkills?: Record<string, {
-    level: number; // 0-100
-    problemsSolved: number;
-    averageAttempts: number;
-    lastPracticed?: string;
-  }>;
+  topicSkills?: Record<
+    string,
+    {
+      level: number; // 0-100
+      problemsSolved: number;
+      averageAttempts: number;
+      lastPracticed?: string;
+    }
+  >;
 
   // Strengths - topics where user excels
   @Column({ type: 'json', nullable: true })
