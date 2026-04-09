@@ -112,6 +112,27 @@ export enum QuizQuestionTypeEnum {
 
 export enum AiProviderEnum {
   Gemini = 'gemini',
+  OpenAI = 'openai',
+  Anthropic = 'anthropic',
   Ollama = 'ollama',
   Groq = 'groq',
+}
+
+export enum AiHintLevelEnum {
+  Approach = 'approach',      // Level 1: General approach
+  Algorithm = 'algorithm',    // Level 2: Specific algorithm
+  Pseudocode = 'pseudocode',  // Level 3: Step-by-step pseudocode
+  PartialCode = 'partial_code', // Level 4: Partial code snippet
+}
+
+export enum CodeReviewSeverityEnum {
+  Error = 'error',
+  Warning = 'warning',
+  Info = 'info',
+}
+
+export enum CodeReviewStatusEnum {
+  Pending = 'pending',
+  Completed = 'completed',
+  Failed = 'failed',
 }

@@ -282,3 +282,34 @@ html, body {
 .glow-purple { box-shadow: 0 0 20px rgba(188, 140, 255, 0.15); }
 .glow-green { box-shadow: 0 0 20px rgba(63, 185, 80, 0.15); }
 
+/* AI Chat Markdown (global to avoid component budget) */
+.chat-markdown :not(pre *) { all: revert; }
+.chat-markdown :not(pre *)::before, .chat-markdown :not(pre *)::after { all: revert; }
+.chat-markdown .code-block-wrapper { border-radius: 12px; overflow: hidden; margin: 14px 0; border: 1px solid var(--cr-border); background-color: var(--cr-bg-primary); }
+.chat-markdown .code-block-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background-color: var(--cr-bg-elevated); border-bottom: 1px solid var(--cr-border); }
+.chat-markdown .code-lang { color: var(--cr-text-muted); font-family: ui-monospace, monospace; font-size: 11px; }
+.chat-markdown .code-copy-btn { display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 11px; color: var(--cr-text-muted); background: transparent; }
+.chat-markdown .code-copy-btn:hover { background-color: var(--cr-bg-tertiary); color: var(--cr-text-primary); }
+.chat-markdown .code-block-wrapper pre { margin: 0 !important; border: none !important; border-radius: 0 !important; background-color: var(--cr-bg-primary) !important; padding: 16px; overflow-x: auto; font-size: 13px; line-height: 1.6; }
+.chat-markdown pre { background-color: var(--cr-bg-elevated); border: 1px solid var(--cr-border); border-radius: 12px; padding: 16px; overflow-x: auto; margin: 14px 0; font-size: 13px; line-height: 1.6; }
+.chat-markdown code { font-family: ui-monospace, monospace; font-size: 13px; }
+.chat-markdown :not(pre) > code { background-color: var(--cr-bg-elevated); padding: 3px 7px; border-radius: 6px; font-size: 12px; border: 1px solid var(--cr-border); color: var(--cr-accent-cyan); }
+.chat-markdown p { margin: 8px 0; line-height: 1.75; }
+.chat-markdown p:first-child { margin-top: 0; }
+.chat-markdown p:last-child { margin-bottom: 0; }
+.chat-markdown ul, .chat-markdown ol { padding-left: 22px; margin: 10px 0; }
+.chat-markdown li { margin: 6px 0; line-height: 1.65; }
+.chat-markdown h1, .chat-markdown h2, .chat-markdown h3, .chat-markdown strong { font-weight: 600; color: var(--cr-text-primary); }
+.chat-markdown h1 { font-size: 1.35em; margin: 20px 0 10px; }
+.chat-markdown h2 { font-size: 1.2em; margin: 18px 0 8px; }
+.chat-markdown h3 { font-size: 1.05em; margin: 14px 0 6px; }
+.chat-markdown a { color: var(--cr-accent-blue); text-decoration: none; }
+.chat-markdown a:hover { text-decoration: underline; }
+.chat-markdown blockquote { border-left: 3px solid var(--cr-accent-purple); padding: 6px 16px; margin: 12px 0; color: var(--cr-text-secondary); background-color: var(--cr-bg-tertiary); border-radius: 0 8px 8px 0; }
+.chat-markdown table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; border: 1px solid var(--cr-border); }
+.chat-markdown th, .chat-markdown td { padding: 10px 14px; border: 1px solid var(--cr-border); text-align: left; }
+.chat-markdown th { background-color: var(--cr-bg-elevated); font-weight: 600; font-size: 12px; color: var(--cr-text-secondary); }
+.chat-markdown tr:nth-child(even) { background-color: var(--cr-bg-tertiary); }
+.chat-markdown hr { border: none; height: 1px; background: var(--cr-border); margin: 20px 0; }
+.chat-markdown img { max-width: 100%; border-radius: 12px; margin: 10px 0; }
+

@@ -20,6 +20,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.85.0",
     "@google/genai": "^1.44.0",
     "@google/generative-ai": "^0.24.1",
     "@types/cors": "^2.8.19",
@@ -30,6 +31,7 @@
     "express": "^5.2.1",
     "groq-sdk": "^0.37.0",
     "ollama": "^0.6.3",
+    "openai": "^6.33.0",
     "zod": "^4.3.6",
     "zod-to-json-schema": "^3.25.1"
   }

@@ -235,7 +235,7 @@
                       <i class="pi pi-file-edit text-primary"></i>
                       Mô tả chi tiết
                     </h3>
-                    <div class="text-sm ql-editor p-0" style="color: var(--cr-text-secondary);" [innerHTML]="c.description"></div>
+                    <div class="text-sm ql-editor p-0" style="color: var(--cr-text-secondary);" [innerHTML]="c.description" [appHighlightCode]="c.description"></div>
                   </div>
                 }
               </div>
@@ -271,7 +271,7 @@
                         </p-accordion-header>
                         <p-accordion-content>
                           @if (section.description) {
-                            <div class="text-sm mb-3 ql-editor p-0" style="color: var(--cr-text-muted);" [innerHTML]="section.description"></div>
+                            <div class="text-sm mb-3 ql-editor p-0" style="color: var(--cr-text-muted);" [innerHTML]="section.description" [appHighlightCode]="section.description"></div>
                           }
                           @if (!section.lessons || section.lessons.length === 0) {
                             <p class="text-sm text-center py-4" style="color: var(--cr-text-muted);">Chưa có bài học trong chương này</p>

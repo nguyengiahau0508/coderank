@@ -1,5 +1,6 @@
 import { ITool } from '../tools/tool.interface';
 import { ContextWindowPolicy } from '../context-window';
+import { TokenUsage } from '../usage';
 
 export interface ChatMessage {
   role: 'user' | 'model' | 'assistant' | 'system';
@@ -27,6 +28,7 @@ export interface ILLMProvider {
   /**
    * Sends a message to the LLM and gets the response.
    * If the LLM decides to call a tool, it returns the tool call request.
+   * Includes token usage information when available.
    */
   sendMessage(message: any): Promise<LLMResponse>;
 }
@@ -37,7 +39,12 @@ export interface ToolCallRequest {
   arguments: any;
 }
 
+/**
+ * LLM response with optional usage tracking.
+ * Follows AGENT_DESIGN.md pattern for usage metadata per message.
+ */
 export interface LLMResponse {
   text?: string;
   toolCalls?: ToolCallRequest[];
+  usage?: TokenUsage;
 }

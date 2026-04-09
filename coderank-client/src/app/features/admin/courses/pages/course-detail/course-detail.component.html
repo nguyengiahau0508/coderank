@@ -75,7 +75,7 @@
                   <h3 class="text-sm font-semibold mb-3" style="color: var(--cr-text-primary);">
                     <i class="pi pi-file-edit mr-2" style="color: var(--cr-accent-blue);"></i>Mô tả chi tiết
                   </h3>
-                  <div class="text-sm ql-editor p-0" style="color: var(--cr-text-secondary);" [innerHTML]="c.description"></div>
+                  <div class="text-sm ql-editor p-0" style="color: var(--cr-text-secondary);" [innerHTML]="c.description" [appHighlightCode]="c.description"></div>
                 </div>
               }
 
@@ -240,7 +240,7 @@
                     </p-accordion-header>
                     <p-accordion-content>
                       @if (section.description) {
-                        <div class="text-sm mb-3 ql-editor p-0" style="color: var(--cr-text-muted);" [innerHTML]="section.description"></div>
+                        <div class="text-sm mb-3 ql-editor p-0" style="color: var(--cr-text-muted);" [innerHTML]="section.description" [appHighlightCode]="section.description"></div>
                       }
                       @if (!section.lessons || section.lessons.length === 0) {
                         <div class="text-center py-4" style="color: var(--cr-text-subtle);">

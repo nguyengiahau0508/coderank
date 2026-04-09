@@ -5,6 +5,22 @@ export { ToolRegistry } from './tool.registry';
 import { ToolRegistry } from './tool.registry';
 import { problemTools } from './problems/problems.tool';
 import { courseTools } from './courses/courses.tool';
+import { 
+  CodeAnalysisTool, 
+  ComplexityAnalysisTool, 
+  CodeQualityTool,
+  AlgorithmSuggestionTool,
+  DataStructureSuggestionTool,
+} from './ai-analysis';
+
+// AI Analysis tools
+const aiAnalysisTools = [
+  new CodeAnalysisTool(),
+  new ComplexityAnalysisTool(),
+  new CodeQualityTool(),
+  new AlgorithmSuggestionTool(),
+  new DataStructureSuggestionTool(),
+];
 
 /**
  * Registers all tools from every domain into the given registry.
@@ -14,5 +30,6 @@ export function registerAllTools(registry: ToolRegistry): void {
   registry.registerMany([
     ...problemTools,
     ...courseTools,
+    ...aiAnalysisTools,
   ]);
 }

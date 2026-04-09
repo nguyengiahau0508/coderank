@@ -16,6 +16,9 @@ import { Textarea } from 'primeng/textarea';
 import { Skeleton } from 'primeng/skeleton';
 import { MessageService } from 'primeng/api';
 
+// Shared
+import { HighlightCodeDirective } from '../../../../shared/directives/highlight-code.directive';
+
 // Models & Enums
 import {
   CoursesModel,
@@ -50,6 +53,7 @@ import { StudentCoursesService } from '../services/courses.service';
     TabPanel,
     Textarea,
     Skeleton,
+    HighlightCodeDirective,
   ],
   providers: [MessageService],
   templateUrl: './course-detail.component.html',

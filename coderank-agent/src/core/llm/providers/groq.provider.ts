@@ -4,6 +4,7 @@ import { ILLMProvider, LLMResponse, ILLMConfig, ConversationHistoryMessage } fro
 import { ITool } from '../../tools/tool.interface';
 import { config } from '../../../config';
 import { ContextWindowPolicy, trimHistoryToBudget } from '../../context-window';
+import { TokenUsage } from '../../usage';
 
 export class GroqProvider implements ILLMProvider {
   private client: Groq;
@@ -97,6 +98,9 @@ export class GroqProvider implements ILLMProvider {
       const assistantMessage = response.choices[0].message;
       this.history.push(assistantMessage as Groq.Chat.Completions.ChatCompletionMessageParam);
 
+      // Extract usage from response
+      const usage = this.extractUsage(response);
+
       if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
         this.lastToolCallIds = new Map();
         assistantMessage.tool_calls.forEach(tc => {
@@ -109,11 +113,13 @@ export class GroqProvider implements ILLMProvider {
             name: tc.function.name,
             arguments: JSON.parse(tc.function.arguments || '{}') ?? {},
           })),
+          usage,
         };
       }
 
       return {
         text: assistantMessage.content || '',
+        usage,
       };
     } catch (error: any) {
       // Handle Groq's tool_use_failed error by recovering the malformed JSON
@@ -148,6 +154,22 @@ export class GroqProvider implements ILLMProvider {
       console.error('[Groq Error]', error);
       throw error;
     }
+  }
+
+  private extractUsage(response: any): TokenUsage | undefined {
+    try {
+      const usage = response.usage;
+      if (usage) {
+        return {
+          inputTokens: usage.prompt_tokens || 0,
+          outputTokens: usage.completion_tokens || 0,
+          totalTokens: usage.total_tokens || 0,
+        };
+      }
+    } catch {
+      // Usage not available
+    }
+    return undefined;
   }
 
   /**

@@ -89,7 +89,7 @@
 
                 @if (l.content) {
                   <div class="rounded-xl p-5" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-                    <div class="text-sm ql-editor p-0" style="color: var(--cr-text-secondary);" [innerHTML]="l.content"></div>
+                    <div class="text-sm ql-editor p-0" style="color: var(--cr-text-secondary);" [innerHTML]="l.content" [appHighlightCode]="l.content"></div>
                   </div>
                 }
 

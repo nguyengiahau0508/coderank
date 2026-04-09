@@ -1,0 +1,7 @@
+export { AiHintsService } from './ai-hints.service';
+export { CodeReviewsService } from './code-reviews.service';
+export { UserSkillProfilesService } from './user-skill-profiles.service';
+export { LearningPathsService } from './learning-paths.service';
+export { TestcaseGeneratorService } from './testcase-generator.service';
+export { ClassAnalyticsService } from './class-analytics.service';
+export { AiGradingService } from './ai-grading.service';

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -31,6 +31,11 @@ import { CourseLevelEnum, CourseStatusEnum, LessonTypeEnum } from '../../../../.
 
 // Services
 import { CoursesService } from '../../../../../shared/services/courses/courses.service';
+import { ChatContextService } from '../../../../../core/services/chat-context.service';
+import { CourseChatContext } from '../../../../../core/models/chat-context.model';
+
+// Shared
+import { HighlightCodeDirective } from '../../../../../shared/directives/highlight-code.directive';
 
 @Component({
   selector: 'app-admin-course-detail',
@@ -56,17 +61,19 @@ import { CoursesService } from '../../../../../shared/services/courses/courses.s
     Tab,
     TabPanels,
     TabPanel,
+    HighlightCodeDirective,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './course-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminCourseDetailComponent implements OnInit {
+export class AdminCourseDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly coursesService = inject(CoursesService);
   private readonly messageService = inject(MessageService);
   private readonly confirmService = inject(ConfirmationService);
+  private readonly chatContextService = inject(ChatContextService);
 
   // State
   readonly course = signal<CoursesModel | null>(null);
@@ -119,14 +126,31 @@ export class AdminCourseDetailComponent implements OnInit {
     this.loading.set(true);
     this.coursesService.getCourse(this.courseId()).subscribe({
       next: (response) => {
-        this.course.set(response.data ?? (response as any));
+        const course = response.data ?? (response as any);
+        this.course.set(course);
         this.loading.set(false);
+        this.updateChatContext(course);
       },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải khóa học' });
         this.loading.set(false);
       },
     });
+  }
+
+  ngOnDestroy(): void {
+    this.chatContextService.popContext();
+  }
+
+  private updateChatContext(course: CoursesModel): void {
+    const context: CourseChatContext = {
+      type: 'course',
+      courseId: course.id,
+      title: course.title,
+      level: course.level,
+      description: course.summary ?? course.description ?? undefined,
+    };
+    this.chatContextService.pushContext(context);
   }
 
   goBack(): void {

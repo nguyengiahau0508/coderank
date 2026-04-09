@@ -4,6 +4,7 @@ import { ILLMProvider, LLMResponse, ChatMessage, ILLMConfig, ConversationHistory
 import { ITool } from '../../tools/tool.interface';
 import { config } from '../../../config';
 import { ContextWindowPolicy, trimHistoryToBudget } from '../../context-window';
+import { TokenUsage } from '../../usage';
 
 export class OllamaProvider implements ILLMProvider {
   private client: Ollama;
@@ -93,22 +94,45 @@ export class OllamaProvider implements ILLMProvider {
 
       this.history.push(response.message);
 
+      // Extract usage from Ollama response
+      const usage = this.extractUsage(response);
+
       if (response.message.tool_calls && response.message.tool_calls.length > 0) {
         return {
           toolCalls: response.message.tool_calls.map(call => ({
             name: call.function.name,
             arguments: call.function.arguments,
-          }))
+          })),
+          usage,
         };
       }
 
       return {
         text: response.message.content,
+        usage,
       };
     } catch (error) {
       console.error(`[Ollama Error]`, error);
       throw error;
     }
+  }
+
+  private extractUsage(response: any): TokenUsage | undefined {
+    try {
+      // Ollama provides eval_count and prompt_eval_count
+      if (response.prompt_eval_count !== undefined || response.eval_count !== undefined) {
+        const inputTokens = response.prompt_eval_count || 0;
+        const outputTokens = response.eval_count || 0;
+        return {
+          inputTokens,
+          outputTokens,
+          totalTokens: inputTokens + outputTokens,
+        };
+      }
+    } catch {
+      // Usage not available
+    }
+    return undefined;
   }
 
   private formatToolsForOllama(tools: ITool[]): Tool[] {

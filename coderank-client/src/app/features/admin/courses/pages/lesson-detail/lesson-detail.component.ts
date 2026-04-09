@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -20,7 +20,10 @@ import { Checkbox } from 'primeng/checkbox';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { FileUpload } from 'primeng/fileupload';
 import { TextEditorComponent } from '../../../../../shared/components/text-editor/text-editor.component';
+import { HighlightCodeDirective } from '../../../../../shared/directives/highlight-code.directive';
 import { CoursesService } from '../../../../../shared/services/courses/courses.service';
+import { ChatContextService } from '../../../../../core/services/chat-context.service';
+import { LessonChatContext } from '../../../../../core/models/chat-context.model';
 import { AssignmentSubmissionStatusEnum, AssignmentTypeEnum, CourseAssignmentsModel, CourseAssignmentSubmissionsModel, CourseLessonProblemsModel, CourseLessonsModel, CourseQuizQuestionsModel, CourseQuizzesModel, LessonTypeEnum, ProblemsModel, QuizQuestionTypeEnum } from '../../../../../data';
 
 @Component({
@@ -42,18 +45,20 @@ import { AssignmentSubmissionStatusEnum, AssignmentTypeEnum, CourseAssignmentsMo
     Checkbox,
     TextEditorComponent,
     FileUpload,
+    HighlightCodeDirective,
   ],
   templateUrl: './lesson-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [MessageService, ConfirmationService],
 })
-export class AdminLessonDetailComponent implements OnInit {
+export class AdminLessonDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly coursesService = inject(CoursesService);
   private readonly messageService = inject(MessageService);
   private readonly confirmService = inject(ConfirmationService);
+  private readonly chatContextService = inject(ChatContextService);
 
   // Route params
   readonly courseId = signal<string>('');
@@ -178,14 +183,30 @@ export class AdminLessonDetailComponent implements OnInit {
     this.loading.set(true);
     this.coursesService.getLesson(this.courseId(), this.sectionId(), this.lessonId()).subscribe({
       next: (response) => {
-        this.lesson.set(response.data ?? (response as any));
+        const lesson = response.data ?? (response as any);
+        this.lesson.set(lesson);
         this.loading.set(false);
+        this.updateChatContext(lesson);
       },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải bài học' });
         this.loading.set(false);
       },
     });
+  }
+
+  ngOnDestroy(): void {
+    this.chatContextService.popContext();
+  }
+
+  private updateChatContext(lesson: CourseLessonsModel): void {
+    const context: LessonChatContext = {
+      type: 'lesson',
+      lessonId: lesson.id,
+      title: lesson.title,
+      courseTitle: (lesson as any).course?.title ?? '',
+    };
+    this.chatContextService.pushContext(context);
   }
 
   loadSectionLessons(): void {

@@ -3,6 +3,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { ILLMProvider, LLMResponse, ILLMConfig, ConversationHistoryMessage } from '../llm.interface';
 import { ITool } from '../../tools/tool.interface';
 import { config } from '../../../config';
+import { TokenUsage } from '../../usage';
 
 export class GeminiProvider implements ILLMProvider {
   private genAI: GoogleGenerativeAI;
@@ -43,6 +44,9 @@ export class GeminiProvider implements ILLMProvider {
     const result = await this.chatSession.sendMessage(message);
     const response = result.response;
     
+    // Extract usage metadata from response
+    const usage = this.extractUsage(response);
+    
     // Check if there are function calls
     const functionCalls = response.functionCalls();
     
@@ -51,13 +55,32 @@ export class GeminiProvider implements ILLMProvider {
         toolCalls: functionCalls.map(call => ({
           name: call.name,
           arguments: call.args,
-        }))
+        })),
+        usage,
       };
     }
 
     return {
       text: response.text(),
+      usage,
     };
+  }
+
+  private extractUsage(response: any): TokenUsage | undefined {
+    try {
+      const metadata = response.usageMetadata;
+      if (metadata) {
+        return {
+          inputTokens: metadata.promptTokenCount || 0,
+          outputTokens: metadata.candidatesTokenCount || 0,
+          totalTokens: metadata.totalTokenCount || 0,
+          cacheReadTokens: metadata.cachedContentTokenCount || 0,
+        };
+      }
+    } catch {
+      // Usage metadata not available
+    }
+    return undefined;
   }
 
   private formatToolsForGemini(tools: ITool[]) {

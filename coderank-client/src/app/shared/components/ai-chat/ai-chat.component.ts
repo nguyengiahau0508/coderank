@@ -18,9 +18,13 @@ import hljs from 'highlight.js';
 import {
   AgentApi,
   AiConfigModel,
-  AI_PROVIDER_MODELS,
   ConversationModel,
   ConversationMessageModel,
+  getModelsForProvider,
+  addCustomModel,
+  removeCustomModel,
+  getCustomModels,
+  DEFAULT_AI_PROVIDER_MODELS,
 } from '../../../data/domains/agent/api/agent.api';
 import { AiProviderEnum } from '../../../data/shared/enums/enums';
 import { environment } from '../../../../environments/environment';
@@ -90,6 +94,13 @@ export class AiChatComponent {
   editModel = signal<string>('');
   editApiKey = signal<string>('');
   editBaseHost = signal<string>('');
+
+  // Custom model management
+  showAddModel = signal(false);
+  newModelName = signal('');
+
+  // Context toggle - user chooses to include context or not
+  includeContext = signal(false);
 
   providers = Object.values(AiProviderEnum);
 
@@ -328,8 +339,8 @@ export class AiChatComponent {
     const token = localStorage.getItem('access_token');
     const url = `${environment.apiUrl}/agent/conversations/${encodeURIComponent(conversationId)}/messages`;
 
-    // Get current context if available
-    const context = this.currentContext();
+    // Only include context if user explicitly enabled it
+    const context = this.includeContext() ? this.currentContext() : null;
 
     try {
       const response = await fetch(url, {
@@ -464,7 +475,44 @@ export class AiChatComponent {
   }
 
   getProviderModels(provider: AiProviderEnum): string[] {
-    return AI_PROVIDER_MODELS[provider] || [];
+    return getModelsForProvider(provider);
+  }
+
+  isCustomModel(provider: AiProviderEnum, model: string): boolean {
+    const defaults = DEFAULT_AI_PROVIDER_MODELS[provider] ?? [];
+    return !defaults.includes(model);
+  }
+
+  openAddModel() {
+    this.showAddModel.set(true);
+    this.newModelName.set('');
+  }
+
+  closeAddModel() {
+    this.showAddModel.set(false);
+    this.newModelName.set('');
+  }
+
+  addNewModel() {
+    const provider = this.editingProvider();
+    const name = this.newModelName().trim();
+    if (!provider || !name) return;
+
+    addCustomModel(provider, name);
+    this.editModel.set(name);
+    this.closeAddModel();
+  }
+
+  removeModel(model: string) {
+    const provider = this.editingProvider();
+    if (!provider) return;
+
+    removeCustomModel(provider, model);
+    // If removed model was selected, select first available
+    if (this.editModel() === model) {
+      const models = this.getProviderModels(provider);
+      this.editModel.set(models[0] ?? '');
+    }
   }
 
   isProviderConfigured(provider: AiProviderEnum): boolean {
@@ -481,6 +529,10 @@ export class AiChatComponent {
     } else {
       this.openEditProvider(provider);
     }
+  }
+
+  toggleContext() {
+    this.includeContext.update(v => !v);
   }
 
   openEditProvider(provider: AiProviderEnum, event?: Event) {

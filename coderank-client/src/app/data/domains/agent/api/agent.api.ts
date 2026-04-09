@@ -50,8 +50,8 @@ export interface UpsertAiConfigDto {
   baseHost?: string;
 }
 
-/** Available models per provider */
-export const AI_PROVIDER_MODELS: Record<AiProviderEnum, string[]> = {
+/** Default models per provider */
+export const DEFAULT_AI_PROVIDER_MODELS: Record<AiProviderEnum, string[]> = {
   [AiProviderEnum.Gemini]: [
     'gemini-2.5-flash',
     'gemini-2.5-pro',
@@ -75,6 +75,72 @@ export const AI_PROVIDER_MODELS: Record<AiProviderEnum, string[]> = {
     'qwen3.5:397b-cloud'
   ],
 };
+
+const CUSTOM_MODELS_STORAGE_KEY = 'ai_custom_models';
+
+export type CustomModelsConfig = Partial<Record<AiProviderEnum, string[]>>;
+
+/** Lấy custom models từ localStorage */
+export function getCustomModels(): CustomModelsConfig {
+  try {
+    const stored = localStorage.getItem(CUSTOM_MODELS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Lưu custom models vào localStorage */
+export function saveCustomModels(config: CustomModelsConfig): void {
+  localStorage.setItem(CUSTOM_MODELS_STORAGE_KEY, JSON.stringify(config));
+}
+
+/** Thêm custom model cho provider */
+export function addCustomModel(provider: AiProviderEnum, model: string): void {
+  const config = getCustomModels();
+  const existing = config[provider] ?? [];
+  if (!existing.includes(model)) {
+    config[provider] = [...existing, model];
+    saveCustomModels(config);
+  }
+}
+
+/** Xóa custom model khỏi provider */
+export function removeCustomModel(provider: AiProviderEnum, model: string): void {
+  const config = getCustomModels();
+  const existing = config[provider] ?? [];
+  config[provider] = existing.filter(m => m !== model);
+  if (config[provider]?.length === 0) {
+    delete config[provider];
+  }
+  saveCustomModels(config);
+}
+
+/** Reset về default */
+export function resetCustomModels(): void {
+  localStorage.removeItem(CUSTOM_MODELS_STORAGE_KEY);
+}
+
+/** Lấy tất cả models (default + custom) cho một provider */
+export function getModelsForProvider(provider: AiProviderEnum): string[] {
+  const defaults = DEFAULT_AI_PROVIDER_MODELS[provider] ?? [];
+  const custom = getCustomModels()[provider] ?? [];
+  return [...new Set([...defaults, ...custom])];
+}
+
+/** Lấy tất cả models (default + custom) cho tất cả providers */
+export function getAllProviderModels(): Record<AiProviderEnum, string[]> {
+  const custom = getCustomModels();
+  const result = { ...DEFAULT_AI_PROVIDER_MODELS };
+  for (const provider of Object.values(AiProviderEnum)) {
+    const customModels = custom[provider] ?? [];
+    result[provider] = [...new Set([...result[provider], ...customModels])];
+  }
+  return result;
+}
+
+/** @deprecated Use getModelsForProvider() or getAllProviderModels() instead */
+export const AI_PROVIDER_MODELS = DEFAULT_AI_PROVIDER_MODELS;
 
 @Injectable({
   providedIn: 'root',
