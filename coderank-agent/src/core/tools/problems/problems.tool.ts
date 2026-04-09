@@ -13,7 +13,6 @@ import {
   UpdateSolutionSchema,
   PaginationQueryProblemsSchema,
 } from './problems.schema';
-import test from 'node:test';
 
 // ─── Problem Tools ───────────────────────────────────────────────────────────
 

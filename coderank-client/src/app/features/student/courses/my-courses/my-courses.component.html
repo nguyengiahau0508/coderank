@@ -155,7 +155,7 @@
 
           <!-- Thumbnail -->
           @if (course.thumbnailUrl) {
-            <div class="relative aspect-video w-full overflow-hidden" style="background: var(--cr-bg-tertiary);">
+            <div class="relative h-44 w-full overflow-hidden" style="background: var(--cr-bg-tertiary);">
               <img
                 [src]="course.thumbnailUrl"
                 [alt]="course.title"
@@ -178,21 +178,23 @@
               }
             </div>
           } @else {
-            <!-- No thumbnail: show progress bar -->
-            @if (course.enrollment) {
-              <div class="px-4 pt-4">
-                <div class="flex items-center justify-between text-xs mb-1" style="color: var(--cr-text-muted);">
-                  <span>{{ course.enrollment.progressPercent | number:'1.0-0' }}% hoàn thành</span>
-                  <span>{{ course.enrollment.completedLessons }}/{{ course.enrollment.totalLessons }} bài</span>
+            <div class="relative h-44 w-full overflow-hidden flex items-center justify-center" style="background: var(--cr-bg-tertiary);">
+              <i class="pi pi-book text-4xl" style="color: var(--cr-text-muted);"></i>
+              @if (course.enrollment) {
+                <div class="absolute bottom-0 left-0 right-0 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.62), rgba(0,0,0,0));">
+                  <div class="flex items-center justify-between text-white text-xs mb-1">
+                    <span>{{ course.enrollment.progressPercent | number:'1.0-0' }}% hoàn thành</span>
+                    <span>{{ course.enrollment.completedLessons }}/{{ course.enrollment.totalLessons }} bài</span>
+                  </div>
+                  <div class="h-1.5 bg-white/30 rounded-full overflow-hidden">
+                    <div
+                      class="h-full bg-white rounded-full transition-all"
+                      [style.width.%]="course.enrollment.progressPercent"
+                    ></div>
+                  </div>
                 </div>
-                <div class="h-2 rounded-full overflow-hidden" style="background: var(--cr-bg-tertiary);">
-                  <div
-                    [class]="'h-full rounded-full transition-all ' + getProgressColor(course.enrollment.progressPercent)"
-                    [style.width.%]="course.enrollment.progressPercent"
-                  ></div>
-                </div>
-              </div>
-            }
+              }
+            </div>
           }
 
           <div class="p-4">

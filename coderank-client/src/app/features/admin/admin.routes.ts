@@ -34,7 +34,7 @@ export const adminRoutes: Routes = [
   {
     path: 'settings',
     loadComponent: () =>
-      import('./settings/settings.component').then(m => m.AdminSettingsComponent),
+      import('../settings/user-settings.component').then(m => m.UserSettingsComponent),
   },
   {
     path: 'reports',

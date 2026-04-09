@@ -62,7 +62,7 @@ export class AiChatComponent {
   isOpen = signal(false);
   sidebarOpen = signal(true);
   showConfig = signal(false);
-  chatSize = signal<'mini' | 'resizable' | 'maximum'>('maximum');
+  chatSize = signal<'mini' | 'resizable' | 'maximum'>('mini');
 
   // Resize state (for resizable mode)
   resizeWidth = signal(620);
@@ -149,6 +149,7 @@ export class AiChatComponent {
   // ---- Open / Close ----
 
   open() {
+    this.setSize('mini');
     this.isOpen.set(true);
     this.loadConfigs();
     this.loadConversations();

@@ -6,45 +6,43 @@ import {
 
 /**
  * Default permission requirements for built-in tools.
- * Follows the permission mapping from AGENT_DESIGN.md
+ * Keep explicit overrides for exceptions, then apply naming conventions.
  */
 const DEFAULT_TOOL_PERMISSIONS: Record<string, PermissionMode> = {
-  // Read-only tools
+  // Read-only tools (explicit exceptions + AI analysis helpers)
   get_problems: PermissionMode.ReadOnly,
   get_problem: PermissionMode.ReadOnly,
   get_my_problems: PermissionMode.ReadOnly,
   get_testcases: PermissionMode.ReadOnly,
   get_hints: PermissionMode.ReadOnly,
-  get_submissions: PermissionMode.ReadOnly,
   get_submission: PermissionMode.ReadOnly,
   get_my_submissions: PermissionMode.ReadOnly,
   get_courses: PermissionMode.ReadOnly,
   get_course: PermissionMode.ReadOnly,
   get_my_courses: PermissionMode.ReadOnly,
-  get_lessons: PermissionMode.ReadOnly,
   get_lesson: PermissionMode.ReadOnly,
-
-  // Write tools (workspace level)
-  create_problem: PermissionMode.WorkspaceWrite,
-  update_problem: PermissionMode.WorkspaceWrite,
-  delete_problem: PermissionMode.WorkspaceWrite,
-  create_testcase: PermissionMode.WorkspaceWrite,
-  update_testcase: PermissionMode.WorkspaceWrite,
-  delete_testcase: PermissionMode.WorkspaceWrite,
-  create_hint: PermissionMode.WorkspaceWrite,
-  update_hint: PermissionMode.WorkspaceWrite,
-  delete_hint: PermissionMode.WorkspaceWrite,
-  create_submission: PermissionMode.WorkspaceWrite,
-  create_course: PermissionMode.WorkspaceWrite,
-  update_course: PermissionMode.WorkspaceWrite,
-  delete_course: PermissionMode.WorkspaceWrite,
-  create_lesson: PermissionMode.WorkspaceWrite,
-  update_lesson: PermissionMode.WorkspaceWrite,
-  delete_lesson: PermissionMode.WorkspaceWrite,
-  create_solution: PermissionMode.WorkspaceWrite,
-  update_solution: PermissionMode.WorkspaceWrite,
-  delete_solution: PermissionMode.WorkspaceWrite,
+  download_assignment_submission: PermissionMode.ReadOnly,
+  analyze_code_structure: PermissionMode.ReadOnly,
+  analyze_complexity: PermissionMode.ReadOnly,
+  analyze_code_quality: PermissionMode.ReadOnly,
+  suggest_algorithm: PermissionMode.ReadOnly,
+  suggest_data_structure: PermissionMode.ReadOnly,
+  generate_problem: PermissionMode.ReadOnly,
 };
+
+const WRITE_TOOL_PREFIXES = [
+  'create_',
+  'update_',
+  'delete_',
+  'submit_',
+  'add_',
+  'remove_',
+  'mark_',
+  'enroll_',
+  'unenroll_',
+  'grade_',
+  'duplicate_',
+];
 
 /**
  * Permission level comparison (higher value = more permissions)
@@ -70,8 +68,16 @@ export class PermissionPolicy implements IPermissionPolicy {
       return this.toolOverrides.get(toolName)!;
     }
 
-    // Fall back to default permission or ReadOnly
-    return DEFAULT_TOOL_PERMISSIONS[toolName] ?? PermissionMode.ReadOnly;
+    if (DEFAULT_TOOL_PERMISSIONS[toolName]) {
+      return DEFAULT_TOOL_PERMISSIONS[toolName];
+    }
+
+    // Convention-based fallback to avoid stale hard-coded mapping.
+    if (WRITE_TOOL_PREFIXES.some(prefix => toolName.startsWith(prefix))) {
+      return PermissionMode.WorkspaceWrite;
+    }
+
+    return PermissionMode.ReadOnly;
   }
 
   authorize(toolName: string, input: unknown): PermissionOutcome {

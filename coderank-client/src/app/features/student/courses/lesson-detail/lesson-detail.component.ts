@@ -17,7 +17,6 @@ import { MessageService } from 'primeng/api';
 
 // Shared
 import { MarkdownViewComponent } from '../../../../shared/components/markdown-view/markdown-view.component';
-import { HighlightCodeDirective } from '../../../../shared/directives/highlight-code.directive';
 
 // Models & Enums
 import {
@@ -52,7 +51,7 @@ import { environment } from '../../../../../environments/environment';
     TabPanel,
     Textarea,
     FileUpload,
-    HighlightCodeDirective,
+    MarkdownViewComponent,
   ],
   templateUrl: './lesson-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

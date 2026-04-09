@@ -183,7 +183,7 @@
 
           <!-- Thumbnail -->
           @if (course.thumbnailUrl) {
-            <div class="aspect-video w-full overflow-hidden" style="background: var(--cr-bg-tertiary);">
+            <div class="h-44 w-full overflow-hidden" style="background: var(--cr-bg-tertiary);">
               <img
                 [src]="course.thumbnailUrl"
                 [alt]="course.title"
@@ -191,7 +191,7 @@
               />
             </div>
           } @else {
-            <div class="aspect-video w-full flex items-center justify-center" style="background: var(--cr-bg-tertiary);">
+            <div class="h-44 w-full flex items-center justify-center" style="background: var(--cr-bg-tertiary);">
               <i class="pi pi-book text-4xl" style="color: var(--cr-text-muted);"></i>
             </div>
           }
