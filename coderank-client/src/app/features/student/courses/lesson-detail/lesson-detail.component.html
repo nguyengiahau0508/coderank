@@ -16,7 +16,10 @@
 } @else if (lesson(); as l) {
   <div class="space-y-4">
     <!-- Breadcrumb & Progress Bar -->
-    <div class="flex flex-col gap-3">
+    <div
+      class="flex flex-col gap-3 rounded-2xl p-4 sm:p-5"
+      style="background: linear-gradient(130deg, color-mix(in srgb, var(--cr-accent-blue) 10%, var(--cr-bg-secondary)) 0%, var(--cr-bg-secondary) 68%); border: 1px solid var(--cr-border);"
+    >
       <!-- Breadcrumb -->
       <nav class="flex items-center gap-2 text-sm" style="color: var(--cr-text-muted);">
         <a
@@ -60,7 +63,10 @@
     </div>
 
     <!-- Header with title and actions -->
-    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+    <div
+      class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 rounded-2xl p-4 sm:p-5"
+      style="background: linear-gradient(160deg, color-mix(in srgb, var(--cr-accent-purple) 8%, var(--cr-bg-secondary)) 0%, var(--cr-bg-secondary) 72%); border: 1px solid var(--cr-border);"
+    >
       <div class="flex items-start gap-3 min-w-0 flex-1">
         <button
           type="button"
@@ -73,7 +79,7 @@
         </button>
         <div class="min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-xl font-semibold line-clamp-2" style="color: var(--cr-text-primary);">{{ l.title }}</h1>
+            <h1 class="text-2xl font-bold line-clamp-2" style="color: var(--cr-text-primary);">{{ l.title }}</h1>
             <p-tag [value]="getLessonTypeLabel(l.type)" [severity]="getLessonTypeSeverity(l.type)" [rounded]="true" />
           </div>
           <div class="flex items-center gap-3 mt-1.5 text-xs" style="color: var(--cr-text-muted);">
@@ -93,6 +99,17 @@
                 {{ formatDuration(l.videoDurationSeconds) }}
               </span>
             }
+          </div>
+          <div class="mt-3 flex flex-wrap gap-1.5">
+            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium" style="background: var(--cr-bg-tertiary); color: var(--cr-text-secondary);">
+              <i class="pi pi-code text-[10px]"></i>{{ lessonProblems().length }} bài tập
+            </span>
+            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium" style="background: var(--cr-bg-tertiary); color: var(--cr-text-secondary);">
+              <i class="pi pi-question-circle text-[10px]"></i>{{ quizzes().length }} quiz
+            </span>
+            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium" style="background: var(--cr-bg-tertiary); color: var(--cr-text-secondary);">
+              <i class="pi pi-file-export text-[10px]"></i>{{ assignments().length }} assignment
+            </span>
           </div>
         </div>
       </div>
@@ -129,12 +146,12 @@
       <!-- Sidebar: Lesson list (collapsible) -->
       @if (showSidebar()) {
         <div class="lg:col-span-1 order-2 lg:order-1">
-          <div class="rounded-xl overflow-hidden sticky top-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-            <div class="p-3 flex items-center justify-between" style="border-bottom: 1px solid var(--cr-border); background: var(--cr-bg-tertiary);">
+          <div class="rounded-xl overflow-hidden sticky top-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border); box-shadow: var(--cr-shadow-sm);">
+            <div class="p-3 flex items-center justify-between" style="border-bottom: 1px solid var(--cr-border); background: color-mix(in srgb, var(--cr-accent-purple) 8%, var(--cr-bg-secondary));">
               <h3 class="text-xs font-semibold uppercase tracking-wider" style="color: var(--cr-text-muted);">Bài học trong phần này</h3>
               <span class="text-xs" style="color: var(--cr-text-muted);">{{ sectionLessons().length }} bài</span>
             </div>
-            <div class="max-h-[calc(100vh-320px)] overflow-y-auto">
+            <div class="max-h-[calc(100vh-280px)] overflow-y-auto">
               @for (sl of sectionLessons(); track sl.id; let idx = $index) {
                 <button
                   type="button"
@@ -180,7 +197,11 @@
       }
 
       <!-- Main Content -->
-      <div [class]="showSidebar() ? 'lg:col-span-3 order-1 lg:order-2' : 'order-1'">
+      <div
+        class="rounded-xl p-3 sm:p-4"
+        style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border); box-shadow: var(--cr-shadow-sm);"
+        [class]="showSidebar() ? 'lg:col-span-3 order-1 lg:order-2' : 'order-1'"
+      >
         <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
           <p-tablist>
             <p-tab value="content"><i class="pi pi-file mr-2"></i>Nội dung</p-tab>

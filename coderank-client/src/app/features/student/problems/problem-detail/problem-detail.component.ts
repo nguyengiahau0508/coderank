@@ -182,12 +182,12 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
     if (!this.showRightPanel()) return 'grid-cols-1';
 
     if (this.splitMode() === '40-60') {
-      return 'grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)]';
+      return 'grid-cols-1 xl:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)]';
     }
     if (this.splitMode() === '60-40') {
-      return 'grid-cols-[minmax(0,0.6fr)_minmax(0,0.4fr)]';
+      return 'grid-cols-1 xl:grid-cols-[minmax(0,0.6fr)_minmax(0,0.4fr)]';
     }
-    return 'grid-cols-2';
+    return 'grid-cols-1 xl:grid-cols-2';
   });
   readonly commands: WorkspaceCommand[] = [
     { id: 'submit', label: 'Submit code', shortcut: 'Ctrl/Cmd + Enter', keywords: ['submit', 'nop bai', 'judge'] },
@@ -796,10 +796,12 @@ export class StudentProblemDetailComponent implements OnInit, OnDestroy {
   }
 
   toggleLeftPanel(): void {
+    if (this.showLeftPanel() && !this.showRightPanel()) return;
     this.showLeftPanel.update(v => !v);
   }
 
   toggleRightPanel(): void {
+    if (!this.showLeftPanel() && this.showRightPanel()) return;
     this.showRightPanel.update(v => !v);
   }
 

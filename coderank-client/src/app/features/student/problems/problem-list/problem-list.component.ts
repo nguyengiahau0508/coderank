@@ -83,7 +83,7 @@ export class StudentProblemListComponent implements OnInit {
   readonly searchTerm = signal<string>('');
   readonly selectedDifficulty = signal<DifficultyEnum | null>(null);
   readonly selectedTags = signal<number[]>([]);
-  readonly pointsRange = signal<number[]>([0, 100]);
+  readonly pointsRange = signal<number[]>([0, 1000]);
   readonly page = signal<number>(1);
   readonly limit = signal<number>(20);
 
@@ -136,6 +136,33 @@ export class StudentProblemListComponent implements OnInit {
   readonly solvedCount = computed(() =>
     this.problems().filter(problem => this.workspaceService.isSolved(problem.id)).length
   );
+  readonly selectedTagNames = computed(() => {
+    const selected = new Set(this.selectedTags());
+    return this.tags()
+      .filter(tag => selected.has(tag.id))
+      .map(tag => tag.name);
+  });
+  readonly quickStatusCounts = computed(() => {
+    let favorites = 0;
+    let solved = 0;
+
+    for (const problem of this.problems()) {
+      if (this.workspaceService.isFavorite(problem.id)) {
+        favorites += 1;
+      }
+      if (this.workspaceService.isSolved(problem.id)) {
+        solved += 1;
+      }
+    }
+
+    const total = this.problems().length;
+    return {
+      all: total,
+      favorites,
+      solved,
+      unsolved: Math.max(total - solved, 0),
+    };
+  });
 
   readonly displayProblems = computed(() => {
     const base = [...this.problems()];
@@ -311,6 +338,10 @@ export class StudentProblemListComponent implements OnInit {
     this.quickStatus.set(status);
   }
 
+  getQuickStatusCount(status: ProblemListQuickStatus): number {
+    return this.quickStatusCounts()[status];
+  }
+
   setSort(sort: ProblemListSort): void {
     this.sortBy.set(sort);
     this.workspaceService.setSort(sort);
@@ -328,6 +359,10 @@ export class StudentProblemListComponent implements OnInit {
 
   isFavorite(problemId: number): boolean {
     return this.workspaceService.isFavorite(problemId);
+  }
+
+  isSolved(problemId: number): boolean {
+    return this.workspaceService.isSolved(problemId);
   }
 
   saveCurrentPreset(): void {

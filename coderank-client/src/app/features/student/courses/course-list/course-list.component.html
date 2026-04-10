@@ -1,272 +1,302 @@
 <p-toast position="top-right" />
 
 <div class="space-y-4">
-  <!-- Header -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-semibold" style="color: var(--cr-text-primary);">Khám phá khóa học</h1>
-      <p class="mt-1" style="color: var(--cr-text-muted);">Tìm kiếm và đăng ký các khóa học lập trình</p>
-    </div>
-    <p-button label="Khóa học của tôi" icon="pi pi-book" (onClick)="goToMyCourses()" severity="secondary" [outlined]="true" />
-  </div>
+  <section
+    class="rounded-2xl p-5 sm:p-6"
+    style="background: linear-gradient(140deg, color-mix(in srgb, var(--cr-accent-blue) 14%, var(--cr-bg-secondary)) 0%, var(--cr-bg-secondary) 72%); border: 1px solid var(--cr-border);"
+  >
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div class="space-y-1">
+        <p class="text-xs uppercase tracking-[0.16em] font-semibold" style="color: var(--cr-text-subtle);">Learning Hub</p>
+        <h1 class="text-2xl sm:text-3xl font-bold" style="color: var(--cr-text-primary);">Khám phá khóa học</h1>
+        <p class="text-sm" style="color: var(--cr-text-muted);">Tìm khóa học phù hợp với trình độ hiện tại và bắt đầu hành trình học của bạn.</p>
+      </div>
 
-  <!-- Stats Cards -->
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-    <!-- Total -->
-    <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-      <div class="flex items-center gap-3">
-        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10">
-          <i class="pi pi-book text-primary text-lg"></i>
-        </div>
-        <div>
-          <p class="text-xs font-medium" style="color: var(--cr-text-muted);">Tổng khóa học</p>
-          <p class="text-xl font-bold" style="color: var(--cr-text-primary);">{{ stats().total }}</p>
-        </div>
+      <p-button
+        label="Khóa học của tôi"
+        icon="pi pi-book"
+        (onClick)="goToMyCourses()"
+        severity="secondary"
+        [outlined]="true"
+      />
+    </div>
+
+    <div class="mt-5 grid grid-cols-2 xl:grid-cols-4 gap-3">
+      <div class="rounded-xl px-4 py-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+        <p class="text-[11px] font-medium" style="color: var(--cr-text-muted);">Tổng khóa học</p>
+        <p class="mt-1 text-2xl font-bold leading-none" style="color: var(--cr-text-primary);">{{ stats().total }}</p>
+      </div>
+      <div class="rounded-xl px-4 py-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+        <p class="text-[11px] font-medium text-green-500">Cơ bản</p>
+        <p class="mt-1 text-2xl font-bold leading-none" style="color: var(--cr-text-primary);">{{ stats().beginner }}</p>
+      </div>
+      <div class="rounded-xl px-4 py-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+        <p class="text-[11px] font-medium text-blue-500">Trung cấp</p>
+        <p class="mt-1 text-2xl font-bold leading-none" style="color: var(--cr-text-primary);">{{ stats().intermediate }}</p>
+      </div>
+      <div class="rounded-xl px-4 py-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+        <p class="text-[11px] font-medium text-orange-500">Nâng cao</p>
+        <p class="mt-1 text-2xl font-bold leading-none" style="color: var(--cr-text-primary);">{{ stats().advanced }}</p>
       </div>
     </div>
+  </section>
 
-    <!-- Beginner -->
-    <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-      <div class="flex items-center gap-3">
-        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-green-500/10">
-          <i class="pi pi-circle-fill text-green-500 text-xs"></i>
-        </div>
-        <div>
-          <p class="text-xs text-green-500 font-medium">Cơ bản</p>
-          <p class="text-xl font-bold" style="color: var(--cr-text-primary);">{{ stats().beginner }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Intermediate -->
-    <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-      <div class="flex items-center gap-3">
-        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10">
-          <i class="pi pi-circle-fill text-blue-500 text-xs"></i>
-        </div>
-        <div>
-          <p class="text-xs text-blue-500 font-medium">Trung cấp</p>
-          <p class="text-xl font-bold" style="color: var(--cr-text-primary);">{{ stats().intermediate }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Advanced -->
-    <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-      <div class="flex items-center gap-3">
-        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-orange-500/10">
-          <i class="pi pi-circle-fill text-orange-500 text-xs"></i>
-        </div>
-        <div>
-          <p class="text-xs text-orange-500 font-medium">Nâng cao</p>
-          <p class="text-xl font-bold" style="color: var(--cr-text-primary);">{{ stats().advanced }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Filters -->
-  <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-    <div class="flex flex-col lg:flex-row gap-3">
-      <!-- Search -->
-      <div class="flex-1">
-        <p-iconfield iconPosition="left">
+  <section class="rounded-xl p-4 space-y-3" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+    <div class="flex flex-col gap-3 xl:flex-row xl:items-center">
+      <div class="flex-1 flex items-center gap-2">
+        <p-iconfield iconPosition="left" styleClass="w-full">
           <p-inputicon styleClass="pi pi-search" />
           <input
             type="text"
             pInputText
-            placeholder="Tìm khóa học..."
+            placeholder="Tìm theo tên hoặc nội dung khóa học..."
             [(ngModel)]="searchTerm"
             (keyup.enter)="onSearch()"
             class="w-full"
+            aria-label="Tìm kiếm khóa học"
           />
         </p-iconfield>
+        <button
+          type="button"
+          class="h-[2.75rem] px-3 rounded-lg text-xs font-semibold transition-colors hover:brightness-110"
+          style="background: var(--cr-accent-blue); color: #fff;"
+          (click)="onSearch()"
+        >
+          Tìm
+        </button>
       </div>
 
-      <!-- Level -->
-      <p-select
-        [(ngModel)]="selectedLevel"
-        [options]="levelOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Cấp độ"
-        [showClear]="true"
-        (onChange)="onLevelChange()"
-        styleClass="w-full lg:w-36"
-      />
-
-      <!-- Category -->
-      @if (categoryOptions().length > 0) {
+      <div class="flex flex-wrap items-center gap-2">
         <p-select
-          [(ngModel)]="selectedCategory"
-          [options]="categoryOptions()"
+          [(ngModel)]="selectedLevel"
+          [options]="levelOptions"
           optionLabel="label"
           optionValue="value"
-          placeholder="Danh mục"
+          placeholder="Cấp độ"
           [showClear]="true"
-          (onChange)="onCategoryChange()"
-          styleClass="w-full lg:w-40"
+          (onChange)="onLevelChange()"
+          styleClass="w-full sm:w-40"
         />
-      }
 
-      <!-- Sort -->
-      <p-select
-        [(ngModel)]="selectedSort"
-        [options]="sortOptions"
-        optionLabel="label"
-        (onChange)="onSortChange()"
-        styleClass="w-full lg:w-40"
-      />
+        @if (categoryOptions().length > 0) {
+          <p-select
+            [(ngModel)]="selectedCategory"
+            [options]="categoryOptions()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Danh mục"
+            [showClear]="true"
+            (onChange)="onCategoryChange()"
+            styleClass="w-full sm:w-44"
+          />
+        }
 
-      @if (hasFilters()) {
-        <p-button
-          icon="pi pi-filter-slash"
-          severity="secondary"
-          [text]="true"
-          pTooltip="Xóa bộ lọc"
-          (onClick)="clearFilters()"
+        <p-select
+          [(ngModel)]="selectedSort"
+          [options]="sortOptions"
+          optionLabel="label"
+          (onChange)="onSortChange()"
+          styleClass="w-full sm:w-44"
         />
-      }
+
+        @if (hasFilters()) {
+          <button
+            type="button"
+            class="h-[2.75rem] px-3 rounded-lg text-xs font-semibold transition-colors hover:opacity-85"
+            style="background: var(--cr-bg-tertiary); color: var(--cr-text-secondary); border: 1px solid var(--cr-border);"
+            (click)="clearFilters()"
+          >
+            <i class="pi pi-filter-slash text-[10px] mr-1.5"></i>
+            Xóa lọc
+          </button>
+        }
+      </div>
     </div>
-  </div>
 
-  <!-- Results count -->
-  @if (!loading() && courses().length > 0) {
-    <p class="text-sm" style="color: var(--cr-text-muted);">
-      Hiển thị {{ courses().length }} trong tổng số {{ totalRecords() }} khóa học
-    </p>
+    @if (hasFilters()) {
+      <div class="flex flex-wrap items-center gap-2 pt-1">
+        @for (label of activeFilterLabels(); track label) {
+          <span class="text-[11px] px-2 py-1 rounded-md" style="background: var(--cr-bg-tertiary); color: var(--cr-text-secondary); border: 1px solid var(--cr-border);">
+            {{ label }}
+          </span>
+        }
+      </div>
+    }
+  </section>
+
+  @if (!loading()) {
+    <p class="text-sm" style="color: var(--cr-text-muted);">{{ displaySummary() }}</p>
   }
 
-  <!-- Course Cards -->
-  @if (loading()) {
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
-        <div class="rounded-xl overflow-hidden" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-          <p-skeleton height="10rem" styleClass="w-full" />
-          <div class="p-4 space-y-3">
-            <p-skeleton height="1.25rem" width="80%" />
-            <p-skeleton height="0.75rem" width="100%" />
-            <p-skeleton height="0.75rem" width="60%" />
-            <div class="flex gap-2">
-              <p-skeleton height="1.5rem" width="4rem" />
-              <p-skeleton height="1.5rem" width="4rem" />
-            </div>
-            <div class="flex justify-between pt-3">
-              <p-skeleton height="1rem" width="4rem" />
-              <p-skeleton height="1rem" width="4rem" />
-            </div>
-          </div>
-        </div>
-      }
-    </div>
-  } @else if (courses().length === 0) {
-    <div class="flex flex-col items-center justify-center py-16 rounded-xl" style="background: var(--cr-bg-tertiary); border: 1px dashed var(--cr-border);">
-      <div class="flex items-center justify-center w-16 h-16 rounded-full mb-4" style="background: var(--cr-bg-secondary);">
-        <i class="pi pi-search text-3xl" style="color: var(--cr-text-muted);"></i>
-      </div>
-      <p class="text-lg font-semibold mb-1" style="color: var(--cr-text-primary);">Không tìm thấy khóa học</p>
-      <p class="text-sm mb-4" style="color: var(--cr-text-muted);">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
-      @if (hasFilters()) {
-        <p-button label="Xóa bộ lọc" icon="pi pi-filter-slash" severity="secondary" (onClick)="clearFilters()" />
-      }
-    </div>
-  } @else {
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      @for (course of courses(); track course.id) {
-        <div
-          class="rounded-xl overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer group"
-          style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);"
-          (click)="viewCourse(course)"
-        >
-          <!-- Color bar -->
-          <div [class]="'h-1.5 ' + getLevelColor(course.level)"></div>
-
-          <!-- Thumbnail -->
-          @if (course.thumbnailUrl) {
-            <div class="h-44 w-full overflow-hidden" style="background: var(--cr-bg-tertiary);">
-              <img
-                [src]="course.thumbnailUrl"
-                [alt]="course.title"
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-          } @else {
-            <div class="h-44 w-full flex items-center justify-center" style="background: var(--cr-bg-tertiary);">
-              <i class="pi pi-book text-4xl" style="color: var(--cr-text-muted);"></i>
+  <div class="grid xl:grid-cols-[minmax(0,1fr)_19rem] gap-4 items-start">
+    <div class="space-y-4">
+      @if (loading()) {
+        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+          @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+            <div class="rounded-xl overflow-hidden" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+              <p-skeleton height="10rem" styleClass="w-full" />
+              <div class="p-4 space-y-3">
+                <p-skeleton height="1.25rem" width="80%" />
+                <p-skeleton height="0.75rem" width="100%" />
+                <p-skeleton height="0.75rem" width="60%" />
+                <div class="flex gap-2">
+                  <p-skeleton height="1.5rem" width="4rem" />
+                  <p-skeleton height="1.5rem" width="4rem" />
+                </div>
+              </div>
             </div>
           }
-
-          <div class="p-4">
-            <!-- Title -->
-            <h3 class="text-base font-semibold line-clamp-2 mb-2 min-h-[3rem]" style="color: var(--cr-text-primary);">
-              {{ course.title }}
-            </h3>
-
-            <!-- Summary -->
-            @if (course.summary) {
-              <div
-                class="text-xs line-clamp-2 mb-3 ql-editor p-0"
-                style="color: var(--cr-text-muted);"
-                [innerHTML]="course.summary"
-              ></div>
-            }
-
-            <!-- Level + Category -->
-            <div class="flex items-center gap-2 mb-3 flex-wrap">
-              <p-tag
-                [value]="getLevelLabel(course.level)"
-                [severity]="getLevelSeverity(course.level)"
-                [rounded]="true"
-              />
-              @if (course.category) {
-                <span class="text-xs px-2 py-0.5 rounded" style="color: var(--cr-text-muted); background: var(--cr-bg-tertiary);">
-                  {{ course.category }}
-                </span>
-              }
-              @if (!course.isPublic) {
-                <p-tag value="Riêng tư" severity="warn" [rounded]="true" icon="pi pi-lock" />
-              }
-            </div>
-
-            <!-- Stats row -->
-            <div class="flex items-center justify-between text-xs mb-3" style="color: var(--cr-text-muted);">
-              <span><i class="pi pi-users mr-1"></i>{{ course.enrollmentCount }} học viên</span>
-              <span>
-                <i class="pi pi-star-fill mr-1 text-yellow-400"></i>
-                {{ course.averageRating | number:'1.1-1' }}
-                <span style="color: var(--cr-text-muted);">({{ course.reviewCount }})</span>
-              </span>
-              @if (course.estimatedDurationMinutes) {
-                <span><i class="pi pi-clock mr-1"></i>{{ course.estimatedDurationMinutes }} phút</span>
-              }
-            </div>
-
-            <!-- Author -->
-            @if (course.author) {
-              <div class="flex items-center gap-2 text-xs pt-3" style="color: var(--cr-text-muted); border-top: 1px solid var(--cr-border);">
-                @if (course.author.avatarUrl) {
-                  <img [src]="course.author.avatarUrl" class="w-5 h-5 rounded-full" />
-                } @else {
-                  <div class="w-5 h-5 rounded-full flex items-center justify-center" style="background: var(--cr-bg-tertiary);">
-                    <i class="pi pi-user text-[9px]"></i>
-                  </div>
-                }
-                <span>{{ course.author.fullName || course.author.username }}</span>
-              </div>
-            }
-          </div>
         </div>
+      } @else if (courses().length === 0) {
+        <div class="rounded-xl p-12 text-center" style="background: var(--cr-bg-tertiary); border: 1px dashed var(--cr-border);">
+          <div class="flex items-center justify-center w-14 h-14 rounded-full mx-auto mb-3" style="background: var(--cr-bg-secondary);">
+            <i class="pi pi-search text-2xl" style="color: var(--cr-text-muted);"></i>
+          </div>
+          <p class="mb-1.5 font-medium" style="color: var(--cr-text-primary);">Không tìm thấy khóa học phù hợp</p>
+          <p class="text-xs mb-3" style="color: var(--cr-text-muted);">Thử thay đổi bộ lọc hoặc từ khóa để mở rộng kết quả.</p>
+          @if (hasFilters()) {
+            <button
+              type="button"
+              class="text-sm text-primary hover:underline"
+              (click)="clearFilters()"
+            >
+              Xóa toàn bộ bộ lọc
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+          @for (course of courses(); track course.id) {
+            <article
+              class="rounded-xl overflow-hidden transition-colors cursor-pointer"
+              style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);"
+              (click)="viewCourse(course)"
+              role="button"
+              tabindex="0"
+              (keydown.enter)="viewCourse(course)"
+              (keydown.space)="viewCourse(course); $event.preventDefault()"
+            >
+              <div [class]="'h-1.5 ' + getLevelColor(course.level)"></div>
+
+              @if (course.thumbnailUrl) {
+                <div class="h-40 w-full overflow-hidden" style="background: var(--cr-bg-tertiary);">
+                  <img
+                    [src]="course.thumbnailUrl"
+                    [alt]="course.title"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+              } @else {
+                <div class="h-40 w-full flex items-center justify-center" style="background: var(--cr-bg-tertiary);">
+                  <i class="pi pi-book text-4xl" style="color: var(--cr-text-muted);"></i>
+                </div>
+              }
+
+              <div class="p-4">
+                <h3 class="text-base font-semibold line-clamp-2 mb-2 min-h-[3rem]" style="color: var(--cr-text-primary);">
+                  {{ course.title }}
+                </h3>
+
+                @if (course.summary) {
+                  <div
+                    class="text-xs line-clamp-2 mb-3 ql-editor p-0"
+                    style="color: var(--cr-text-muted);"
+                    [innerHTML]="course.summary"
+                  ></div>
+                }
+
+                <div class="flex items-center gap-2 mb-3 flex-wrap">
+                  <p-tag
+                    [value]="getLevelLabel(course.level)"
+                    [severity]="getLevelSeverity(course.level)"
+                    [rounded]="true"
+                  />
+                  @if (course.category) {
+                    <span class="text-xs px-2 py-0.5 rounded" style="color: var(--cr-text-muted); background: var(--cr-bg-tertiary);">
+                      {{ course.category }}
+                    </span>
+                  }
+                </div>
+
+                <div class="flex items-center justify-between text-xs mb-3" style="color: var(--cr-text-muted);">
+                  <span><i class="pi pi-users mr-1"></i>{{ course.enrollmentCount || 0 }}</span>
+                  <span>
+                    <i class="pi pi-star-fill mr-1 text-yellow-400"></i>
+                    {{ (course.averageRating || 0) | number:'1.1-1' }}
+                  </span>
+                  @if (course.estimatedDurationMinutes) {
+                    <span><i class="pi pi-clock mr-1"></i>{{ course.estimatedDurationMinutes }}p</span>
+                  }
+                </div>
+
+                <div class="flex items-center justify-between pt-3" style="border-top: 1px solid var(--cr-border);">
+                  <div class="text-xs min-w-0 pr-2" style="color: var(--cr-text-muted);">
+                    @if (course.author) {
+                      <span class="line-clamp-1">{{ course.author.fullName || course.author.username }}</span>
+                    } @else {
+                      <span class="line-clamp-1">CodeRank</span>
+                    }
+                  </div>
+                  <span class="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                    Xem chi tiết
+                    <i class="pi pi-arrow-right text-[10px]"></i>
+                  </span>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+
+        @if (totalRecords() > limit()) {
+          <p-paginator
+            [rows]="limit()"
+            [totalRecords]="totalRecords()"
+            [rowsPerPageOptions]="[12, 24, 48]"
+            (onPageChange)="onPageChange($event)"
+          />
+        }
       }
     </div>
 
-    <!-- Paginator -->
-    @if (totalRecords() > limit()) {
-      <p-paginator
-        [rows]="limit()"
-        [totalRecords]="totalRecords()"
-        [rowsPerPageOptions]="[12, 24, 48]"
-        (onPageChange)="onPageChange($event)"
-      />
-    }
-  }
+    <aside class="space-y-4 xl:sticky xl:top-4">
+      <div class="rounded-xl p-4 space-y-3" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-semibold" style="color: var(--cr-text-primary);">Bộ lọc nhanh</h3>
+          <span class="text-[11px]" style="color: var(--cr-text-subtle);">{{ categoryOptions().length }} danh mục</span>
+        </div>
+
+        @if (categoryOptions().length > 0) {
+          <div class="flex flex-wrap gap-2">
+            @for (category of categoryOptions().slice(0, 8); track category.value) {
+              <button
+                type="button"
+                [class]="'text-xs px-2.5 py-1 rounded-full border transition-colors ' +
+                  (selectedCategory() === category.value
+                    ? 'bg-primary/10 text-primary border-primary/30'
+                    : 'border-surface-200 dark:border-surface-700 text-surface-500 hover:text-surface-200')"
+                (click)="selectedCategory.set(category.value); onCategoryChange()"
+              >
+                {{ category.label }}
+              </button>
+            }
+          </div>
+        } @else {
+          <p class="text-xs" style="color: var(--cr-text-muted);">Chưa có danh mục khả dụng.</p>
+        }
+      </div>
+
+      <div class="rounded-xl p-4 space-y-3" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+        <h3 class="text-sm font-semibold" style="color: var(--cr-text-primary);">Học tiếp của bạn</h3>
+        <p class="text-xs" style="color: var(--cr-text-muted);">
+          Vào khu vực “Khóa học của tôi” để tiếp tục các khóa đang học và theo dõi tiến độ.
+        </p>
+        <p-button
+          label="Mở khóa học của tôi"
+          icon="pi pi-arrow-right"
+          styleClass="w-full"
+          (onClick)="goToMyCourses()"
+        />
+      </div>
+    </aside>
+  </div>
 </div>

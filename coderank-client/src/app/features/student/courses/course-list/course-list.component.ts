@@ -11,7 +11,6 @@ import { Paginator } from 'primeng/paginator';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { Toast } from 'primeng/toast';
-import { Tooltip } from 'primeng/tooltip';
 import { Button } from 'primeng/button';
 import { Skeleton } from 'primeng/skeleton';
 import { MessageService } from 'primeng/api';
@@ -41,7 +40,6 @@ interface SortOption {
     IconField,
     InputIcon,
     Toast,
-    Tooltip,
     Button,
     Skeleton,
   ],
@@ -96,6 +94,35 @@ export class StudentCourseListComponent implements OnInit {
   readonly hasFilters = computed(() =>
     !!this.searchTerm() || !!this.selectedLevel() || !!this.selectedCategory()
   );
+  readonly activeFilterLabels = computed(() => {
+    const labels: string[] = [];
+    const search = this.searchTerm().trim();
+    const level = this.selectedLevel();
+    const category = this.selectedCategory();
+
+    if (search) {
+      labels.push(`Từ khóa: ${search}`);
+    }
+    if (level) {
+      labels.push(`Cấp độ: ${this.getLevelLabel(level)}`);
+    }
+    if (category) {
+      labels.push(`Danh mục: ${category}`);
+    }
+
+    return labels;
+  });
+  readonly displaySummary = computed(() => {
+    const currentCount = this.courses().length;
+    const total = this.totalRecords();
+    if (!total) {
+      return 'Chưa có khóa học phù hợp.';
+    }
+
+    const start = (this.page() - 1) * this.limit() + 1;
+    const end = start + currentCount - 1;
+    return `Hiển thị ${start}-${end} trên ${total} khóa học`;
+  });
 
   ngOnInit(): void {
     this.loadStats();

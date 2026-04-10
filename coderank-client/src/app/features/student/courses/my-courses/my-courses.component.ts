@@ -11,7 +11,6 @@ import { Paginator } from 'primeng/paginator';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { Toast } from 'primeng/toast';
-import { Tooltip } from 'primeng/tooltip';
 import { Button } from 'primeng/button';
 import { Skeleton } from 'primeng/skeleton';
 import { MessageService } from 'primeng/api';
@@ -41,7 +40,6 @@ interface TabOption {
     IconField,
     InputIcon,
     Toast,
-    Tooltip,
     Button,
     Skeleton,
   ],
@@ -90,6 +88,25 @@ export class StudentMyCoursesComponent implements OnInit {
   readonly hasFilters = computed(() =>
     !!this.searchTerm() || !!this.selectedLevel()
   );
+  readonly completionRate = computed(() => {
+    const data = this.stats();
+    if (data.total === 0) return 0;
+    return Math.round((data.completed / data.total) * 100);
+  });
+  readonly activeFilterLabels = computed(() => {
+    const labels: string[] = [];
+    const search = this.searchTerm().trim();
+    const level = this.selectedLevel();
+
+    if (search) {
+      labels.push(`Từ khóa: ${search}`);
+    }
+    if (level) {
+      labels.push(`Cấp độ: ${this.getLevelLabel(level)}`);
+    }
+
+    return labels;
+  });
 
   ngOnInit(): void {
     this.loadStats();
@@ -190,6 +207,13 @@ export class StudentMyCoursesComponent implements OnInit {
   }
 
   // ==================== HELPERS ====================
+
+  getTabCount(tab: EnrollmentStatusEnum | 'all'): number {
+    const data = this.stats();
+    if (tab === 'all') return data.total;
+    if (tab === EnrollmentStatusEnum.Active) return data.inProgress;
+    return data.completed;
+  }
 
   getLevelLabel(level: CourseLevelEnum): string {
     const labels: Record<string, string> = {
