@@ -95,9 +95,19 @@ export class StudentLayoutComponent {
       command: () => this.authService.logout(),
     },
   ];
+  readonly appMenuItems: MenuItem[] = [
+    {
+      label: 'IDE',
+      icon: 'pi pi-code',
+      command: () => this.navigateIde(),
+    },
+  ];
 
   readonly currentUrl = signal(this.router.url);
   readonly currentSectionLabel = computed(() => {
+    if (this.currentUrl().includes('/ide')) {
+      return 'Online IDE';
+    }
     if (this.currentUrl().includes('/contests')) {
       return 'Contest Zone';
     }
@@ -133,5 +143,14 @@ export class StudentLayoutComponent {
 
   navigateHome(): void {
     this.router.navigate(['/student/problems']);
+  }
+
+  navigateIde(): void {
+    const ideUrl = this.router.serializeUrl(this.router.createUrlTree(['/ide']));
+    if (typeof window !== 'undefined') {
+      window.open(ideUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    this.router.navigate(['/ide']);
   }
 }

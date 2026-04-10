@@ -1,0 +1,248 @@
+<p-toast position="top-right" />
+
+<div class="ide-shell">
+  <header class="ide-toolbar">
+    <div class="toolbar-left">
+      <div class="ide-brand">
+        <span class="brand-badge"><i class="pi pi-code"></i></span>
+        <div class="brand-copy">
+          <h1>CodeRank IDE</h1>
+          <p>Fullpage Workspace</p>
+        </div>
+      </div>
+
+      <div class="project-switcher compact">
+        <label for="project-select">Project</label>
+        <select
+          id="project-select"
+          class="ide-select"
+          [ngModel]="activeProjectId()"
+          (ngModelChange)="setActiveProject($event)"
+          [disabled]="!hasProjects()"
+          aria-label="Chọn project"
+        >
+          @if (hasProjects()) {
+            @for (project of projects(); track project.id) {
+              <option [value]="project.id">{{ project.name }}</option>
+            }
+          } @else {
+            <option value="" disabled>Chưa có project</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="toolbar-actions">
+      <button type="button" class="ide-btn ghost" (click)="openCreateProjectDialog()">
+        <i class="pi pi-plus"></i>
+        New Project
+      </button>
+      <button type="button" class="ide-btn ghost danger" [disabled]="!hasProjects()" (click)="deleteCurrentProject()">
+        <i class="pi pi-trash"></i>
+        Delete Project
+      </button>
+    </div>
+  </header>
+
+  <section class="workspace-grid">
+    @if (hasProjects()) {
+      <aside class="ide-panel explorer-panel">
+        <div class="panel-header">
+          <h2>Explorer</h2>
+          <div class="panel-tools">
+            <button
+              type="button"
+              class="tool-btn"
+              aria-label="Tạo file mới"
+              title="Tạo file mới"
+              (click)="openCreateItemDialog('file')"
+            >
+              <i class="pi pi-file-plus"></i>
+            </button>
+            <button
+              type="button"
+              class="tool-btn"
+              aria-label="Tạo thư mục mới"
+              title="Tạo thư mục mới"
+              (click)="openCreateItemDialog('folder')"
+            >
+              <i class="pi pi-folder-plus"></i>
+            </button>
+          </div>
+        </div>
+        <div class="explorer-list">
+          @for (row of explorerRows(); track row.path) {
+            <button
+              type="button"
+              class="explorer-row"
+              [class.selected]="selectedExplorerPath() === row.path"
+              [class.active-file]="activeFilePath() === row.path && row.type === 'file'"
+              (click)="onExplorerRowClick(row)"
+              (contextmenu)="onExplorerRowContextMenu($event, row)"
+            >
+              <span class="row-inner" [style.paddingLeft.px]="row.depth * 12 + 8">
+                @if (row.type === 'folder') {
+                  <span class="folder-toggle" (click)="toggleFolder(row.path, $event)">
+                    <i [class]="'pi ' + (row.isOpen ? 'pi-chevron-down' : 'pi-chevron-right')"></i>
+                  </span>
+                  <i class="pi pi-folder row-icon folder"></i>
+                } @else {
+                  <span class="folder-toggle spacer"></span>
+                  <i class="pi pi-file row-icon file"></i>
+                }
+                <span class="row-name">{{ row.name }}</span>
+              </span>
+            </button>
+          } @empty {
+            <div class="empty-state">
+              <i class="pi pi-folder-open"></i>
+              <p>Chưa có file nào.</p>
+            </div>
+          }
+        </div>
+      </aside>
+
+      <section class="ide-panel editor-panel">
+        <div class="editor-tabs">
+          @for (path of openFilePaths(); track path) {
+            <button type="button" class="tab-item" [class.active]="activeFilePath() === path" (click)="activateTab(path)">
+              <i class="pi pi-file"></i>
+              <span class="tab-name">{{ getBaseName(path) }}</span>
+              <span class="tab-close" (click)="closeTab(path, $event)"><i class="pi pi-times"></i></span>
+            </button>
+          } @empty {
+            <div class="tab-placeholder">Chọn file để bắt đầu coding.</div>
+          }
+        </div>
+
+        <div class="editor-stage">
+          @if (activeFile()) {
+            <ngx-monaco-editor
+              [options]="editorOptions"
+              [model]="editorModel"
+              [(ngModel)]="editorValue"
+              (ngModelChange)="onEditorChange($event)"
+              [style]="{ height: '100%' }"
+            />
+          } @else {
+            <div class="editor-empty">
+              <i class="pi pi-code"></i>
+              <p>Chọn file để chỉnh sửa code.</p>
+            </div>
+          }
+        </div>
+
+        <section class="terminal-panel">
+          <div class="terminal-head">
+            <h3>Terminal</h3>
+            <button type="button" class="clear-terminal-btn" (click)="clearTerminalLogs()">
+              Clear
+            </button>
+          </div>
+          <div class="terminal-log">
+            @for (line of terminalLogs(); track $index) {
+              <div class="terminal-line" [class.command]="line.startsWith(terminalPrompt())">
+                {{ line }}
+              </div>
+            } @empty {
+              <div class="terminal-line muted">No logs yet.</div>
+            }
+          </div>
+          <div class="terminal-input-wrap">
+            <span class="terminal-prefix">{{ terminalPrompt() }}</span>
+            <input
+              type="text"
+              class="terminal-input"
+              [ngModel]="terminalCommand()"
+              (ngModelChange)="terminalCommand.set($event)"
+              (keydown.enter)="executeTerminalCommand()"
+              placeholder="Nhập lệnh: npm install, npm run dev, npm test..."
+            />
+          </div>
+        </section>
+      </section>
+    } @else {
+      <section class="ide-panel workspace-empty">
+        <i class="pi pi-sparkles"></i>
+        <h2>Tạo project đầu tiên của bạn</h2>
+        <p>Bắt đầu bằng template có sẵn hoặc chọn Empty Project để tự custom.</p>
+        <button type="button" class="ide-btn primary" (click)="openCreateProjectDialog()">
+          <i class="pi pi-plus"></i>
+          Tạo project đầu tiên
+        </button>
+      </section>
+    }
+  </section>
+</div>
+
+<p-contextmenu #explorerContextMenu [model]="explorerContextMenuItems()" />
+
+<p-dialog
+  header="Create new project"
+  [visible]="showCreateProjectDialog()"
+  (visibleChange)="showCreateProjectDialog.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '900px', maxWidth: '95vw' }"
+>
+  <div class="dialog-space">
+    <div class="template-grid">
+      @for (template of projectTemplates; track template.id) {
+        <button type="button" class="template-card" [class.active]="selectedTemplateId() === template.id" (click)="selectedTemplateId.set(template.id)">
+          <div class="template-icon" [class]="'template-icon ' + template.accentClass"><i [class]="template.icon"></i></div>
+          <div class="template-copy">
+            <div class="title">{{ template.name }}</div>
+            <div class="subtitle">{{ template.subtitle }}</div>
+          </div>
+        </button>
+      }
+    </div>
+    <div class="dialog-field">
+      <label for="project-name">Project name</label>
+      <input id="project-name" type="text" class="dialog-input" [ngModel]="newProjectName()" (ngModelChange)="newProjectName.set($event)" placeholder="VD: my-node-api" />
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <div class="dialog-actions">
+      <button type="button" class="ide-btn ghost" (click)="showCreateProjectDialog.set(false)">Cancel</button>
+      <button type="button" class="ide-btn primary" (click)="createProject()">Create project</button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [header]="createItemType() === 'file' ? 'Create file' : 'Create folder'"
+  [visible]="showCreateItemDialog()"
+  (visibleChange)="showCreateItemDialog.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '460px', maxWidth: '95vw' }"
+>
+  <div class="dialog-space">
+    <div class="dialog-field">
+      <label for="item-name">
+        {{ createItemType() === 'file' ? 'File name' : 'Folder name' }}
+      </label>
+      <input
+        id="item-name"
+        type="text"
+        class="dialog-input"
+        [ngModel]="createItemName()"
+        (ngModelChange)="createItemName.set($event)"
+        [placeholder]="createItemType() === 'file' ? 'index.js hoặc src/app.ts' : 'src hoặc src/modules'"
+      />
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <div class="dialog-actions">
+      <button type="button" class="ide-btn ghost" (click)="showCreateItemDialog.set(false)">
+        Cancel
+      </button>
+      <button type="button" class="ide-btn primary" (click)="createItem()">
+        Create
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>

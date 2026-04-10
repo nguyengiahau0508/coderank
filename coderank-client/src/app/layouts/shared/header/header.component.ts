@@ -36,6 +36,16 @@ import { AuthService } from '../../../core/services/auth.service';
 
         <!-- Right Section -->
         <div class="flex items-center gap-2">
+          <!-- Applications -->
+          <button
+            pButton
+            icon="pi pi-th-large"
+            class="p-button-text p-button-rounded transition-all relative"
+            style="color: var(--cr-text-muted);"
+            aria-label="Open applications"
+            (click)="appsMenu.toggle($event)"
+          ></button>
+
           <!-- Notifications -->
           <button 
             pButton 
@@ -82,6 +92,13 @@ import { AuthService } from '../../../core/services/auth.service';
               <i class="pi pi-angle-down text-sm transition-colors hidden md:block" style="color: var(--cr-text-subtle);"></i>
             </div>
           }
+
+          <p-menu
+            #appsMenu
+            [model]="appMenuItems"
+            [popup]="true"
+            styleClass="mt-2 rounded-lg"
+          />
 
           <p-menu 
             #menu 
@@ -146,6 +163,13 @@ export class HeaderComponent {
   toggleSidebar = output<void>();
   
   readonly user = this.authService.currentUser;
+  readonly appMenuItems: MenuItem[] = [
+    {
+      label: 'IDE',
+      icon: 'pi pi-code',
+      command: () => this.navigateIde()
+    }
+  ];
 
   readonly menuItems: MenuItem[] = [
     {
@@ -173,6 +197,15 @@ export class HeaderComponent {
     if (primaryRole) {
       this.router.navigate([`/${primaryRole}/dashboard`]);
     }
+  }
+
+  navigateIde(): void {
+    const ideUrl = this.router.serializeUrl(this.router.createUrlTree(['/ide']));
+    if (typeof window !== 'undefined') {
+      window.open(ideUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    this.router.navigate(['/ide']);
   }
 
   private navigateSettings(): void {
