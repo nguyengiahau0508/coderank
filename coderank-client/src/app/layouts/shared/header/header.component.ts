@@ -168,6 +168,11 @@ export class HeaderComponent {
       label: 'IDE',
       icon: 'pi pi-code',
       command: () => this.navigateIde()
+    },
+    {
+      label: 'System Diagram',
+      icon: 'pi pi-sitemap',
+      command: () => this.navigateDiagram()
     }
   ];
 
@@ -206,6 +211,15 @@ export class HeaderComponent {
       return;
     }
     this.router.navigate(['/ide']);
+  }
+
+  navigateDiagram(): void {
+    const diagramUrl = this.router.serializeUrl(this.router.createUrlTree(['/diagram']));
+    if (typeof window !== 'undefined') {
+      window.open(diagramUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    this.router.navigate(['/diagram']);
   }
 
   private navigateSettings(): void {

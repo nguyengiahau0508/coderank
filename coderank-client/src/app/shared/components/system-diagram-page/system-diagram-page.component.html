@@ -1,0 +1,548 @@
+<div class="diagram-shell">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="title-wrap">
+        <h1>System Diagram Designer</h1>
+        <p>Quản lý sơ đồ, vẽ canvas vô hạn, kết nối và export/import trong một màn hình.</p>
+      </div>
+
+      <div class="tool-group">
+        <button type="button" class="tool-btn" [class.active]="toolMode() === 'select'" (click)="useTool('select')">
+          <i class="pi pi-mouse"></i> Select
+        </button>
+        <button type="button" class="tool-btn" [class.active]="toolMode() === 'pan'" (click)="useTool('pan')">
+          <i class="pi pi-arrows-alt"></i> Pan
+        </button>
+        <button type="button" class="tool-btn" [class.active]="toolMode() === 'connector'" (click)="useTool('connector')">
+          <i class="pi pi-share-alt"></i> Connector
+        </button>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <button type="button" class="action-btn" (click)="undo()" [disabled]="!canUndo()">Undo</button>
+      <button type="button" class="action-btn" (click)="redo()" [disabled]="!canRedo()">Redo</button>
+      <button type="button" class="action-btn" (click)="zoomOut()">-</button>
+      <span class="zoom-badge">{{ (zoom() * 100).toFixed(0) }}%</span>
+      <button type="button" class="action-btn" (click)="zoomIn()">+</button>
+      <button type="button" class="action-btn" (click)="resetView()">Reset View</button>
+      <button type="button" class="action-btn" (click)="toggleGrid()">
+        {{ showGrid() ? 'Hide Grid' : 'Show Grid' }}
+      </button>
+      <button type="button" class="action-btn" (click)="toggleSnap()">
+        {{ snapToGrid() ? 'Snap: ON' : 'Snap: OFF' }}
+      </button>
+      <button type="button" class="action-btn" (click)="toggleMinimap()">
+        {{ showMinimap() ? 'Mini-map: ON' : 'Mini-map: OFF' }}
+      </button>
+      <button type="button" class="action-btn primary" (click)="saveDiagram()" [disabled]="!hasActiveDiagram()">
+        Save
+      </button>
+    </div>
+  </header>
+
+  <section class="workspace-grid">
+    <aside class="panel manager-panel">
+      <div class="panel-header">
+        <h2>Quản lý sơ đồ</h2>
+      </div>
+
+      <div class="panel-body">
+        <div class="field">
+          <label for="diagram-name">Tạo sơ đồ mới</label>
+          <input
+            id="diagram-name"
+            type="text"
+            class="field-input"
+            [ngModel]="newDiagramName()"
+            (ngModelChange)="newDiagramName.set($event)"
+            placeholder="VD: Payment Architecture"
+          />
+        </div>
+        <div class="field inline">
+          <select
+            class="field-input"
+            [ngModel]="newDiagramStorage()"
+            (ngModelChange)="newDiagramStorage.set($event)"
+          >
+            <option value="local">Save target: Local</option>
+            <option value="cloud">Save target: Cloud</option>
+          </select>
+          <button type="button" class="action-btn primary" (click)="createDiagram()">Create</button>
+        </div>
+
+        <div class="field">
+          <label for="search-diagram">Danh sách sơ đồ</label>
+          <input
+            id="search-diagram"
+            type="text"
+            class="field-input"
+            [ngModel]="searchKeyword()"
+            (ngModelChange)="searchKeyword.set($event)"
+            placeholder="Tìm theo tên..."
+          />
+        </div>
+        <div class="field">
+          <select class="field-input" [ngModel]="sortMode()" (ngModelChange)="sortMode.set($event)">
+            <option value="updatedAt">Sort by date</option>
+            <option value="name">Sort by name</option>
+          </select>
+        </div>
+
+        <div class="diagram-list">
+          @for (diagram of visibleDiagrams(); track diagram.id) {
+            <div class="diagram-item" [class.active]="activeDiagramId() === diagram.id">
+              <button type="button" class="diagram-main" (click)="openDiagram(diagram.id)">
+                <span class="name">{{ diagram.name }}</span>
+                <span class="meta">{{ diagram.storage }} · {{ formatDate(diagram.updatedAt) }}</span>
+              </button>
+              <div class="diagram-actions">
+                <button type="button" class="icon-btn" (click)="duplicateDiagram(diagram.id)" aria-label="Duplicate">
+                  <i class="pi pi-copy"></i>
+                </button>
+                <button type="button" class="icon-btn danger" (click)="deleteDiagram(diagram.id)" aria-label="Delete">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <p class="empty-copy">Chưa có sơ đồ nào. Hãy tạo sơ đồ đầu tiên.</p>
+          }
+        </div>
+
+        @if (hasActiveDiagram()) {
+          <div class="rename-box">
+            <label for="rename-diagram">Đổi tên sơ đồ hiện tại</label>
+            <div class="field inline">
+              <input
+                id="rename-diagram"
+                type="text"
+                class="field-input"
+                [ngModel]="renameValue()"
+                (ngModelChange)="renameValue.set($event)"
+              />
+              <button type="button" class="action-btn" (click)="renameActiveDiagram()">Rename</button>
+            </div>
+          </div>
+        }
+
+        <div class="shape-library">
+          <h3>Thư viện shape</h3>
+          <div class="shape-list">
+            @for (preset of shapeLibrary; track preset.id) {
+              <button type="button" class="shape-btn" (click)="addShape(preset.type)" [disabled]="!hasActiveDiagram()">
+                <span>{{ preset.label }}</span>
+                <small>{{ preset.description }}</small>
+              </button>
+            }
+            <button type="button" class="shape-btn" (click)="addTextElement()" [disabled]="!hasActiveDiagram()">
+              <span>Add text</span>
+              <small>Text block</small>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="panel canvas-panel">
+      <div class="panel-header canvas-header">
+        <h2>Canvas</h2>
+        <div class="canvas-actions">
+          <button type="button" class="action-btn" (click)="copySelection()" [disabled]="!selectedElementIds().length">
+            Copy
+          </button>
+          <button type="button" class="action-btn" (click)="pasteSelection()">
+            Paste
+          </button>
+          <button type="button" class="action-btn danger" (click)="deleteSelection()">
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        @if (!hasActiveDiagram()) {
+          <div class="canvas-empty">
+            <i class="pi pi-sitemap"></i>
+            <p>Tạo hoặc mở sơ đồ để bắt đầu.</p>
+          </div>
+        } @else {
+          <svg
+            #canvasSurface
+            class="diagram-canvas"
+            viewBox="0 0 1600 900"
+            (pointerdown)="onCanvasPointerDown($event)"
+            (pointermove)="onCanvasPointerMove($event)"
+            (pointerup)="onCanvasPointerUp($event)"
+            (pointerleave)="onCanvasPointerUp($event)"
+            (pointercancel)="onCanvasPointerUp($event)"
+            (wheel)="onCanvasWheel($event)"
+            (contextmenu)="$event.preventDefault()"
+          >
+            <defs>
+              <pattern id="grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(139,148,158,0.18)" stroke-width="1" />
+              </pattern>
+              <marker id="arrow-head" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+                <path d="M 0 0 L 10 4 L 0 8 z" fill="#58a6ff" />
+              </marker>
+            </defs>
+
+            <g [attr.transform]="'translate(' + panX() + ' ' + panY() + ') scale(' + zoom() + ')'">
+              @if (showGrid()) {
+                <rect x="-50000" y="-50000" width="100000" height="100000" fill="url(#grid-pattern)" />
+              }
+
+              @for (connector of connectors(); track connector.id) {
+                <g [attr.data-connector-id]="connector.id">
+                  <path
+                    [attr.d]="connectorPath(connector)"
+                    [attr.stroke]="connector.stroke"
+                    [attr.stroke-width]="connector.strokeWidth"
+                    [attr.stroke-dasharray]="connector.strokeStyle === 'dashed' ? '8 6' : null"
+                    fill="none"
+                    [attr.marker-end]="connector.arrow ? 'url(#arrow-head)' : null"
+                    class="connector-path"
+                    [class.active]="selectedConnectorId() === connector.id"
+                    (pointerdown)="onConnectorPointerDown($event, connector.id)"
+                  />
+                  @if (connector.label) {
+                    <text
+                      class="connector-label"
+                      [attr.x]="connectorLabelX(connector)"
+                      [attr.y]="connectorLabelY(connector)"
+                      text-anchor="middle"
+                    >
+                      {{ connector.label }}
+                    </text>
+                  }
+                </g>
+              }
+
+              @for (element of sortedElements(); track element.id) {
+                <g
+                  [attr.data-element-id]="element.id"
+                  [attr.transform]="elementTransform(element)"
+                  class="diagram-element"
+                  [class.active]="isElementSelected(element.id)"
+                  [class.locked]="element.locked"
+                  (pointerdown)="onElementPointerDown($event, element.id)"
+                >
+                  @if (element.type === 'rectangle' || element.type === 'text') {
+                    <rect
+                      x="0"
+                      y="0"
+                      [attr.width]="element.width"
+                      [attr.height]="element.height"
+                      rx="12"
+                      [attr.fill]="element.fill"
+                      [attr.stroke]="element.stroke"
+                      [attr.stroke-width]="element.strokeWidth"
+                      [attr.stroke-dasharray]="element.strokeStyle === 'dashed' ? '8 6' : null"
+                    />
+                  } @else if (element.type === 'circle') {
+                    <ellipse
+                      [attr.cx]="element.width / 2"
+                      [attr.cy]="element.height / 2"
+                      [attr.rx]="element.width / 2"
+                      [attr.ry]="element.height / 2"
+                      [attr.fill]="element.fill"
+                      [attr.stroke]="element.stroke"
+                      [attr.stroke-width]="element.strokeWidth"
+                      [attr.stroke-dasharray]="element.strokeStyle === 'dashed' ? '8 6' : null"
+                    />
+                  } @else if (element.type === 'diamond') {
+                    <path
+                      [attr.d]="'M ' + element.width / 2 + ' 0 L ' + element.width + ' ' + element.height / 2 + ' L ' + element.width / 2 + ' ' + element.height + ' L 0 ' + element.height / 2 + ' Z'"
+                      [attr.fill]="element.fill"
+                      [attr.stroke]="element.stroke"
+                      [attr.stroke-width]="element.strokeWidth"
+                      [attr.stroke-dasharray]="element.strokeStyle === 'dashed' ? '8 6' : null"
+                    />
+                  } @else if (element.type === 'svg-image') {
+                    <image
+                      x="0"
+                      y="0"
+                      [attr.width]="element.width"
+                      [attr.height]="element.height"
+                      [attr.href]="element.assetDataUrl"
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+                    <rect
+                      x="0"
+                      y="0"
+                      [attr.width]="element.width"
+                      [attr.height]="element.height"
+                      rx="8"
+                      [attr.stroke]="element.stroke"
+                      [attr.stroke-width]="element.strokeWidth"
+                      fill="none"
+                    />
+                  }
+
+                  <text
+                    [attr.x]="element.width / 2"
+                    [attr.y]="element.height / 2 + 4"
+                    text-anchor="middle"
+                    [attr.fill]="element.textColor"
+                    [attr.font-size]="element.fontSize"
+                    [attr.font-weight]="element.bold ? 700 : 500"
+                    [attr.font-style]="element.italic ? 'italic' : 'normal'"
+                    class="element-text"
+                  >
+                    {{ element.text }}
+                  </text>
+
+                  @if (isElementSelected(element.id) && !element.locked) {
+                    <line
+                      [attr.x1]="element.width / 2"
+                      y1="-8"
+                      [attr.x2]="element.width / 2"
+                      y2="-20"
+                      stroke="#58a6ff"
+                      stroke-width="1.5"
+                    />
+                    <circle
+                      [attr.cx]="element.width / 2"
+                      cy="-24"
+                      r="6"
+                      class="rotate-handle"
+                      (pointerdown)="onRotateHandlePointerDown($event, element.id)"
+                    />
+                    <rect
+                      [attr.x]="element.width - 6"
+                      [attr.y]="element.height - 6"
+                      width="12"
+                      height="12"
+                      class="resize-handle"
+                      (pointerdown)="onResizeHandlePointerDown($event, element.id)"
+                    />
+                  }
+                </g>
+              }
+            </g>
+          </svg>
+        }
+
+        @if (showMinimap() && hasActiveDiagram()) {
+          <div class="minimap">
+            <div class="minimap-head">Mini-map</div>
+            <svg
+              [attr.viewBox]="'0 0 ' + minimap().width + ' ' + minimap().height"
+              class="minimap-svg"
+              (pointerdown)="onMinimapPointerDown($event)"
+            >
+              <rect x="0" y="0" [attr.width]="minimap().width" [attr.height]="minimap().height" fill="#0d1117" stroke="#30363d" />
+
+              @for (item of sortedElements(); track item.id) {
+                <rect
+                  [attr.x]="(item.x - minimap().minX) * minimap().scale + minimap().offsetX"
+                  [attr.y]="(item.y - minimap().minY) * minimap().scale + minimap().offsetY"
+                  [attr.width]="minimapSize(item.width)"
+                  [attr.height]="minimapSize(item.height)"
+                  [attr.fill]="item.fill"
+                  [attr.stroke]="item.stroke"
+                  stroke-width="0.8"
+                />
+              }
+
+              <rect
+                [attr.x]="minimap().viewportX"
+                [attr.y]="minimap().viewportY"
+                [attr.width]="minimap().viewportWidth"
+                [attr.height]="minimap().viewportHeight"
+                fill="rgba(88,166,255,0.12)"
+                stroke="#58a6ff"
+                stroke-width="1.2"
+              />
+            </svg>
+          </div>
+        }
+      </div>
+    </section>
+
+    <aside class="panel inspector-panel">
+      <div class="panel-header">
+        <h2>Inspector</h2>
+      </div>
+
+      <div class="panel-body">
+        <section class="inspector-card">
+          <h3>Connector defaults</h3>
+          <div class="field">
+            <label>Loại connector mới</label>
+            <select
+              class="field-input"
+              [ngModel]="newConnectorType()"
+              (ngModelChange)="newConnectorType.set($event)"
+            >
+              <option value="straight">Straight</option>
+              <option value="curved">Curved</option>
+              <option value="elbow">Elbow</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="inspector-card">
+          <h3>Căn chỉnh & bố cục</h3>
+          <div class="action-grid">
+            <button type="button" class="action-btn" (click)="alignSelected('left')">Align Left</button>
+            <button type="button" class="action-btn" (click)="alignSelected('right')">Align Right</button>
+            <button type="button" class="action-btn" (click)="alignSelected('h-center')">Align H-Center</button>
+            <button type="button" class="action-btn" (click)="alignSelected('top')">Align Top</button>
+            <button type="button" class="action-btn" (click)="alignSelected('bottom')">Align Bottom</button>
+            <button type="button" class="action-btn" (click)="alignSelected('v-center')">Align V-Center</button>
+            <button type="button" class="action-btn" (click)="distributeSelected('horizontal')">Distribute X</button>
+            <button type="button" class="action-btn" (click)="distributeSelected('vertical')">Distribute Y</button>
+            <button type="button" class="action-btn" (click)="groupSelected()">Group</button>
+            <button type="button" class="action-btn" (click)="ungroupSelected()">Ungroup</button>
+            <button type="button" class="action-btn" (click)="bringToFront()">Bring Front</button>
+            <button type="button" class="action-btn" (click)="sendToBack()">Send Back</button>
+            <button type="button" class="action-btn" (click)="lockSelected()">Lock</button>
+            <button type="button" class="action-btn" (click)="unlockSelected()">Unlock</button>
+          </div>
+        </section>
+
+        @if (selectedElement(); as element) {
+          <section class="inspector-card">
+            <h3>Element styling</h3>
+            <div class="field">
+              <label>Text</label>
+              <input
+                type="text"
+                class="field-input"
+                [ngModel]="element.text"
+                (ngModelChange)="setElementText($event)"
+              />
+            </div>
+            <div class="field inline">
+              <label>Fill</label>
+              <input type="color" class="color-input" [ngModel]="element.fill" (ngModelChange)="setElementFill($event)" />
+            </div>
+            <div class="field inline">
+              <label>Stroke</label>
+              <input type="color" class="color-input" [ngModel]="element.stroke" (ngModelChange)="setElementStroke($event)" />
+            </div>
+            <div class="field">
+              <label>Stroke width</label>
+              <input
+                type="number"
+                min="1"
+                max="14"
+                class="field-input"
+                [ngModel]="element.strokeWidth"
+                (ngModelChange)="setElementStrokeWidth($event)"
+              />
+            </div>
+            <div class="field">
+              <label>Stroke style</label>
+              <select
+                class="field-input"
+                [ngModel]="element.strokeStyle"
+                (ngModelChange)="setElementStrokeStyle($event)"
+              >
+                <option value="solid">Solid</option>
+                <option value="dashed">Dashed</option>
+              </select>
+            </div>
+            <div class="field inline">
+              <label>Text color</label>
+              <input
+                type="color"
+                class="color-input"
+                [ngModel]="element.textColor"
+                (ngModelChange)="setElementTextColor($event)"
+              />
+            </div>
+            <div class="field">
+              <label>Font size</label>
+              <input
+                type="number"
+                min="10"
+                max="44"
+                class="field-input"
+                [ngModel]="element.fontSize"
+                (ngModelChange)="setElementFontSize($event)"
+              />
+            </div>
+            <div class="field inline">
+              <label class="checkbox-wrap">
+                <input type="checkbox" [ngModel]="element.bold" (ngModelChange)="setElementBold($event)" />
+                Bold
+              </label>
+              <label class="checkbox-wrap">
+                <input type="checkbox" [ngModel]="element.italic" (ngModelChange)="setElementItalic($event)" />
+                Italic
+              </label>
+            </div>
+          </section>
+        }
+
+        @if (selectedConnector(); as connector) {
+          <section class="inspector-card">
+            <h3>Connector editing</h3>
+            <div class="field">
+              <label>Label</label>
+              <input
+                type="text"
+                class="field-input"
+                [ngModel]="connector.label"
+                (ngModelChange)="updateConnectorLabel($event)"
+              />
+            </div>
+            <div class="field">
+              <label>Type</label>
+              <select
+                class="field-input"
+                [ngModel]="connector.type"
+                (ngModelChange)="updateConnectorType($event)"
+              >
+                <option value="straight">Straight</option>
+                <option value="curved">Curved</option>
+                <option value="elbow">Elbow</option>
+              </select>
+            </div>
+            <div class="field inline">
+              <label>Color</label>
+              <input type="color" class="color-input" [ngModel]="connector.stroke" (ngModelChange)="updateConnectorStroke($event)" />
+            </div>
+            <label class="checkbox-wrap">
+              <input
+                type="checkbox"
+                [ngModel]="connector.arrow"
+                (ngModelChange)="toggleConnectorArrow($event)"
+              />
+              Arrow
+            </label>
+          </section>
+        }
+
+        <section class="inspector-card">
+          <h3>Import / Export</h3>
+          <div class="action-grid">
+            <button type="button" class="action-btn" (click)="exportJson()" [disabled]="!hasActiveDiagram()">Export JSON</button>
+            <button type="button" class="action-btn" (click)="exportSvg()" [disabled]="!hasActiveDiagram()">Export SVG</button>
+            <button type="button" class="action-btn" (click)="exportPng()" [disabled]="!hasActiveDiagram()">Export PNG</button>
+            <button type="button" class="action-btn" (click)="exportPdf()" [disabled]="!hasActiveDiagram()">Export PDF</button>
+            <button type="button" class="action-btn" (click)="triggerJsonImport()">Import JSON</button>
+            <button type="button" class="action-btn" (click)="triggerSvgImport()">Import SVG</button>
+          </div>
+          <input #jsonInput type="file" accept=".json,application/json" class="hidden-input" (change)="onJsonImport($event)" />
+          <input #svgInput type="file" accept=".svg,image/svg+xml" class="hidden-input" (change)="onSvgImport($event)" />
+        </section>
+
+        <section class="inspector-card">
+          <h3>Shortcuts</h3>
+          <p>Ctrl + Z / Y: Undo / Redo</p>
+          <p>Ctrl + C / V: Copy / Paste</p>
+          <p>Delete: Xóa phần tử</p>
+          <p>Scroll: Zoom canvas</p>
+        </section>
+      </div>
+    </aside>
+  </section>
+
+  <footer class="status-bar">
+    <span>{{ statusMessage() }}</span>
+  </footer>
+</div>

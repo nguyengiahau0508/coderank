@@ -1,5 +1,11 @@
 import { Routes } from '@angular/router';
-import { guestGuard, studentGuard, lecturerGuard, adminGuard } from './core/guards';
+import {
+  authGuard,
+  guestGuard,
+  studentGuard,
+  lecturerGuard,
+  adminGuard,
+} from './core/guards';
 
 export const routes: Routes = [
   {
@@ -10,6 +16,17 @@ export const routes: Routes = [
   {
     path: 'auth/callback',
     loadComponent: () => import('./features/auth/pages/callback/callback.component').then(m => m.CallbackComponent)
+  },
+  {
+    path: 'ide',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/ide/ide.routes').then(m => m.ideRoutes),
+  },
+  {
+    path: 'diagram',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/diagram/diagram.routes').then(m => m.diagramRoutes),
   },
   {
     path: 'student',
