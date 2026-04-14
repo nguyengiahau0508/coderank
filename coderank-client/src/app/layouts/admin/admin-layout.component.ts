@@ -5,7 +5,7 @@ import { MenuItem } from '../shared/sidebar/sidebar.component';
 @Component({
   selector: 'app-admin-layout',
   imports: [BaseLayoutComponent],
-  template: `<app-base-layout [items]="menuItems" />`,
+  template: `<app-base-layout [items]="menuItems" [fullHeightSidebar]="true" />`,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminLayoutComponent {

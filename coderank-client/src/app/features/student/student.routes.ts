@@ -22,6 +22,11 @@ export const studentRoutes: Routes = [
       import('./contests/contests.routes').then(m => m.studentContestsRoutes),
   },
   {
+    path: 'ide',
+    redirectTo: '/ide',
+    pathMatch: 'full',
+  },
+  {
     path: 'settings',
     loadComponent: () =>
       import('../settings/user-settings.component').then(m => m.UserSettingsComponent),

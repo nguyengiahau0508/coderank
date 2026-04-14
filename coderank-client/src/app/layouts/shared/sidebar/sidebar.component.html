@@ -1,0 +1,50 @@
+<aside
+  class="flex flex-col transition-all duration-300 ease-in-out h-full"
+  style="background-color: var(--cr-bg-secondary); border-right: 1px solid var(--cr-border);"
+  [class.w-64]="!collapsed()"
+  [class.w-20]="collapsed()"
+>
+  <nav class="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+    @for (item of menuItems(); track item.route) {
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="active-link"
+        [routerLinkActiveOptions]="{ exact: false }"
+        class="nav-link group"
+      >
+        <div class="nav-link-content">
+          <i [class]="item.icon + ' nav-icon'"></i>
+
+          @if (!collapsed()) {
+            <span class="nav-label">{{ item.label }}</span>
+
+            @if (item.badge) {
+              <span
+                class="nav-badge"
+                [style.background-color]="'rgba(248, 81, 73, 0.15)'"
+                [style.color]="'var(--cr-accent-red)'"
+              >
+                {{ item.badge }}
+              </span>
+            }
+          } @else if (item.badge) {
+            <span class="nav-badge-dot"></span>
+          }
+        </div>
+      </a>
+    }
+  </nav>
+
+  <div class="p-4" style="border-top: 1px solid var(--cr-border);">
+    @if (!collapsed()) {
+      <div class="text-center">
+        <p class="text-xs font-medium" style="color: var(--cr-text-subtle);">CodeRank</p>
+        <p class="text-xs mt-1" style="color: var(--cr-text-subtle);">© 2026</p>
+      </div>
+    } @else {
+      <div class="flex justify-center">
+        <div class="w-2 h-2 rounded-full" style="background: var(--cr-border);"></div>
+      </div>
+    }
+  </div>
+</aside>

@@ -1,80 +1,92 @@
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  Component,
   ChangeDetectionStrategy,
-  signal,
+  Component,
+  DestroyRef,
   effect,
   inject,
-  HostListener,
   input,
+  signal,
 } from '@angular/core';
-import { Router, RouterModule, NavigationStart, NavigationEnd, NavigationCancel, NavigationError } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { filter } from 'rxjs/operators';
-import { HeaderComponent } from '../shared/header/header.component';
-import { SidebarComponent, MenuItem } from '../shared/sidebar/sidebar.component';
+import {
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationStart,
+  Router,
+  RouterModule,
+} from '@angular/router';
+import { debounceTime, filter, fromEvent } from 'rxjs';
 import { AiChatComponent } from '../../shared/components/ai-chat/ai-chat.component';
+import { HeaderComponent } from '../shared/header/header.component';
+import { MenuItem, SidebarComponent } from '../shared/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-base-layout',
   imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent, AiChatComponent],
-  templateUrl: './base-layout.commponnet.html',
+  templateUrl: './base-layout.component.html',
   styleUrls: ['./base-layout.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BaseLayoutComponent {
-  private router = inject(Router);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
-  // Input for menu items from child layouts
   items = input<MenuItem[]>([]);
+  fullHeightSidebar = input<boolean>(false);
 
-  protected sidebarCollapsed = signal(false);
-  protected menuItems: MenuItem[] = [];
-  protected isNavigating = signal(false);
-  protected isMobileScreen = signal(false);
+  protected readonly sidebarCollapsed = signal(false);
+  protected readonly isNavigating = signal(false);
+  protected readonly isMobileScreen = signal(false);
 
   constructor() {
-    // Load sidebar state from localStorage
     this.loadSidebarState();
 
-    // Persist sidebar state to localStorage
     effect(() => {
-      localStorage.setItem('sidebarCollapsed', JSON.stringify(this.sidebarCollapsed()));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sidebarCollapsed', JSON.stringify(this.sidebarCollapsed()));
+      }
     });
 
-    // Check initial screen size
     this.checkScreenSize();
-
-    // Auto-collapse sidebar on mobile on init
     if (this.isMobileScreen()) {
       this.sidebarCollapsed.set(true);
     }
 
-    // Track navigation state for loading bar
+    if (typeof window !== 'undefined') {
+      fromEvent(window, 'resize')
+        .pipe(
+          debounceTime(120),
+          takeUntilDestroyed(this.destroyRef)
+        )
+        .subscribe(() => {
+          this.checkScreenSize();
+        });
+    }
+
     this.router.events
-      .pipe(filter(event =>
-        event instanceof NavigationStart ||
-        event instanceof NavigationEnd ||
-        event instanceof NavigationCancel ||
-        event instanceof NavigationError
-      ))
+      .pipe(
+        filter(
+          event =>
+            event instanceof NavigationStart ||
+            event instanceof NavigationEnd ||
+            event instanceof NavigationCancel ||
+            event instanceof NavigationError
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe(event => {
         if (event instanceof NavigationStart) {
           this.isNavigating.set(true);
-        } else {
-          // Small delay to show the loading bar
-          setTimeout(() => this.isNavigating.set(false), 200);
+          return;
+        }
 
-          // Auto-close sidebar on mobile after navigation
-          if (this.isMobileScreen()) {
-            this.sidebarCollapsed.set(true);
-          }
+        setTimeout(() => this.isNavigating.set(false), 180);
+        if (this.isMobileScreen()) {
+          this.sidebarCollapsed.set(true);
         }
       });
-  }
-
-  @HostListener('window:resize')
-  onResize(): void {
-    this.checkScreenSize();
   }
 
   protected toggleSidebar(): void {
@@ -90,17 +102,19 @@ export class BaseLayoutComponent {
   }
 
   private checkScreenSize(): void {
-    this.isMobileScreen.set(window.innerWidth < 1024); // lg breakpoint
+    if (typeof window === 'undefined') {
+      return;
+    }
+    this.isMobileScreen.set(window.innerWidth < 1024);
   }
 
   private loadSidebarState(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
     const savedState = localStorage.getItem('sidebarCollapsed');
-    if (savedState !== null) {
-      try {
-        this.sidebarCollapsed.set(JSON.parse(savedState));
-      } catch {
-        // Ignore parsing errors
-      }
+    if (savedState === 'true' || savedState === 'false') {
+      this.sidebarCollapsed.set(savedState === 'true');
     }
   }
 }

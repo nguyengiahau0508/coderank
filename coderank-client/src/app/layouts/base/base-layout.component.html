@@ -1,0 +1,33 @@
+<div class="layout-root" [class.viewport-sidebar]="fullHeightSidebar()">
+  @if (isNavigating()) {
+    <div class="route-progress" aria-hidden="true"></div>
+  }
+
+  <app-header (toggleSidebar)="toggleSidebar()" />
+
+  <div class="layout-body">
+    @if (!sidebarCollapsed() && isMobile()) {
+      <div class="layout-overlay" (click)="closeSidebar()"></div>
+    }
+
+    <app-sidebar
+      [collapsed]="sidebarCollapsed()"
+      [menuItems]="items()"
+      class="layout-sidebar"
+      [class.translate-x-0]="!sidebarCollapsed() || !isMobile()"
+      [class.-translate-x-full]="sidebarCollapsed() && isMobile()"
+    />
+
+    <main class="layout-main">
+      <div class="layout-main-inner">
+        <div class="layout-container">
+          <div class="page-transition">
+            <router-outlet />
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<app-ai-chat />

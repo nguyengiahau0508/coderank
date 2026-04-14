@@ -1,0 +1,81 @@
+<header class="app-header">
+  <div class="header-shell">
+    <div class="header-left">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-bars"
+        class="p-button-text p-button-rounded icon-btn"
+        aria-label="Toggle sidebar"
+        (click)="toggleSidebar.emit()"
+      ></button>
+
+      <button
+        type="button"
+        class="brand-trigger"
+        aria-label="Go to dashboard"
+        (click)="navigateHome()"
+      >
+        <span class="brand-icon-wrap">
+          <i class="pi pi-code brand-icon"></i>
+        </span>
+        <span class="brand-copy">
+          <span class="brand-title">CodeRank</span>
+          <span class="brand-subtitle">{{ roleLabel() }}</span>
+        </span>
+      </button>
+
+      <span class="section-chip">{{ currentSectionLabel() }}</span>
+    </div>
+
+    <div class="header-right">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-th-large"
+        class="p-button-text p-button-rounded icon-btn"
+        aria-label="Open applications"
+        (click)="appsMenu.toggle($event)"
+      ></button>
+
+      <button
+        pButton
+        type="button"
+        icon="pi pi-bell"
+        class="p-button-text p-button-rounded icon-btn"
+        pBadge="3"
+        severity="danger"
+        aria-label="Notifications"
+      ></button>
+
+      @if (user(); as currentUser) {
+        <button
+          type="button"
+          class="profile-trigger"
+          aria-label="Open user menu"
+          (click)="menu.toggle($event)"
+        >
+          @if (currentUser.avatar) {
+            <p-avatar [image]="currentUser.avatar" shape="circle" />
+          } @else {
+            <p-avatar
+              [label]="currentUser.username.charAt(0).toUpperCase()"
+              shape="circle"
+              styleClass="avatar-fallback"
+            />
+          }
+
+          <span class="profile-meta">
+            <span class="profile-name">{{ currentUser.username }}</span>
+            <span class="profile-role">{{ roleLabel() }}</span>
+          </span>
+
+          <i class="pi pi-angle-down profile-arrow"></i>
+        </button>
+      }
+
+      <p-menu #appsMenu [model]="appMenuItems" [popup]="true" styleClass="workspace-menu" />
+      <p-menu #menu [model]="menuItems" [popup]="true" styleClass="workspace-menu" />
+    </div>
+  </div>
+</header>

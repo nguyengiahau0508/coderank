@@ -27,6 +27,11 @@ export const adminRoutes: Routes = [
       import('./contests/contests.routes').then(m => m.adminContestsRoutes),
   },
   {
+    path: 'ide',
+    redirectTo: '/ide',
+    pathMatch: 'full',
+  },
+  {
     path: 'courses',
     loadChildren: () =>
       import('./courses/courses.routes').then(m => m.adminCoursesRoutes),

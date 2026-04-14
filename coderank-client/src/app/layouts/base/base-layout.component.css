@@ -1,62 +1,145 @@
 :host {
-      display: block;
-      height: 100vh;
-    }
+  display: block;
+  min-height: 100vh;
+}
 
-    main {
-      position: relative;
-    }
+.layout-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--cr-bg-primary);
+}
 
-    main::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 200px;
-      background: linear-gradient(180deg, rgba(88, 166, 255, 0.03) 0%, transparent 100%);
-      pointer-events: none;
-      z-index: 0;
-    }
+.layout-root.viewport-sidebar {
+  height: 100vh;
+}
 
-    /* Custom scrollbar for main content */
-    main::-webkit-scrollbar {
-      width: 8px;
-    }
+.layout-root.viewport-sidebar .layout-body {
+  height: calc(100vh - 4.25rem);
+}
 
-    main::-webkit-scrollbar-track {
-      background: transparent;
-    }
+.layout-root.viewport-sidebar .layout-sidebar {
+  height: 100%;
+}
 
-    main::-webkit-scrollbar-thumb {
-      background: var(--cr-bg-elevated);
-      border-radius: 4px;
-    }
+.route-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 2px;
+  z-index: 1100;
+  background: linear-gradient(90deg, var(--cr-syntax-keyword), var(--cr-syntax-function), var(--cr-accent-blue));
+  animation: pulse 0.7s ease-in-out infinite alternate;
+}
 
-    main::-webkit-scrollbar-thumb:hover {
-      background: var(--cr-border);
-    }
+.layout-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
 
-    /* Fade in animation for page transitions */
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
+.layout-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: rgba(1, 4, 9, 0.72);
+  backdrop-filter: blur(2px);
+}
 
-    .animate-fade-in {
-      animation: fadeIn 0.3s ease-out;
-    }
+.layout-sidebar {
+  z-index: 40;
+  transition: transform 0.3s ease;
+}
 
-    /* Loading bar animation */
-    @keyframes loadingBar {
-      0% {
-        transform: translateX(-100%);
-      }
-      100% {
-        transform: translateX(100%);
-      }
-    }
+.layout-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  position: relative;
+}
+
+.layout-main::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 240px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(88, 166, 255, 0.07) 0%, transparent 100%);
+  z-index: 0;
+}
+
+.layout-main-inner {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top right, rgba(88, 166, 255, 0.08), transparent 36%),
+    radial-gradient(circle at bottom left, rgba(137, 87, 229, 0.08), transparent 34%),
+    var(--cr-bg-primary);
+}
+
+.layout-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0.9rem 0.9rem 1.2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.page-transition {
+  animation: fadeIn 0.24s ease-out;
+}
+
+.layout-main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.layout-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.layout-main::-webkit-scrollbar-thumb {
+  background: var(--cr-bg-elevated);
+  border-radius: 999px;
+}
+
+.layout-main::-webkit-scrollbar-thumb:hover {
+  background: var(--cr-border);
+}
+
+@media (min-width: 640px) {
+  .layout-container {
+    padding: 1.1rem 1.2rem 1.4rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout-overlay {
+    display: none;
+  }
+
+  .layout-container {
+    padding: 1.3rem 1.6rem 1.7rem;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  from {
+    opacity: 0.45;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

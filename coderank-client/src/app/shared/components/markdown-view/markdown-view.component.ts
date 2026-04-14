@@ -56,6 +56,7 @@ export class MarkdownViewComponent {
   /** Raw content string to render */
   readonly content = input<string | null | undefined>('');
 
+
   /** Content format: 'html' for pre-rendered HTML, 'markdown' for Markdown source */
   readonly format = input<'html' | 'markdown'>('html');
 

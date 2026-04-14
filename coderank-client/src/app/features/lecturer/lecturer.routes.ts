@@ -23,6 +23,11 @@ export const lecturerRoutes: Routes = [
     loadChildren: () => import('./contests/contests.routes').then(m => m.lecturerContestsRoutes)
   },
   {
+    path: 'ide',
+    redirectTo: '/ide',
+    pathMatch: 'full'
+  },
+  {
     path: 'students',
     loadComponent: () => import('./pages/students/students.component').then(m => m.LecturerStudentsComponent)
   },
