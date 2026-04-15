@@ -31,6 +31,7 @@ export class GeminiProvider implements ILLMProvider {
     this.chatSession = model.startChat({
       history: this.formatHistoryForGemini(initialHistory),
       generationConfig: {
+        temperature: 0,
         maxOutputTokens: 2000,
       },
     });

@@ -97,6 +97,7 @@ export class OpenAIProvider implements ILLMProvider {
       const response = await this.client.chat.completions.create({
         model: this.modelName,
         messages: this.history,
+        temperature: 0,
         tools: this.tools.length > 0 ? this.tools : undefined,
       });
 

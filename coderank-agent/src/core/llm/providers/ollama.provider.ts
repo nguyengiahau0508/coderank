@@ -90,6 +90,11 @@ export class OllamaProvider implements ILLMProvider {
         model: this.modelName,
         messages: this.history,
         tools: this.tools.length > 0 ? this.tools : undefined,
+        options: {
+          temperature: 0,
+          top_p: 1,
+          seed: 42,
+        },
       });
 
       this.history.push(response.message);

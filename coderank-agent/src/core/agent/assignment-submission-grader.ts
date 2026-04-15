@@ -2137,8 +2137,6 @@ export class AssignmentSubmissionGrader {
     const prompt = [
       `Assignment title: ${payload.assignmentTitle || '(untitled assignment)'}`,
       `Assignment description: ${payload.assignmentDescription || '(no description provided)'}`,
-      `Submission ID: ${prepared.submission.id}`,
-      `Student ID: ${prepared.submission.authorId}`,
       `Rubric: ${JSON.stringify(rubric)}`,
       `Evaluated files (${adaptivelyReadSnippets.length}/${selectedSnippets.length}): ${adaptivelyReadSnippets.map((snippet) => snippet.relativePath).join(', ')}`,
       'Grade the submission based on the rubric.',
@@ -2272,8 +2270,6 @@ export class AssignmentSubmissionGrader {
     const bootstrapPrompt = [
       `Assignment title: ${payload.assignmentTitle || '(untitled assignment)'}`,
       `Assignment description: ${payload.assignmentDescription || '(no description provided)'}`,
-      `Submission ID: ${prepared.submission.id}`,
-      `Student ID: ${prepared.submission.authorId}`,
       `Rubric: ${JSON.stringify(rubric)}`,
       'You will receive files one by one in ranked order.',
       `Candidate file order (${selectedSnippets.length} files):\n${candidateManifest}`,
@@ -2591,7 +2587,8 @@ export class AssignmentSubmissionGrader {
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      const entries = await fs.readdir(current, { withFileTypes: true });
+      const entries = (await fs.readdir(current, { withFileTypes: true }))
+        .sort((left, right) => left.name.localeCompare(right.name));
 
       for (const entry of entries) {
         if (entry.name.startsWith('.DS_Store')) continue;
@@ -2609,7 +2606,7 @@ export class AssignmentSubmissionGrader {
       }
     }
 
-    return files;
+    return files.sort((left, right) => left.localeCompare(right));
   }
 
   private computeSimilarityMatches(

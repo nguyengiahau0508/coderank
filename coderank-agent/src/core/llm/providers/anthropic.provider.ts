@@ -107,6 +107,7 @@ export class AnthropicProvider implements ILLMProvider {
       const response = await this.client.messages.create({
         model: this.modelName,
         max_tokens: 4096,
+        temperature: 0,
         system: this.systemPrompt,
         messages: this.history,
         tools: this.tools.length > 0 ? this.tools : undefined,
