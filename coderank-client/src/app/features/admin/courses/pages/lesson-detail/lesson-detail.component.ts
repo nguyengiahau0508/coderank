@@ -41,6 +41,22 @@ import {
   QuizQuestionTypeEnum,
 } from '../../../../../data';
 
+type AssignmentSubmissionSummaryRow = {
+  submissionId: string;
+  displayName: string;
+  email: string;
+  scoreValue: number;
+  scoreText: string;
+  similarityGroup: string[];
+  submittedAt: string;
+};
+
+type AssignmentCriterionDraft = {
+  criterion: string;
+  maxScore: number | null;
+  description: string;
+};
+
 @Component({
   selector: 'app-admin-lesson-detail',
   imports: [
@@ -139,6 +155,35 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
   readonly gradingSubmission = signal<CourseAssignmentSubmissionsModel | null>(null);
   readonly savingGrade = signal<boolean>(false);
   gradeForm: any = {};
+
+  readonly gradedSubmissionSummaryRows = computed<AssignmentSubmissionSummaryRow[]>(() => {
+    const assignment = this.selectedAssignment();
+    if (!assignment) {
+      return [];
+    }
+
+    const maxScore = assignment.maxScore;
+    const rows = this.submissions()
+      .filter((sub) => typeof sub.score === 'number' && Number.isFinite(sub.score))
+      .map((sub) => {
+        const scoreValue = sub.score as number;
+        const similarityGroup = (sub.similarityMatches ?? [])
+          .slice(0, 5)
+          .map((match) => `${this.getSimilarityMatchLabel(match)} (${this.formatSimilarityPercent(match.similarity)})`);
+
+        return {
+          submissionId: sub.id.toString(),
+          displayName: this.getSubmissionDisplayName(sub),
+          email: sub.author?.email || '—',
+          scoreValue,
+          scoreText: `${scoreValue}/${maxScore}`,
+          similarityGroup,
+          submittedAt: sub.submittedAt,
+        };
+      });
+
+    return rows.sort((left, right) => right.scoreValue - left.scoreValue);
+  });
 
   // Computed prev/next
   readonly prevLesson = computed(() => {
@@ -822,7 +867,7 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
       isPublished: false,
       allowedFileTypes: '.pdf,.docx,.zip,.rar',
       maxFileSizeMb: 10,
-      gradingCriteriaText: '',
+      gradingCriteriaItems: [this.createEmptyCriterionDraft()],
     };
     this.showAssignmentDialog.set(true);
   }
@@ -840,9 +885,39 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
       isPublished: a.isPublished,
       allowedFileTypes: a.allowedFileTypes || '',
       maxFileSizeMb: a.maxFileSizeMb,
-      gradingCriteriaText: this.formatGradingCriteriaInput(a.gradingCriteria),
+      gradingCriteriaItems: this.toCriterionDrafts(a.gradingCriteria),
     };
     this.showAssignmentDialog.set(true);
+  }
+
+  addAssignmentCriterionRow(): void {
+    if (!Array.isArray(this.assignmentForm.gradingCriteriaItems)) {
+      this.assignmentForm.gradingCriteriaItems = [];
+    }
+    this.assignmentForm.gradingCriteriaItems.push(this.createEmptyCriterionDraft());
+  }
+
+  removeAssignmentCriterionRow(index: number): void {
+    if (!Array.isArray(this.assignmentForm.gradingCriteriaItems)) {
+      return;
+    }
+    if (index < 0 || index >= this.assignmentForm.gradingCriteriaItems.length) {
+      return;
+    }
+    this.assignmentForm.gradingCriteriaItems.splice(index, 1);
+    if (this.assignmentForm.gradingCriteriaItems.length === 0) {
+      this.assignmentForm.gradingCriteriaItems = [this.createEmptyCriterionDraft()];
+    }
+  }
+
+  getAssignmentCriteriaTotalScore(): number {
+    const items = Array.isArray(this.assignmentForm.gradingCriteriaItems)
+      ? this.assignmentForm.gradingCriteriaItems
+      : [];
+    return items.reduce((sum: number, item: AssignmentCriterionDraft) => {
+      const score = Number(item?.maxScore);
+      return Number.isFinite(score) && score > 0 ? sum + score : sum;
+    }, 0);
   }
 
   onAssignmentFileSelect(event: any): void {
@@ -858,7 +933,7 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
     this.savingAssignment.set(true);
     const editing = this.editingAssignment();
     const dto: any = { ...this.assignmentForm };
-    const criteriaParse = this.parseGradingCriteriaInput(this.assignmentForm.gradingCriteriaText || '');
+    const criteriaParse = this.parseGradingCriteriaItems(this.assignmentForm.gradingCriteriaItems || []);
     if (criteriaParse.error) {
       this.messageService.add({ severity: 'warn', summary: 'Cảnh báo', detail: criteriaParse.error });
       this.savingAssignment.set(false);
@@ -870,7 +945,7 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
     if (!dto.dueDate) delete dto.dueDate;
     if (!dto.allowedFileTypes) delete dto.allowedFileTypes;
     if (!dto.gradingCriteria || dto.gradingCriteria.length === 0) delete dto.gradingCriteria;
-    delete dto.gradingCriteriaText;
+    delete dto.gradingCriteriaItems;
 
     if (editing) {
       this.coursesService.updateAssignment(this.courseId(), this.lessonId(), editing.id.toString(), dto, this.assignmentFile ?? undefined).subscribe({
@@ -1083,44 +1158,74 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
     return `${Math.round(score * 100)}%`;
   }
 
-  private formatGradingCriteriaInput(criteria?: AssignmentGradingCriterion[] | null): string {
-    if (!criteria || criteria.length === 0) return '';
-    return criteria
-      .map((item) => `${item.criterion}|${item.maxScore}${item.description ? `|${item.description}` : ''}`)
-      .join('\n');
+  private createEmptyCriterionDraft(): AssignmentCriterionDraft {
+    return {
+      criterion: '',
+      maxScore: null,
+      description: '',
+    };
   }
 
-  private parseGradingCriteriaInput(rawText: string): { criteria: AssignmentGradingCriterion[]; error?: string } {
-    const text = rawText.trim();
-    if (!text) {
+  private toCriterionDrafts(
+    criteria?: AssignmentGradingCriterion[] | null,
+  ): AssignmentCriterionDraft[] {
+    if (!criteria || criteria.length === 0) {
+      return [this.createEmptyCriterionDraft()];
+    }
+
+    const items = criteria.map((item) => ({
+      criterion: item.criterion || '',
+      maxScore: Number.isFinite(item.maxScore) ? item.maxScore : null,
+      description: item.description || '',
+    }));
+
+    return items.length > 0 ? items : [this.createEmptyCriterionDraft()];
+  }
+
+  private parseGradingCriteriaItems(
+    items: AssignmentCriterionDraft[],
+  ): { criteria: AssignmentGradingCriterion[]; error?: string } {
+    const criteria: AssignmentGradingCriterion[] = [];
+
+    const normalizedItems = Array.isArray(items)
+      ? items
+        .map((item) => {
+          const rawMaxScore = (item as any)?.maxScore;
+          return {
+          criterion: item?.criterion?.trim() || '',
+          maxScore: rawMaxScore === null || rawMaxScore === undefined || rawMaxScore === ''
+            ? null
+            : Number(rawMaxScore),
+          description: item?.description?.trim() || '',
+          };
+        })
+        .filter((item) => item.criterion || item.description || item.maxScore !== null)
+      : [];
+
+    if (normalizedItems.length === 0) {
       return { criteria: [] };
     }
 
-    const lines = text.split('\n').map((line) => line.trim()).filter((line) => line.length > 0);
-    const criteria: AssignmentGradingCriterion[] = [];
-
-    for (let index = 0; index < lines.length; index += 1) {
-      const line = lines[index];
-      const [criterion, maxScoreText, ...descParts] = line.split('|').map((part) => part.trim());
-      if (!criterion || !maxScoreText) {
+    for (let index = 0; index < normalizedItems.length; index += 1) {
+      const item = normalizedItems[index];
+      if (!item.criterion) {
         return {
           criteria: [],
-          error: `Tiêu chí dòng ${index + 1} không hợp lệ. Định dạng đúng: Tên tiêu chí|max điểm|mô tả`,
+          error: `Tên tiêu chí ở dòng ${index + 1} không được để trống`,
         };
       }
 
-      const maxScore = Number(maxScoreText);
-      if (!Number.isFinite(maxScore) || maxScore < 0) {
+      if (item.maxScore === null || !Number.isFinite(item.maxScore) || item.maxScore <= 0) {
         return {
           criteria: [],
-          error: `Điểm tối đa ở dòng ${index + 1} không hợp lệ`,
+          error: `Điểm tối đa ở dòng ${index + 1} phải lớn hơn 0`,
         };
       }
 
       criteria.push({
-        criterion,
-        maxScore,
-        description: descParts.length > 0 ? descParts.join('|') : undefined,
+        criterion: item.criterion,
+        maxScore: item.maxScore,
+        description: item.description || undefined,
       });
     }
 

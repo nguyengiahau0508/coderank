@@ -176,6 +176,16 @@ const MAX_METADATA_FILES_FOR_GRADING = 1;
 const MAX_FILES_FOR_TRAVERSAL = 48;
 const MIN_FILES_BEFORE_EARLY_STOP = 2;
 const MIN_IMPLEMENTATION_FILES_BEFORE_EARLY_STOP = 1;
+const DOWNLOAD_REQUEST_TIMEOUT_MS = 25000;
+const LLM_REQUEST_TIMEOUT_MS = 45000;
+const OLLAMA_LLM_REQUEST_TIMEOUT_MS = 90000;
+const MAX_RETRY_ATTEMPTS = 3;
+const OLLAMA_MAX_RETRY_ATTEMPTS = 4;
+const RETRY_BASE_DELAY_MS = 350;
+const ZIP_LIST_MAX_BUFFER = 20 * 1024 * 1024;
+const MAX_CONCURRENT_SUBMISSION_GRADING = 3;
+const MAX_ADAPTIVE_DECISION_PARSE_FAILURES = 2;
+const MAX_FILES_FOR_OLLAMA_GRADING = 8;
 
 type SubmissionFileInfo = {
   fileId: string;
@@ -273,6 +283,8 @@ type LlmReadDecisionJson = {
   missingEvidence?: string[];
 };
 
+type LlmProvider = ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'];
+
 type InferredProjectContext = {
   projectType: string;
   keyDirectories: string[];
@@ -356,6 +368,76 @@ const toNumber = (value: unknown, fallback: number): number => {
     return value;
   }
   return fallback;
+};
+
+const wait = (delayMs: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, delayMs));
+
+const errorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+const withTimeout = async <T>(
+  operation: () => Promise<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T> => {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      operation(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  }
+};
+
+const isRetryableError = (error: unknown): boolean => {
+  const value = error as any;
+  const message = String(value?.message || '').toLowerCase();
+  const code = String(value?.code || '').toUpperCase();
+  const status = Number(value?.response?.status ?? value?.status ?? value?.status_code);
+
+  if (
+    [
+      'ETIMEDOUT',
+      'ECONNRESET',
+      'ECONNABORTED',
+      'EAI_AGAIN',
+      'ENOTFOUND',
+      'ECONNREFUSED',
+      'EPIPE',
+    ].includes(code)
+  ) {
+    return true;
+  }
+
+  if (Number.isFinite(status) && (status >= 500 || status === 429 || status === 408)) {
+    return true;
+  }
+
+  return (
+    message.includes('timeout') ||
+    message.includes('timed out') ||
+    message.includes('rate limit') ||
+    message.includes('temporarily unavailable') ||
+    message.includes('network') ||
+    message.includes('connection reset by peer') ||
+    message.includes('socket hang up') ||
+    message.includes('unexpected end of json input') ||
+    message.includes('read tcp')
+  );
+};
+
+const normalizeConfidenceValue = (value: number): number => {
+  const scaled = value > 1 && value <= 100 ? value / 100 : value;
+  return Number(clamp(scaled, 0, 1).toFixed(3));
 };
 
 const normalizeForSimilarity = (source: string): string =>
@@ -917,9 +999,17 @@ export class AssignmentSubmissionGrader {
     const rubric = normalizeRubric(payload.gradingCriteria, defaultMaxScore);
     const maxPossibleScore = rubric.reduce((sum, item) => sum + item.maxScore, 0);
 
-    const submissionsResponse = await client.get(
-      `/courses/${payload.courseId}/lessons/${payload.lessonId}/assignments/${payload.assignmentId}/submissions`,
-    );
+    const submissionsResponse = await this.executeWithRetry({
+      label: `fetch submissions for assignment ${payload.assignmentId}`,
+      timeoutMs: DOWNLOAD_REQUEST_TIMEOUT_MS,
+      operation: () =>
+        client.get(
+          `/courses/${payload.courseId}/lessons/${payload.lessonId}/assignments/${payload.assignmentId}/submissions`,
+          {
+            timeout: DOWNLOAD_REQUEST_TIMEOUT_MS,
+          },
+        ),
+    });
     const allSubmissions = unwrapApiData<CourseAssignmentSubmission[]>(submissionsResponse.data);
 
     if (!Array.isArray(allSubmissions) || allSubmissions.length === 0) {
@@ -968,14 +1058,23 @@ export class AssignmentSubmissionGrader {
 
     try {
       const preparedMap = new Map<string, SubmissionPreparedData>();
+      const preparationErrors = new Map<string, string>();
       for (const submission of poolSubmissions) {
-        const prepared = await this.prepareSubmissionData({
-          client,
-          payload,
-          submission,
-          tempRoot,
-        });
-        preparedMap.set(submission.id, prepared);
+        try {
+          const prepared = await this.prepareSubmissionData({
+            client,
+            payload,
+            submission,
+            tempRoot,
+          });
+          preparedMap.set(submission.id, prepared);
+        } catch (error: unknown) {
+          const message = errorMessage(error);
+          preparationErrors.set(submission.id, message);
+          console.log(
+            `[AssignmentSubmissionGrader] prepare failed for submission ${submission.id} (student ${submission.authorId}): ${message}`,
+          );
+        }
       }
       this.pruneCommonSimilarityTokens(preparedMap);
 
@@ -992,111 +1091,161 @@ export class AssignmentSubmissionGrader {
         payload.modelName,
         llmConfig,
       );
-      const provider = providerSelection.provider;
-      const providerName = providerSelection.actualType;
+      const defaultProviderName = providerSelection.actualType;
       const modelName = payload.modelName;
+      const maxConcurrencyForProvider =
+        defaultProviderName === 'ollama' ? 1 : MAX_CONCURRENT_SUBMISSION_GRADING;
 
-      const results: BatchGradeResult['results'] = [];
-      let flaggedCount = 0;
+      const gradingConcurrency = Math.min(
+        maxConcurrencyForProvider,
+        Math.max(1, targetSubmissions.length),
+      );
+      console.log(
+        `[AssignmentSubmissionGrader] grading ${targetSubmissions.length} submissions with concurrency=${gradingConcurrency}`,
+      );
 
-      for (const [submissionIndex, submission] of targetSubmissions.entries()) {
-        const prepared = preparedMap.get(submission.id);
-        if (!prepared) {
-          throw new Error(`Missing prepared data for submission ${submission.id}`);
-        }
+      const results = await this.mapWithConcurrencyLimit(
+        targetSubmissions,
+        gradingConcurrency,
+        async (submission, submissionIndex) => {
+          const prepared = preparedMap.get(submission.id);
+          if (!prepared) {
+            const preparationMessage =
+              preparationErrors.get(submission.id) ||
+              'No readable files were extracted from this submission';
+            const failedResult = {
+              rubricUsed: rubric,
+              criterionScores: [],
+              score: 0,
+              maxScore: maxPossibleScore,
+              percentageScore: 0,
+              feedback: `Submission preparation failed: ${preparationMessage}`,
+              strengths: [],
+              improvements: [],
+              confidence: 0,
+              evaluatedFileCount: 0,
+              generatedAt: new Date().toISOString(),
+              graderProvider: defaultProviderName,
+              graderModel: modelName,
+              error: preparationMessage,
+            };
 
-        console.log(
-          `[AssignmentSubmissionGrader] progress ${submissionIndex + 1}/${targetSubmissions.length} start grading submission ${submission.id} (student ${submission.authorId}, attempt ${submission.attemptNumber})`,
-        );
+            console.log(
+              `[AssignmentSubmissionGrader] skip grading submission ${submission.id} (student ${submission.authorId}) because prepare failed`,
+            );
 
-        const projectContext = await this.inferProjectContext({
-          provider,
-          payload,
-          prepared,
-        });
-        const selectedSnippets = await this.selectSnippetsForGrading({
-          provider,
-          payload,
-          rubric,
-          prepared,
-          projectContext,
-        });
+            return {
+              submissionId: submission.id,
+              status: submission.status || 'submitted',
+              feedback: failedResult.feedback,
+              isSimilarityFlagged: false,
+              maxSimilarityScore: undefined,
+              similarityMatches: [],
+              aiGradingResult: failedResult,
+            } satisfies BatchGradeResult['results'][number];
+          }
 
-        console.log(
-          `[AssignmentSubmissionGrader] projectType=${projectContext.projectType} source=${projectContext.source} selected ${selectedSnippets.length}/${prepared.snippets.length} files for grading submission ${submission.id} (student ${submission.authorId}):`,
-          selectedSnippets.map((item) => item.relativePath),
-        );
+          console.log(
+            `[AssignmentSubmissionGrader] progress ${submissionIndex + 1}/${targetSubmissions.length} start grading submission ${submission.id} (student ${submission.authorId}, attempt ${submission.attemptNumber})`,
+          );
 
-        const similarityMatches = this.computeSimilarityMatches(
-          submission.id,
-          preparedMap,
-          similarityThreshold,
-        );
-        const maxSimilarityScore = similarityMatches[0]?.similarity;
-        const isSimilarityFlagged = similarityMatches.length > 0;
-        if (isSimilarityFlagged) {
-          flaggedCount++;
-        }
+          const submissionProviderSelection = LLMFactory.createProviderWithFallback(
+            payload.provider,
+            payload.modelName,
+            llmConfig,
+          );
+          const provider = submissionProviderSelection.provider;
+          const providerName = submissionProviderSelection.actualType;
 
-        try {
-          const grading = await this.gradeSingleSubmission({
+          const projectContext = await this.inferProjectContext({
             provider,
-            providerName,
-            modelName,
+            payload,
+            prepared,
+          });
+          const selectedSnippets = await this.selectSnippetsForGrading({
+            provider,
             payload,
             rubric,
-            maxPossibleScore,
             prepared,
-            selectedSnippets,
-          });
-
-          results.push({
-            submissionId: submission.id,
-            status: 'graded',
-            score: grading.score,
-            feedback: grading.feedback,
-            isSimilarityFlagged,
-            maxSimilarityScore,
-            similarityMatches,
-            aiGradingResult: grading,
+            projectContext,
           });
 
           console.log(
-            `[AssignmentSubmissionGrader] completed grading submission ${submission.id} (student ${submission.authorId}) score=${grading.score}/${grading.maxScore}`,
+            `[AssignmentSubmissionGrader] projectType=${projectContext.projectType} source=${projectContext.source} selected ${selectedSnippets.length}/${prepared.snippets.length} files for grading submission ${submission.id} (student ${submission.authorId}):`,
+            selectedSnippets.map((item) => item.relativePath),
           );
-        } catch (error: any) {
-          const failedResult = {
-            rubricUsed: rubric,
-            criterionScores: [],
-            score: 0,
-            maxScore: maxPossibleScore,
-            percentageScore: 0,
-            feedback: `AI grading failed: ${error.message}`,
-            strengths: [],
-            improvements: [],
-            confidence: 0,
-            evaluatedFileCount: selectedSnippets.length,
-            generatedAt: new Date().toISOString(),
-            graderProvider: providerName,
-            graderModel: modelName,
-            error: error.message,
-          };
 
-          results.push({
-            submissionId: submission.id,
-            status: submission.status || 'submitted',
-            feedback: failedResult.feedback,
-            isSimilarityFlagged,
-            maxSimilarityScore,
-            similarityMatches,
-            aiGradingResult: failedResult,
-          });
-
-          console.log(
-            `[AssignmentSubmissionGrader] failed grading submission ${submission.id} (student ${submission.authorId}): ${error.message}`,
+          const similarityMatches = this.computeSimilarityMatches(
+            submission.id,
+            preparedMap,
+            similarityThreshold,
           );
-        }
-      }
+          const maxSimilarityScore = similarityMatches[0]?.similarity;
+          const isSimilarityFlagged = similarityMatches.length > 0;
+
+          try {
+            const grading = await this.gradeSingleSubmission({
+              provider,
+              providerName,
+              modelName,
+              payload,
+              rubric,
+              maxPossibleScore,
+              prepared,
+              selectedSnippets,
+            });
+
+            console.log(
+              `[AssignmentSubmissionGrader] completed grading submission ${submission.id} (student ${submission.authorId}) score=${grading.score}/${grading.maxScore}`,
+            );
+
+            return {
+              submissionId: submission.id,
+              status: 'graded',
+              score: grading.score,
+              feedback: grading.feedback,
+              isSimilarityFlagged,
+              maxSimilarityScore,
+              similarityMatches,
+              aiGradingResult: grading,
+            } satisfies BatchGradeResult['results'][number];
+          } catch (error: unknown) {
+            const message = errorMessage(error);
+            const failedResult = {
+              rubricUsed: rubric,
+              criterionScores: [],
+              score: 0,
+              maxScore: maxPossibleScore,
+              percentageScore: 0,
+              feedback: `AI grading failed: ${message}`,
+              strengths: [],
+              improvements: [],
+              confidence: 0,
+              evaluatedFileCount: selectedSnippets.length,
+              generatedAt: new Date().toISOString(),
+              graderProvider: providerName,
+              graderModel: modelName,
+              error: message,
+            };
+
+            console.log(
+              `[AssignmentSubmissionGrader] failed grading submission ${submission.id} (student ${submission.authorId}): ${message}`,
+            );
+
+            return {
+              submissionId: submission.id,
+              status: submission.status || 'submitted',
+              feedback: failedResult.feedback,
+              isSimilarityFlagged,
+              maxSimilarityScore,
+              similarityMatches,
+              aiGradingResult: failedResult,
+            } satisfies BatchGradeResult['results'][number];
+          }
+        },
+      );
+
+      const flaggedCount = results.filter((result) => result.isSimilarityFlagged).length;
 
       return {
         assignmentId: payload.assignmentId,
@@ -1109,8 +1258,256 @@ export class AssignmentSubmissionGrader {
     }
   }
 
+  private async executeWithRetry<T>(params: {
+    label: string;
+    timeoutMs: number;
+    operation: () => Promise<T>;
+    maxAttempts?: number;
+  }): Promise<T> {
+    const maxAttempts = Math.max(1, params.maxAttempts || MAX_RETRY_ATTEMPTS);
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await withTimeout(params.operation, params.timeoutMs, params.label);
+      } catch (error: unknown) {
+        lastError = error;
+        const canRetry = attempt < maxAttempts && isRetryableError(error);
+        if (!canRetry) {
+          throw error;
+        }
+
+        const nextAttempt = attempt + 1;
+        const delayMs = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+        console.log(
+          `[AssignmentSubmissionGrader] retry ${nextAttempt}/${maxAttempts} for ${params.label} after error: ${errorMessage(error)} (backoff=${delayMs}ms)`,
+        );
+        await wait(delayMs);
+      }
+    }
+
+    throw new Error(`${params.label} failed after ${maxAttempts} attempts: ${errorMessage(lastError)}`);
+  }
+
+  private async sendProviderMessageWithRetry(
+    provider: LlmProvider,
+    prompt: string,
+    label: string,
+    options?: {
+      timeoutMs?: number;
+      maxAttempts?: number;
+    },
+  ): Promise<Awaited<ReturnType<LlmProvider['sendMessage']>>> {
+    return this.executeWithRetry({
+      label: `llm request (${label})`,
+      timeoutMs: options?.timeoutMs || LLM_REQUEST_TIMEOUT_MS,
+      operation: () => provider.sendMessage(prompt),
+      maxAttempts: options?.maxAttempts,
+    });
+  }
+
+  private getLlmRequestOptions(providerName: LLMProviderType): {
+    timeoutMs: number;
+    maxAttempts: number;
+  } {
+    if (providerName === 'ollama') {
+      return {
+        timeoutMs: OLLAMA_LLM_REQUEST_TIMEOUT_MS,
+        maxAttempts: OLLAMA_MAX_RETRY_ATTEMPTS,
+      };
+    }
+
+    return {
+      timeoutMs: LLM_REQUEST_TIMEOUT_MS,
+      maxAttempts: MAX_RETRY_ATTEMPTS,
+    };
+  }
+
+  private async mapWithConcurrencyLimit<T, R>(
+    items: T[],
+    concurrency: number,
+    worker: (item: T, index: number) => Promise<R>,
+  ): Promise<R[]> {
+    if (items.length === 0) {
+      return [];
+    }
+
+    const results = new Array<R>(items.length);
+    const workerCount = Math.max(1, Math.min(concurrency, items.length));
+    let nextIndex = 0;
+
+    const consume = async (): Promise<void> => {
+      while (nextIndex < items.length) {
+        const currentIndex = nextIndex;
+        nextIndex += 1;
+        results[currentIndex] = await worker(items[currentIndex], currentIndex);
+      }
+    };
+
+    await Promise.all(Array.from({ length: workerCount }, () => consume()));
+    return results;
+  }
+
+  private validateGradingJsonPayload(payload: Record<string, unknown>): LlmGradeJson {
+    const validated: LlmGradeJson = {};
+
+    if (payload.criterionScores !== undefined) {
+      if (!Array.isArray(payload.criterionScores)) {
+        throw new Error('criterionScores must be an array');
+      }
+
+      validated.criterionScores = payload.criterionScores.map((item, index) => {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+          throw new Error(`criterionScores[${index}] must be an object`);
+        }
+        const criterion = (item as any).criterion;
+        const score = (item as any).score;
+        const feedback = (item as any).feedback;
+
+        if (typeof criterion !== 'string' || !criterion.trim()) {
+          throw new Error(`criterionScores[${index}].criterion must be a non-empty string`);
+        }
+        if (typeof score !== 'number' || !Number.isFinite(score)) {
+          throw new Error(`criterionScores[${index}].score must be a finite number`);
+        }
+        if (feedback !== undefined && typeof feedback !== 'string') {
+          throw new Error(`criterionScores[${index}].feedback must be a string when provided`);
+        }
+
+        return {
+          criterion: criterion.trim(),
+          score,
+          feedback: typeof feedback === 'string' ? feedback.trim() : undefined,
+        };
+      });
+    }
+
+    if (payload.totalScore !== undefined) {
+      if (typeof payload.totalScore !== 'number' || !Number.isFinite(payload.totalScore)) {
+        throw new Error('totalScore must be a finite number');
+      }
+      if (payload.totalScore < 0) {
+        throw new Error('totalScore must be >= 0');
+      }
+      validated.totalScore = payload.totalScore;
+    }
+
+    if (payload.feedback !== undefined) {
+      if (typeof payload.feedback !== 'string') {
+        throw new Error('feedback must be a string');
+      }
+      validated.feedback = payload.feedback;
+    }
+
+    if (payload.strengths !== undefined) {
+      if (!Array.isArray(payload.strengths) || payload.strengths.some((item) => typeof item !== 'string')) {
+        throw new Error('strengths must be an array of strings');
+      }
+      validated.strengths = payload.strengths;
+    }
+
+    if (payload.improvements !== undefined) {
+      if (
+        !Array.isArray(payload.improvements) ||
+        payload.improvements.some((item) => typeof item !== 'string')
+      ) {
+        throw new Error('improvements must be an array of strings');
+      }
+      validated.improvements = payload.improvements;
+    }
+
+    if (payload.confidence !== undefined) {
+      const rawConfidence =
+        typeof payload.confidence === 'number'
+          ? payload.confidence
+          : typeof payload.confidence === 'string'
+            ? Number(payload.confidence)
+            : NaN;
+      if (!Number.isFinite(rawConfidence)) {
+        throw new Error('confidence must be a finite number');
+      }
+      validated.confidence = normalizeConfidenceValue(rawConfidence);
+    }
+
+    if (Object.keys(validated).length === 0) {
+      throw new Error('Grading JSON contains no recognized fields');
+    }
+
+    return validated;
+  }
+
+  private validateReadDecisionPayload(payload: Record<string, unknown>): LlmReadDecisionJson {
+    const validated: LlmReadDecisionJson = {};
+
+    if (payload.needsMoreFiles === undefined) {
+      throw new Error('needsMoreFiles is required');
+    }
+    if (typeof payload.needsMoreFiles !== 'boolean') {
+      throw new Error('needsMoreFiles must be a boolean');
+    }
+    validated.needsMoreFiles = payload.needsMoreFiles;
+
+    if (payload.reason !== undefined) {
+      if (typeof payload.reason !== 'string') {
+        throw new Error('reason must be a string');
+      }
+      validated.reason = payload.reason;
+    }
+
+    if (payload.confidence !== undefined) {
+      const rawConfidence =
+        typeof payload.confidence === 'number'
+          ? payload.confidence
+          : typeof payload.confidence === 'string'
+            ? Number(payload.confidence)
+            : NaN;
+      if (!Number.isFinite(rawConfidence)) {
+        throw new Error('confidence must be a finite number');
+      }
+      validated.confidence = normalizeConfidenceValue(rawConfidence);
+    }
+
+    if (payload.missingEvidence !== undefined) {
+      if (
+        !Array.isArray(payload.missingEvidence) ||
+        payload.missingEvidence.some((item) => typeof item !== 'string')
+      ) {
+        throw new Error('missingEvidence must be an array of strings');
+      }
+      validated.missingEvidence = payload.missingEvidence;
+    }
+
+    return validated;
+  }
+
+  private async validateZipEntriesSafety(zipFilePath: string): Promise<void> {
+    const listing = await execFileAsync('unzip', ['-Z1', zipFilePath], {
+      maxBuffer: ZIP_LIST_MAX_BUFFER,
+      timeout: DOWNLOAD_REQUEST_TIMEOUT_MS,
+    });
+
+    const entries = listing.stdout
+      .split(/\r?\n/g)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+    for (const entry of entries) {
+      const normalized = path.posix.normalize(entry.replace(/\\/g, '/'));
+      if (!normalized || normalized === '.') {
+        continue;
+      }
+
+      const hasParentTraversal =
+        normalized === '..' || normalized.startsWith('../') || normalized.includes('/../');
+      const isAbsolute = path.posix.isAbsolute(normalized) || /^[a-zA-Z]:/.test(normalized);
+      if (hasParentTraversal || isAbsolute || normalized.includes('\u0000')) {
+        throw new Error(`Zip contains unsafe entry path: ${entry}`);
+      }
+    }
+  }
+
   private async inferProjectContext(params: {
-    provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'];
+    provider: LlmProvider;
     payload: GradeRequestPayload;
     prepared: SubmissionPreparedData;
   }): Promise<InferredProjectContext> {
@@ -1137,7 +1534,11 @@ export class AssignmentSubmissionGrader {
         `File paths: ${JSON.stringify(samplePaths)}`,
       ].join('\n\n');
 
-      const response = await provider.sendMessage(prompt);
+      const response = await this.sendProviderMessageWithRetry(
+        provider,
+        prompt,
+        `project context inference for submission ${prepared.submission.id}`,
+      );
       if (!response.text || response.toolCalls?.length) {
         return heuristic;
       }
@@ -1163,7 +1564,7 @@ export class AssignmentSubmissionGrader {
   }
 
   private async selectSnippetsForGrading(params: {
-    provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'];
+    provider: LlmProvider;
     payload: GradeRequestPayload;
     rubric: GradingCriterion[];
     prepared: SubmissionPreparedData;
@@ -1528,6 +1929,11 @@ export class AssignmentSubmissionGrader {
       addIfMissing(snippet);
     }
 
+    const preferredMetadataSnippets = this.getPreferredMetadataSnippets(
+      rankedSnippets,
+      projectContext,
+    );
+
     const implementationCandidates = rankedSnippets.filter((snippet) =>
       isImplementationPath(snippet.relativePath, projectContext),
     );
@@ -1557,6 +1963,13 @@ export class AssignmentSubmissionGrader {
       }
     }
 
+    for (const snippet of preferredMetadataSnippets) {
+      if (selected.filter((item) => item.isMetadata).length >= MAX_METADATA_FILES_FOR_GRADING) {
+        break;
+      }
+      addIfMissing(snippet);
+    }
+
     let metadataCount = selected.filter((snippet) => snippet.isMetadata).length;
     if (
       implementationCandidates.length > 0 &&
@@ -1572,9 +1985,27 @@ export class AssignmentSubmissionGrader {
       void metadataCount;
     }
 
-    for (const snippet of rankedSnippets) {
+    const highValueCandidates = rankedSnippets.filter(
+      (snippet) => !snippet.isMetadata && !isLikelyGeneratedPath(snippet.relativePath),
+    );
+    for (const snippet of highValueCandidates) {
       addIfMissing(snippet);
       if (selected.length >= MAX_FILES_FOR_AI_GRADING) break;
+    }
+
+    if (selected.filter((snippet) => snippet.isMetadata).length < MAX_METADATA_FILES_FOR_GRADING) {
+      for (const snippet of rankedSnippets) {
+        if (!snippet.isMetadata) continue;
+        addIfMissing(snippet);
+        break;
+      }
+    }
+
+    if (selected.length < MIN_FILES_BEFORE_EARLY_STOP) {
+      for (const snippet of rankedSnippets) {
+        addIfMissing(snippet);
+        if (selected.length >= MIN_FILES_BEFORE_EARLY_STOP) break;
+      }
     }
 
     if (
@@ -1586,9 +2017,15 @@ export class AssignmentSubmissionGrader {
         addIfMissing(snippet);
         if (selected.length >= MAX_FILES_FOR_AI_GRADING) break;
       }
-      for (const snippet of rankedSnippets) {
+      for (const snippet of highValueCandidates) {
         addIfMissing(snippet);
         if (selected.length >= MAX_FILES_FOR_AI_GRADING) break;
+      }
+      for (const snippet of preferredMetadataSnippets) {
+        if (selected.filter((item) => item.isMetadata).length >= MAX_METADATA_FILES_FOR_GRADING) {
+          break;
+        }
+        addIfMissing(snippet);
       }
     }
 
@@ -1599,8 +2036,65 @@ export class AssignmentSubmissionGrader {
     return selected.slice(0, MAX_FILES_FOR_AI_GRADING);
   }
 
+  private getPreferredMetadataSnippets(
+    rankedSnippets: SubmissionFileSnippet[],
+    projectContext: InferredProjectContext,
+  ): SubmissionFileSnippet[] {
+    const metadataSnippets = rankedSnippets.filter((snippet) => snippet.isMetadata);
+    if (metadataSnippets.length === 0) {
+      return [];
+    }
+
+    const preferredBasenames = this.getPreferredMetadataBasenames(projectContext.projectType);
+    const preferred: SubmissionFileSnippet[] = [];
+
+    for (const basename of preferredBasenames) {
+      const matched = metadataSnippets.find(
+        (snippet) => path.basename(normalizePathForMatch(snippet.relativePath)) === basename,
+      );
+      if (matched && !preferred.includes(matched)) {
+        preferred.push(matched);
+      }
+    }
+
+    if (preferred.length > 0) {
+      return preferred;
+    }
+
+    return metadataSnippets.slice(0, 1);
+  }
+
+  private getPreferredMetadataBasenames(projectType: string): string[] {
+    const type = (projectType || '').toLowerCase();
+    if (type === 'flutter') {
+      return ['pubspec.yaml', 'analysis_options.yaml', 'readme.md'];
+    }
+    if (type === 'angular' || type === 'nextjs' || type === 'node-web' || type === 'nestjs') {
+      return ['package.json', 'tsconfig.json', 'readme.md'];
+    }
+    if (type === 'python') {
+      return ['pyproject.toml', 'requirements.txt', 'readme.md'];
+    }
+    if (type === 'jvm') {
+      return ['pom.xml', 'build.gradle', 'readme.md'];
+    }
+    if (type === 'dotnet') {
+      return ['appsettings.json', 'readme.md'];
+    }
+    if (type === 'go') {
+      return ['go.mod', 'readme.md'];
+    }
+    if (type === 'rust') {
+      return ['cargo.toml', 'readme.md'];
+    }
+    if (type === 'php') {
+      return ['composer.json', 'readme.md'];
+    }
+    return ['readme.md', 'package.json', 'tsconfig.json'];
+  }
+
   private async gradeSingleSubmission(params: {
-    provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'];
+    provider: LlmProvider;
     providerName: LLMProviderType;
     modelName?: string;
     payload: GradeRequestPayload;
@@ -1622,6 +2116,7 @@ export class AssignmentSubmissionGrader {
 
     const adaptivelyReadSnippets = await this.readSnippetsAdaptively({
       provider,
+      providerName,
       payload,
       rubric,
       prepared,
@@ -1653,7 +2148,12 @@ export class AssignmentSubmissionGrader {
       `Submission content:\n${filesSection}`,
     ].join('\n\n');
 
-    const llmResponse = await provider.sendMessage(prompt);
+    const llmResponse = await this.sendProviderMessageWithRetry(
+      provider,
+      prompt,
+      `grade submission ${prepared.submission.id}`,
+      this.getLlmRequestOptions(providerName),
+    );
     if (!llmResponse.text) {
       throw new Error('LLM returned no text response for grading');
     }
@@ -1731,13 +2231,14 @@ export class AssignmentSubmissionGrader {
   }
 
   private async readSnippetsAdaptively(params: {
-    provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'];
+    provider: LlmProvider;
+    providerName: LLMProviderType;
     payload: GradeRequestPayload;
     rubric: GradingCriterion[];
     prepared: SubmissionPreparedData;
     selectedSnippets: SubmissionFileSnippet[];
   }): Promise<SubmissionFileSnippet[]> {
-    const { provider, payload, rubric, prepared, selectedSnippets } = params;
+    const { provider, providerName, payload, rubric, prepared, selectedSnippets } = params;
     if (selectedSnippets.length <= 1) {
       for (const [index, snippet] of selectedSnippets.entries()) {
         console.log(
@@ -1745,6 +2246,22 @@ export class AssignmentSubmissionGrader {
         );
       }
       return selectedSnippets;
+    }
+
+    if (providerName === 'ollama') {
+      const limitedSnippets = selectedSnippets.slice(
+        0,
+        Math.min(MAX_FILES_FOR_OLLAMA_GRADING, selectedSnippets.length),
+      );
+      console.log(
+        `[AssignmentSubmissionGrader] ollama mode: skip adaptive-read decisions and use top ${limitedSnippets.length}/${selectedSnippets.length} files for submission ${prepared.submission.id}`,
+      );
+      for (const [index, snippet] of limitedSnippets.entries()) {
+        console.log(
+          `[AssignmentSubmissionGrader] reading file ${index + 1}/${limitedSnippets.length} for submission ${prepared.submission.id} (student ${prepared.submission.authorId}): ${snippet.relativePath}`,
+        );
+      }
+      return limitedSnippets;
     }
 
     provider.init(ADAPTIVE_READING_SYSTEM_PROMPT, [], []);
@@ -1763,7 +2280,11 @@ export class AssignmentSubmissionGrader {
       'Acknowledge with STRICT JSON: {"ack":true}',
     ].join('\n\n');
 
-    const bootstrapResponse = await provider.sendMessage(bootstrapPrompt);
+    const bootstrapResponse = await this.sendProviderMessageWithRetry(
+      provider,
+      bootstrapPrompt,
+      `adaptive-read bootstrap for submission ${prepared.submission.id}`,
+    );
     if (!bootstrapResponse.text) {
       throw new Error('LLM returned no text response for adaptive reading bootstrap');
     }
@@ -1772,6 +2293,7 @@ export class AssignmentSubmissionGrader {
     }
 
     const readSnippets: SubmissionFileSnippet[] = [];
+    let decisionParseFailures = 0;
 
     for (const [index, snippet] of selectedSnippets.entries()) {
       console.log(
@@ -1783,6 +2305,13 @@ export class AssignmentSubmissionGrader {
       if (remainingCount === 0) {
         break;
       }
+
+      const implementationLikeCount = readSnippets.filter(
+        (item) => !item.isMetadata && !isLikelyGeneratedPath(item.relativePath),
+      ).length;
+      const meetsStopGuards =
+        readSnippets.length >= MIN_FILES_BEFORE_EARLY_STOP &&
+        implementationLikeCount >= MIN_IMPLEMENTATION_FILES_BEFORE_EARLY_STOP;
 
       const decisionPrompt = [
         `FILE ${index + 1}/${selectedSnippets.length}: ${snippet.relativePath}`,
@@ -1796,7 +2325,11 @@ export class AssignmentSubmissionGrader {
         '{"needsMoreFiles":boolean,"reason":"string","confidence":number,"missingEvidence":["string"]}',
       ].join('\n\n');
 
-      const decisionResponse = await provider.sendMessage(decisionPrompt);
+      const decisionResponse = await this.sendProviderMessageWithRetry(
+        provider,
+        decisionPrompt,
+        `adaptive-read decision ${index + 1}/${selectedSnippets.length} for submission ${prepared.submission.id}`,
+      );
       if (!decisionResponse.text) {
         console.log(
           `[AssignmentSubmissionGrader] adaptive-read decision missing text for submission ${prepared.submission.id}; continue reading`,
@@ -1810,20 +2343,22 @@ export class AssignmentSubmissionGrader {
       let decision: LlmReadDecisionJson;
       try {
         decision = await this.parseReadDecisionJsonWithRepair(provider, decisionResponse.text);
-      } catch (error: any) {
+        decisionParseFailures = 0;
+      } catch (error: unknown) {
+        decisionParseFailures += 1;
+        if (meetsStopGuards && decisionParseFailures >= MAX_ADAPTIVE_DECISION_PARSE_FAILURES) {
+          console.log(
+            `[AssignmentSubmissionGrader] adaptive-read stop for submission ${prepared.submission.id} after ${readSnippets.length}/${selectedSnippets.length} files due to repeated decision parse failures (${decisionParseFailures})`,
+          );
+          break;
+        }
         console.log(
-          `[AssignmentSubmissionGrader] adaptive-read decision parse failed for submission ${prepared.submission.id}: ${error.message}; continue reading`,
+          `[AssignmentSubmissionGrader] adaptive-read decision parse failed for submission ${prepared.submission.id}: ${errorMessage(error)}; continue reading`,
         );
         continue;
       }
 
       const needsMoreFiles = decision.needsMoreFiles !== false;
-      const implementationLikeCount = readSnippets.filter(
-        (item) => !item.isMetadata && !isLikelyGeneratedPath(item.relativePath),
-      ).length;
-      const meetsStopGuards =
-        readSnippets.length >= MIN_FILES_BEFORE_EARLY_STOP &&
-        implementationLikeCount >= MIN_IMPLEMENTATION_FILES_BEFORE_EARLY_STOP;
 
       if (!needsMoreFiles && meetsStopGuards) {
         console.log(
@@ -1844,12 +2379,12 @@ export class AssignmentSubmissionGrader {
   }
 
   private async parseGradingJsonWithRepair(
-    provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'],
+    provider: LlmProvider,
     rawResponse: string,
   ): Promise<LlmGradeJson> {
     try {
-      return extractAnyJsonObject(rawResponse) as LlmGradeJson;
-    } catch (initialError: any) {
+      return this.validateGradingJsonPayload(extractAnyJsonObject(rawResponse));
+    } catch (initialError: unknown) {
       const truncatedRaw =
         rawResponse.length > MAX_RAW_RESPONSE_CHARS_FOR_REPAIR
           ? `${rawResponse.slice(0, MAX_RAW_RESPONSE_CHARS_FOR_REPAIR)}\n... [truncated]`
@@ -1864,29 +2399,35 @@ export class AssignmentSubmissionGrader {
         truncatedRaw,
       ].join('\n\n');
 
-      const repairResponse = await provider.sendMessage(repairPrompt);
+      const repairResponse = await this.sendProviderMessageWithRetry(
+        provider,
+        repairPrompt,
+        'grading response repair',
+      );
       if (!repairResponse.text) {
-        throw new Error(`LLM grading response is not valid JSON: ${initialError.message}`);
+        throw new Error(
+          `LLM grading response is not valid JSON: ${errorMessage(initialError)}`,
+        );
       }
       if (repairResponse.toolCalls && repairResponse.toolCalls.length > 0) {
         throw new Error('Unexpected tool calls during grading response repair');
       }
 
       try {
-        return extractAnyJsonObject(repairResponse.text) as LlmGradeJson;
-      } catch {
-        throw new Error('LLM grading response is not valid JSON');
+        return this.validateGradingJsonPayload(extractAnyJsonObject(repairResponse.text));
+      } catch (repairError: unknown) {
+        throw new Error(`LLM grading response is not valid JSON: ${errorMessage(repairError)}`);
       }
     }
   }
 
   private async parseReadDecisionJsonWithRepair(
-    provider: ReturnType<typeof LLMFactory.createProviderWithFallback>['provider'],
+    provider: LlmProvider,
     rawResponse: string,
   ): Promise<LlmReadDecisionJson> {
     try {
-      return extractAnyJsonObject(rawResponse) as LlmReadDecisionJson;
-    } catch (initialError: any) {
+      return this.validateReadDecisionPayload(extractAnyJsonObject(rawResponse));
+    } catch (initialError: unknown) {
       const truncatedRaw =
         rawResponse.length > MAX_RAW_RESPONSE_CHARS_FOR_REPAIR
           ? `${rawResponse.slice(0, MAX_RAW_RESPONSE_CHARS_FOR_REPAIR)}\n... [truncated]`
@@ -1901,18 +2442,26 @@ export class AssignmentSubmissionGrader {
         truncatedRaw,
       ].join('\n\n');
 
-      const repairResponse = await provider.sendMessage(repairPrompt);
+      const repairResponse = await this.sendProviderMessageWithRetry(
+        provider,
+        repairPrompt,
+        'adaptive-read decision repair',
+      );
       if (!repairResponse.text) {
-        throw new Error(`LLM adaptive-read decision is not valid JSON: ${initialError.message}`);
+        throw new Error(
+          `LLM adaptive-read decision is not valid JSON: ${errorMessage(initialError)}`,
+        );
       }
       if (repairResponse.toolCalls && repairResponse.toolCalls.length > 0) {
         throw new Error('Unexpected tool calls during adaptive-read decision repair');
       }
 
       try {
-        return extractAnyJsonObject(repairResponse.text) as LlmReadDecisionJson;
-      } catch {
-        throw new Error('LLM adaptive-read decision is not valid JSON');
+        return this.validateReadDecisionPayload(extractAnyJsonObject(repairResponse.text));
+      } catch (repairError: unknown) {
+        throw new Error(
+          `LLM adaptive-read decision is not valid JSON: ${errorMessage(repairError)}`,
+        );
       }
     }
   }
@@ -1934,13 +2483,19 @@ export class AssignmentSubmissionGrader {
       const localFileName = `${i}-${safeFileName(file.fileName || `file-${i}`)}`;
       const localFilePath = path.join(submissionDir, localFileName);
 
-      const response = await client.get(
-        `/courses/${payload.courseId}/lessons/${payload.lessonId}/assignments/${payload.assignmentId}/submissions/${submission.id}/download`,
-        {
-          params: { fileIndex: i },
-          responseType: 'arraybuffer',
-        },
-      );
+      const response = await this.executeWithRetry({
+        label: `download submission ${submission.id} file ${i + 1}`,
+        timeoutMs: DOWNLOAD_REQUEST_TIMEOUT_MS,
+        operation: () =>
+          client.get(
+            `/courses/${payload.courseId}/lessons/${payload.lessonId}/assignments/${payload.assignmentId}/submissions/${submission.id}/download`,
+            {
+              params: { fileIndex: i },
+              responseType: 'arraybuffer',
+              timeout: DOWNLOAD_REQUEST_TIMEOUT_MS,
+            },
+          ),
+      });
 
       await fs.writeFile(localFilePath, Buffer.from(response.data));
 
@@ -1948,12 +2503,14 @@ export class AssignmentSubmissionGrader {
         const unzipTarget = path.join(submissionDir, `unzipped-${i}`);
         await fs.mkdir(unzipTarget, { recursive: true });
         try {
+          await this.validateZipEntriesSafety(localFilePath);
           await execFileAsync('unzip', ['-oq', localFilePath, '-d', unzipTarget], {
             maxBuffer: 10 * 1024 * 1024,
+            timeout: DOWNLOAD_REQUEST_TIMEOUT_MS,
           });
           extractedRoots.push(unzipTarget);
-        } catch (error: any) {
-          throw new Error(`Unable to extract zip file "${file.fileName}": ${error.message}`);
+        } catch (error: unknown) {
+          throw new Error(`Unable to extract zip file "${file.fileName}": ${errorMessage(error)}`);
         }
       } else {
         extractedRoots.push(localFilePath);
