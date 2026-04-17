@@ -2,6 +2,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { spawn } from 'child_process';
 import * as fs from 'fs/promises';
+import * as os from 'os';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import { ProgrammingLanguageEnum } from 'src/common/enums/enums';
@@ -11,7 +12,12 @@ import { RunResultDto, RunStatusEnum } from '../dto/run-result.dto';
 @Injectable()
 export class RunnerService {
   private readonly logger = new Logger(RunnerService.name);
-  private readonly WORKDIR = '/tmp/coderank'; // đổi sang docker volume nếu production
+  private readonly WORKDIR = path.join(os.tmpdir(), 'coderank');
+  private readonly DOCKER_BIN = process.env.CODERANK_DOCKER_BIN || 'docker';
+  private readonly PYTHON_IMAGE =
+    process.env.CODERANK_RUNNER_PYTHON_IMAGE || 'python:3.12-alpine';
+  private readonly CPP_IMAGE =
+    process.env.CODERANK_RUNNER_CPP_IMAGE || 'gcc:14';
 
   async runCode(dto: RunCodeDto) {
     const id = randomUUID();
@@ -23,6 +29,7 @@ export class RunnerService {
 
     let execCmd: string;
     let compileCmd: string | null = null;
+    let runtimeImage: string;
 
     // -------- Handle language ----------
     switch (dto.language) {
@@ -30,6 +37,7 @@ export class RunnerService {
         const file = path.join(dir, 'main.py');
         await fs.writeFile(file, dto.code);
         execCmd = `python3 main.py`;
+        runtimeImage = this.PYTHON_IMAGE;
         break;
       }
 
@@ -39,6 +47,7 @@ export class RunnerService {
         await fs.writeFile(file, dto.code);
         compileCmd = `g++ main.cpp -O2 -std=c++17 -o main.out`;
         execCmd = `./main.out`;
+        runtimeImage = this.CPP_IMAGE;
         break;
       }
 
@@ -47,46 +56,80 @@ export class RunnerService {
       }
     }
 
-    // -------- Compile ----------
-    if (compileCmd) {
-      const compileRes = await this.execSandbox(
-        compileCmd,
+    try {
+      // -------- Compile ----------
+      if (compileCmd) {
+        const compileRes = await this.execSandbox(
+          compileCmd,
+          runtimeImage,
+          dir,
+          '',
+          timeLimit,
+          memoryLimit,
+        );
+
+        if (compileRes.status !== RunStatusEnum.OK) {
+          if (
+            compileRes.status === RunStatusEnum.TLE ||
+            compileRes.status === RunStatusEnum.MLE
+          ) {
+            return compileRes;
+          }
+
+          return { ...compileRes, status: RunStatusEnum.CE };
+        }
+      }
+
+      // -------- Run ----------
+      return this.execSandbox(
+        execCmd,
+        runtimeImage,
         dir,
-        '',
+        dto.input ?? '',
         timeLimit,
         memoryLimit,
       );
-      if (compileRes.status !== RunStatusEnum.OK) {
-        return { ...compileRes, status: RunStatusEnum.CE };
-      }
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true }).catch((error) => {
+        this.logger.warn(`failed to cleanup workdir ${dir}: ${String(error)}`);
+      });
     }
-
-    // -------- Run ----------
-    return this.execSandbox(execCmd, dir, dto.input, timeLimit, memoryLimit);
   }
 
   private execSandbox(
     cmd: string,
+    image: string,
     cwd: string,
     input: string,
     timeLimit: number,
     memoryLimit: number,
   ): Promise<RunResultDto> {
     return new Promise((resolve) => {
-      const firejailCmd = [
-        'firejail',
-        '--quiet',
-        '--net=none',
-        `--private=${cwd}`,
-        `--rlimit-as=${memoryLimit * 1024 * 1024}`,
-        '--',
-        'bash',
-        '-c',
+      const containerName = `coderank-run-${randomUUID()}`;
+      const dockerCmd = [
+        'run',
+        '--rm',
+        '--name',
+        containerName,
+        '--network',
+        'none',
+        '--cpus',
+        '1',
+        '--memory',
+        `${memoryLimit}m`,
+        '--pids-limit',
+        '128',
+        '--workdir',
+        '/workspace',
+        '--mount',
+        `type=bind,src=${cwd},dst=/workspace`,
+        image,
+        'sh',
+        '-lc',
         cmd,
       ];
 
-      const proc = spawn(firejailCmd[0], firejailCmd.slice(1), {
-        cwd,
+      const proc = spawn(this.DOCKER_BIN, dockerCmd, {
         stdio: 'pipe',
       });
 
@@ -95,19 +138,58 @@ export class RunnerService {
       let killedByTimeout = false;
       let stdoutFirstSeen = false;
       let stderrFirstSeen = false;
+      let settled = false;
+      let timeout: NodeJS.Timeout | null = null;
       let killTimer: NodeJS.Timeout | null = null;
 
       const start = Date.now();
       this.logger.debug(
-        `spawned pid=${proc.pid} cmd=${firejailCmd.join(' ')} start=${start}`,
+        `spawned pid=${proc.pid} cmd=${this.DOCKER_BIN} ${dockerCmd.join(' ')} start=${start}`,
       );
 
-      const inputToWrite = input.endsWith('\n') ? input : input + '\n';
-      proc.stdin.write(inputToWrite);
+      const finalize = (result: RunResultDto) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+        if (killTimer) {
+          clearTimeout(killTimer);
+        }
+        resolve(result);
+      };
+
+      proc.on('error', (error: NodeJS.ErrnoException) => {
+        const message =
+          error.code === 'ENOENT'
+            ? `Docker CLI "${this.DOCKER_BIN}" was not found. Install Docker Desktop/Engine and ensure Docker is on PATH.`
+            : `Failed to start sandbox process: ${String(error)}`;
+
+        this.logger.error(message);
+        finalize({
+          status: RunStatusEnum.RE,
+          stdout,
+          stderr: `${stderr}${stderr ? '\n' : ''}${message}`,
+          time: Date.now() - start,
+          memory: 0,
+        });
+      });
+
+      if (input.length > 0) {
+        const inputToWrite = input.endsWith('\n') ? input : `${input}\n`;
+        try {
+          proc.stdin.write(inputToWrite);
+          this.logger.debug(
+            `stdin written len=${inputToWrite.length} (was ${input.length})`,
+          );
+        } catch (error) {
+          this.logger.debug(`failed to write stdin: ${String(error)}`);
+        }
+      }
       proc.stdin.end();
-      this.logger.debug(
-        `stdin written len=${inputToWrite.length} (was ${input.length})`,
-      );
 
       proc.stdout.on('data', (d: Buffer) => {
         if (!stdoutFirstSeen) {
@@ -136,11 +218,13 @@ export class RunnerService {
         );
       });
 
-      const timeout = setTimeout(() => {
+      timeout = setTimeout(() => {
         killedByTimeout = true;
         this.logger.debug(
-          `timeout triggered after ${timeLimit}ms, sending SIGTERM to pid=${proc.pid}`,
+          `timeout triggered after ${timeLimit}ms, terminating container ${containerName}`,
         );
+
+        this.killContainer(containerName);
         try {
           proc.kill('SIGTERM');
         } catch (e) {
@@ -150,6 +234,7 @@ export class RunnerService {
         // If still alive after short grace period, force kill
         killTimer = setTimeout(() => {
           this.logger.debug(`force killing pid=${proc.pid} with SIGKILL`);
+          this.killContainer(containerName);
           try {
             proc.kill('SIGKILL');
           } catch (e) {
@@ -159,17 +244,13 @@ export class RunnerService {
       }, timeLimit);
 
       proc.on('close', (code) => {
-        clearTimeout(timeout);
-        if (killTimer) {
-          clearTimeout(killTimer);
-        }
         const time = Date.now() - start;
         this.logger.debug(
           `close code=${code} killedByTimeout=${killedByTimeout} totalTime=${time}ms`,
         );
 
         if (killedByTimeout) {
-          return resolve({
+          return finalize({
             status: RunStatusEnum.TLE,
             stdout,
             stderr,
@@ -178,8 +259,18 @@ export class RunnerService {
           });
         }
 
+        if (code === 137) {
+          return finalize({
+            status: RunStatusEnum.MLE,
+            stdout,
+            stderr,
+            time,
+            memory: 0,
+          });
+        }
+
         if (code !== 0) {
-          return resolve({
+          return finalize({
             status: RunStatusEnum.RE,
             stdout,
             stderr,
@@ -188,8 +279,16 @@ export class RunnerService {
           });
         }
 
-        resolve({ status: RunStatusEnum.OK, stdout, stderr, time, memory: 0 });
+        finalize({ status: RunStatusEnum.OK, stdout, stderr, time, memory: 0 });
       });
     });
+  }
+
+  private killContainer(containerName: string): void {
+    const killer = spawn(this.DOCKER_BIN, ['kill', containerName], {
+      stdio: 'ignore',
+    });
+
+    killer.on('error', () => undefined);
   }
 }
