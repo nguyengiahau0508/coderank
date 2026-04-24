@@ -18,16 +18,24 @@ export class RunnerService {
     process.env.CODERANK_RUNNER_PYTHON_IMAGE || 'python:3.12-alpine';
   private readonly CPP_IMAGE =
     process.env.CODERANK_RUNNER_CPP_IMAGE || 'gcc:14';
+  private readonly COMPILE_TIMEOUT_MS =
+    Number(process.env.CODERANK_RUNNER_COMPILE_TIMEOUT_MS) || 15000;
+  private readonly IMAGE_PULL_TIMEOUT_MS =
+    Number(process.env.CODERANK_RUNNER_IMAGE_PULL_TIMEOUT_MS) || 180000;
+  private readonly readyImages = new Set<string>();
+  private readonly imagePreparationTasks = new Map<string, Promise<void>>();
 
   async runCode(dto: RunCodeDto) {
     const id = randomUUID();
     const dir = path.join(this.WORKDIR, id);
     await fs.mkdir(dir, { recursive: true });
+    const start = Date.now();
 
     const timeLimit = dto.timeLimit ?? 2000;
     const memoryLimit = dto.memoryLimit ?? 256; // MB
 
     let execCmd: string;
+    let fallbackExecCmd: string | null = null;
     let compileCmd: string | null = null;
     let runtimeImage: string;
 
@@ -47,6 +55,9 @@ export class RunnerService {
         await fs.writeFile(file, dto.code);
         compileCmd = `g++ main.cpp -O2 -std=c++17 -o main.out`;
         execCmd = `./main.out`;
+        // Some Docker Desktop + Windows bind-mount setups can lose executables
+        // between separate containers; keep a single-container fallback.
+        fallbackExecCmd = `${compileCmd} && ${execCmd}`;
         runtimeImage = this.CPP_IMAGE;
         break;
       }
@@ -57,14 +68,17 @@ export class RunnerService {
     }
 
     try {
+      await this.ensureImageReady(runtimeImage);
+
       // -------- Compile ----------
       if (compileCmd) {
+        const compileTimeLimit = Math.max(timeLimit, this.COMPILE_TIMEOUT_MS);
         const compileRes = await this.execSandbox(
           compileCmd,
           runtimeImage,
           dir,
           '',
-          timeLimit,
+          compileTimeLimit,
           memoryLimit,
         );
 
@@ -81,7 +95,7 @@ export class RunnerService {
       }
 
       // -------- Run ----------
-      return this.execSandbox(
+      const runRes = await this.execSandbox(
         execCmd,
         runtimeImage,
         dir,
@@ -89,11 +103,152 @@ export class RunnerService {
         timeLimit,
         memoryLimit,
       );
+
+      const missingExecutableOnRun =
+        runRes.status === RunStatusEnum.RE &&
+        /\.\/main\.out:\s+not\s+found/i.test(runRes.stderr ?? '');
+
+      if (fallbackExecCmd && missingExecutableOnRun) {
+        this.logger.warn(
+          'Detected missing main.out after compile; retrying C++ run in a single container.',
+        );
+
+        return this.execSandbox(
+          fallbackExecCmd,
+          runtimeImage,
+          dir,
+          dto.input ?? '',
+          timeLimit,
+          memoryLimit,
+        );
+      }
+
+      return runRes;
+    } catch (error: any) {
+      const details = String(error?.message ?? error ?? 'Unknown runner error');
+      this.logger.error(`runCode failed: ${details}`);
+      return {
+        status: RunStatusEnum.RE,
+        stdout: '',
+        stderr: details,
+        time: Date.now() - start,
+        memory: 0,
+      };
     } finally {
       await fs.rm(dir, { recursive: true, force: true }).catch((error) => {
         this.logger.warn(`failed to cleanup workdir ${dir}: ${String(error)}`);
       });
     }
+  }
+
+  private async ensureImageReady(image: string): Promise<void> {
+    if (this.readyImages.has(image)) {
+      return;
+    }
+
+    const inFlight = this.imagePreparationTasks.get(image);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    const task = this.prepareImage(image).finally(() => {
+      this.imagePreparationTasks.delete(image);
+    });
+
+    this.imagePreparationTasks.set(image, task);
+    return task;
+  }
+
+  private async prepareImage(image: string): Promise<void> {
+    const inspect = await this.runDockerCommand(
+      ['image', 'inspect', image],
+      15000,
+    );
+
+    if (inspect.code === 0) {
+      this.readyImages.add(image);
+      return;
+    }
+
+    this.logger.log(
+      `Docker image ${image} not found locally, pulling before execution...`,
+    );
+
+    const pull = await this.runDockerCommand(
+      ['pull', image],
+      this.IMAGE_PULL_TIMEOUT_MS,
+    );
+
+    if (pull.code !== 0) {
+      const detail = pull.stderr || pull.stdout || 'unknown pull error';
+      throw new Error(`Failed to pull Docker image ${image}: ${detail}`);
+    }
+
+    this.readyImages.add(image);
+    this.logger.log(`Docker image ${image} is ready.`);
+  }
+
+  private runDockerCommand(
+    args: string[],
+    timeoutMs: number,
+  ): Promise<{ code: number | null; stdout: string; stderr: string }> {
+    return new Promise((resolve) => {
+      const proc = spawn(this.DOCKER_BIN, args, {
+        stdio: 'pipe',
+      });
+
+      let stdout = '';
+      let stderr = '';
+      let finished = false;
+
+      const finish = (code: number | null) => {
+        if (finished) {
+          return;
+        }
+
+        finished = true;
+        resolve({ code, stdout, stderr });
+      };
+
+      const timer = setTimeout(() => {
+        try {
+          proc.kill('SIGTERM');
+        } catch {
+          // ignore
+        }
+
+        setTimeout(() => {
+          try {
+            proc.kill('SIGKILL');
+          } catch {
+            // ignore
+          }
+        }, 300);
+      }, timeoutMs);
+
+      proc.stdout.on('data', (chunk: Buffer) => {
+        stdout += chunk.toString();
+      });
+
+      proc.stderr.on('data', (chunk: Buffer) => {
+        stderr += chunk.toString();
+      });
+
+      proc.on('error', (error: NodeJS.ErrnoException) => {
+        clearTimeout(timer);
+        const message =
+          error.code === 'ENOENT'
+            ? `Docker CLI "${this.DOCKER_BIN}" was not found.`
+            : String(error);
+        stderr = `${stderr}${stderr ? '\n' : ''}${message}`;
+        finish(1);
+      });
+
+      proc.on('close', (code) => {
+        clearTimeout(timer);
+        finish(code);
+      });
+    });
   }
 
   private execSandbox(
@@ -109,6 +264,7 @@ export class RunnerService {
       const dockerCmd = [
         'run',
         '--rm',
+        '-i',
         '--name',
         containerName,
         '--network',

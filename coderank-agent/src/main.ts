@@ -162,6 +162,10 @@ app.post(
   },
 );
 
+console.log("START FILE");
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[CodeRank Agent] Running on port ${PORT}`);
 });
+
+console.log("END FILE");

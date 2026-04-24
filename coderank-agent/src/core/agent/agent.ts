@@ -147,24 +147,57 @@ export class Agent {
     await new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  private getLlmErrorMetadata(error: any): { status: number; message: string } {
+    const rawStatus = error?.status_code ?? error?.status ?? error?.response?.status;
+    const status = Number.isFinite(Number(rawStatus)) ? Number(rawStatus) : 0;
+
+    const messageParts = [
+      error?.message,
+      error?.error,
+      error?.response?.data?.error?.message,
+      error?.response?.statusText,
+    ].filter((part): part is string => typeof part === 'string' && part.trim().length > 0);
+
+    return {
+      status,
+      message: messageParts.join(' | ').toLowerCase(),
+    };
+  }
+
   private isRetryableLlmError(error: any): boolean {
-    const status = error?.status_code ?? error?.status;
-    const msg = String(error?.message ?? error?.error ?? '');
-    return status === 503 || msg.includes('Service Temporarily Unavailable');
+    const { status, message } = this.getLlmErrorMetadata(error);
+
+    if ([408, 429, 500, 502, 503, 504].includes(status)) {
+      return true;
+    }
+
+    return (
+      message.includes('service temporarily unavailable') ||
+      message.includes('temporarily unavailable') ||
+      message.includes('internal server error') ||
+      message.includes('timeout') ||
+      message.includes('timed out') ||
+      message.includes('rate limit') ||
+      message.includes('try again later') ||
+      message.includes('overloaded') ||
+      message.includes('fetch failed') ||
+      message.includes('connection reset') ||
+      message.includes('econnreset') ||
+      message.includes('socket hang up')
+    );
   }
 
   private isProviderAuthError(error: any): boolean {
-    const status = Number(error?.status_code ?? error?.status ?? 0);
-    const msg = String(error?.message ?? error?.error ?? '').toLowerCase();
+    const { status, message } = this.getLlmErrorMetadata(error);
 
     const hasAuthKeyword =
-      msg.includes('api key not valid') ||
-      msg.includes('api_key_invalid') ||
-      msg.includes('invalid api key') ||
-      msg.includes('authentication failed') ||
-      msg.includes('unauthorized') ||
-      msg.includes('invalid token') ||
-      msg.includes('forbidden');
+      message.includes('api key not valid') ||
+      message.includes('api_key_invalid') ||
+      message.includes('invalid api key') ||
+      message.includes('authentication failed') ||
+      message.includes('unauthorized') ||
+      message.includes('invalid token') ||
+      message.includes('forbidden');
 
     return status === 401 || status === 403 || hasAuthKeyword;
   }
@@ -233,12 +266,14 @@ export class Agent {
       } catch (error: any) {
         const retryable = this.isRetryableLlmError(error);
         const canRetry = retryable && retryAttempt < this.LLM_RETRY_ATTEMPTS;
+        const { status, message: normalizedMessage } = this.getLlmErrorMetadata(error);
+        const shortMessage = normalizedMessage ? normalizedMessage.slice(0, 180) : 'unknown error';
 
         if (canRetry) {
           const delay = this.LLM_RETRY_BASE_DELAY_MS * (retryAttempt + 1);
           retryAttempt += 1;
           console.warn(
-            `${logPrefix}:LLMRetry] Service unavailable (attempt ${retryAttempt}/${this.LLM_RETRY_ATTEMPTS + 1}). Retrying in ${delay}ms...`,
+            `${logPrefix}:LLMRetry] Transient provider error (status=${status || 'n/a'}, attempt ${retryAttempt}/${this.LLM_RETRY_ATTEMPTS + 1}): ${shortMessage}. Retrying in ${delay}ms...`,
           );
           if (onEvent) {
             onEvent({ type: 'status', content: 'LLM tạm thời quá tải, đang thử lại...' });

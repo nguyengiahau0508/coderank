@@ -1,6 +1,6 @@
 import { Ollama, Message, Tool } from 'ollama';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { ILLMProvider, LLMResponse, ChatMessage, ILLMConfig, ConversationHistoryMessage } from '../llm.interface';
+import { ILLMProvider, LLMResponse, ILLMConfig, ConversationHistoryMessage } from '../llm.interface';
 import { ITool } from '../../tools/tool.interface';
 import { config } from '../../../config';
 import { ContextWindowPolicy, trimHistoryToBudget } from '../../context-window';
@@ -53,6 +53,8 @@ export class OllamaProvider implements ILLMProvider {
   }
 
   async sendMessage(message: any): Promise<LLMResponse> {
+    const historyBeforeRequest = [...this.history];
+
     // Determine the role and content to append to history
     if (typeof message === 'string') {
       this.history.push({ role: 'user', content: message });
@@ -116,8 +118,13 @@ export class OllamaProvider implements ILLMProvider {
         text: response.message.content,
         usage,
       };
-    } catch (error) {
-      console.error(`[Ollama Error]`, error);
+    } catch (error: any) {
+      // Keep provider state consistent across retries.
+      this.history = historyBeforeRequest;
+
+      const status = error?.status_code ?? error?.status ?? error?.response?.status;
+      const errorMessage = String(error?.message ?? error?.error ?? 'unknown error');
+      console.error(`[Ollama Error] status=${status ?? 'n/a'} message=${errorMessage}`, error);
       throw error;
     }
   }
