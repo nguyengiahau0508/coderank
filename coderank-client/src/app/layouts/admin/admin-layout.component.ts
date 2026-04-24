@@ -16,39 +16,19 @@ export class AdminLayoutComponent {
       route: '/admin/dashboard'
     },
     {
-      label: 'User Management',
-      icon: 'pi pi-users',
-      route: '/admin/users'
-    },
-    {
-      label: 'Courses',
+      label: 'Course',
       icon: 'pi pi-book',
       route: '/admin/courses'
     },
     {
-      label: 'Problems',
+      label: 'Problem',
       icon: 'pi pi-code',
       route: '/admin/problems'
     },
     {
-      label: 'Contests',
+      label: 'Contest',
       icon: 'pi pi-trophy',
       route: '/admin/contests'
-    },
-    {
-      label: 'Reports',
-      icon: 'pi pi-chart-bar',
-      route: '/admin/reports'
-    },
-    {
-      label: 'System Logs',
-      icon: 'pi pi-file-edit',
-      route: '/admin/logs'
-    },
-    {
-      label: 'Settings',
-      icon: 'pi pi-cog',
-      route: '/admin/settings'
     }
   ];
 }

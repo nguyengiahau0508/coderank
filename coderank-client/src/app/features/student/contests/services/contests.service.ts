@@ -53,6 +53,10 @@ export class StudentContestsService {
     return this.contestsApi.getContestParticipants(contestId);
   }
 
+  getMyParticipation(contestId: string): Observable<ApiResponse<ContestParticipantsModel | null>> {
+    return this.contestsApi.getMyContestParticipation(contestId);
+  }
+
   submitSolution(contestId: string, problemId: string, dto: CreateContestSubmissionDto): Observable<ApiResponse<ContestSubmissionsModel>> {
     return this.contestsApi.submitContestSolution(contestId, problemId, dto);
   }

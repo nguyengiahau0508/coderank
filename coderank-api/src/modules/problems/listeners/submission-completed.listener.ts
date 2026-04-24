@@ -18,6 +18,10 @@ export class SubmissionCompletedListener {
 
   @OnEvent('submission.completed')
   async handleSubmissionCompleted(event: SubmissionCompletedEvent) {
+    if (event.source !== 'problem') {
+      return;
+    }
+
     this.logger.log(
       `Handling submission completed event for submission ${event.submissionId}`,
     );

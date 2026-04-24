@@ -37,6 +37,41 @@ export class ContestParticipantsEntity extends BaseEntity {
   solvedProblems: number; // Số bài đã giải
 
   @ApiPropertyOptional({
+    description: 'Snapshot of Elo before contest rating update',
+    example: 1400,
+  })
+  @Column({ type: 'int', nullable: true })
+  oldRating?: number;
+
+  @ApiPropertyOptional({
+    description: 'Expected performance indicator used by Elo formula',
+    example: 2.3456,
+  })
+  @Column({ type: 'decimal', precision: 10, scale: 4, nullable: true })
+  expectedPerformanceIndicator?: number;
+
+  @ApiPropertyOptional({
+    description: 'Actual rank used by Elo formula',
+    example: 3,
+  })
+  @Column({ type: 'int', nullable: true })
+  actualRank?: number;
+
+  @ApiPropertyOptional({
+    description: 'Elo delta after contest rating update',
+    example: 12.34,
+  })
+  @Column({ type: 'decimal', precision: 10, scale: 4, nullable: true })
+  ratingDelta?: number;
+
+  @ApiPropertyOptional({
+    description: 'Snapshot of Elo after contest rating update',
+    example: 1412,
+  })
+  @Column({ type: 'int', nullable: true })
+  newRating?: number;
+
+  @ApiPropertyOptional({
     description: 'Penalty time in minutes (ACM format)',
     example: 0,
   })

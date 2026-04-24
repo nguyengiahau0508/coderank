@@ -76,7 +76,24 @@
           />
         }
       </div>
-    } @else if (!isJoined() && !joining() && contest()?.isPublic === false && contest()?.status !== 'ended' && contest()?.status !== 'draft') {
+    } @else if (canJoin() && contest()?.isPublic) {
+      <div class="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4 flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+          <i class="pi pi-user-plus text-blue-500"></i>
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-blue-700 dark:text-blue-400">Bạn chưa đăng ký cuộc thi này</p>
+          <p class="text-xs text-blue-500">Đăng ký ngay để nộp bài và lên bảng xếp hạng</p>
+        </div>
+        <p-button
+          label="Đăng ký thi"
+          icon="pi pi-sign-in"
+          (onClick)="joinContest()"
+          [loading]="joining()"
+          styleClass="whitespace-nowrap"
+        />
+      </div>
+    } @else if (canJoin() && contest()?.isPublic === false) {
       <div class="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20 p-4 flex items-center gap-4">
         <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
           <i class="pi pi-lock text-orange-500"></i>
@@ -98,51 +115,505 @@
     <!-- Problem Detail View -->
     @if (selectedProblem(); as sp) {
       <div class="space-y-4">
-        <div class="flex items-center gap-3">
-          <button
-            class="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-900 dark:hover:text-surface-0 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
-            (click)="backToProblems()"
-          >
-            <i class="pi pi-arrow-left"></i>
-          </button>
-          <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-0">
-            <span class="text-primary mr-2">{{ sp.label || 'P' }}</span>
-            {{ sp.problem?.title || sp.problemId }}
-          </h2>
-          @if (sp.problem?.difficulty) {
-            <p-tag [value]="getDifficultyLabel(sp.problem?.difficulty)" [severity]="getDifficultySeverity(sp.problem?.difficulty)" styleClass="text-xs" />
-          }
-          <p-tag [value]="sp.points + ' điểm'" severity="info" styleClass="text-xs" />
-        </div>
+        <section
+          class="rounded-2xl p-5 sm:p-6"
+          style="background: linear-gradient(135deg, color-mix(in srgb, var(--cr-accent-blue) 14%, var(--cr-bg-secondary)) 0%, var(--cr-bg-secondary) 72%); border: 1px solid var(--cr-border);"
+        >
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div class="space-y-2 min-w-0">
+              <button
+                type="button"
+                (click)="backToProblems()"
+                class="inline-flex items-center gap-1.5 text-xs font-medium transition-colors hover:opacity-80"
+                style="color: var(--cr-text-subtle);"
+              >
+                <i class="pi pi-arrow-left text-[10px]"></i>
+                Danh sách bài trong contest
+              </button>
+              <h2 class="text-2xl sm:text-3xl font-bold line-clamp-2" style="color: var(--cr-text-primary);">
+                <span style="color: var(--cr-accent-blue);">{{ sp.label || 'P' }}</span>
+                {{ sp.problem?.title || sp.problemId }}
+              </h2>
+              <div class="flex flex-wrap items-center gap-2">
+                @if (sp.problem?.difficulty) {
+                  <span
+                    class="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                    [style]="sp.problem?.difficulty === 'easy'
+                      ? 'background: rgba(63, 185, 80, 0.1); color: var(--cr-accent-green);'
+                      : sp.problem?.difficulty === 'medium'
+                        ? 'background: rgba(210, 153, 34, 0.1); color: var(--cr-accent-yellow);'
+                        : 'background: rgba(248, 81, 73, 0.1); color: var(--cr-accent-red);'"
+                  >
+                    {{ getDifficultyLabel(sp.problem?.difficulty) }}
+                  </span>
+                }
+                <span class="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full" style="background: rgba(88, 166, 255, 0.1); color: var(--cr-accent-blue);">
+                  <i class="pi pi-star-fill text-[9px]"></i>
+                  {{ sp.points || 0 }} điểm
+                </span>
+                @if (sp.problem?.timeLimitMs) {
+                  <span class="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full" style="background: var(--cr-bg-tertiary); color: var(--cr-text-subtle);">
+                    <i class="pi pi-clock text-[9px]"></i>
+                    {{ sp.problem?.timeLimitMs }}ms
+                  </span>
+                }
+                @if (sp.problem?.memoryLimitMb) {
+                  <span class="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full" style="background: var(--cr-bg-tertiary); color: var(--cr-text-subtle);">
+                    <i class="pi pi-database text-[9px]"></i>
+                    {{ sp.problem?.memoryLimitMb }}MB
+                  </span>
+                }
+                @if (isProblemSolved(sp.problemId)) {
+                  <span class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full" style="background: rgba(63, 185, 80, 0.12); color: var(--cr-accent-green);">
+                    <i class="pi pi-check-circle text-[8px]"></i>
+                    Đã giải
+                  </span>
+                }
+              </div>
+            </div>
 
-        @if (sp.problem?.description) {
-          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5">
-            <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-2">Đề bài</h3>
-            <p class="text-sm text-surface-600 dark:text-surface-400 whitespace-pre-wrap">{{ sp.problem?.description }}</p>
+            <button
+              type="button"
+              (click)="submitSolution()"
+              [disabled]="!canSubmit() || !currentCode().trim() || isSubmitting()"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all hover:brightness-110 disabled:opacity-50 shrink-0"
+              style="background: linear-gradient(135deg, #238636 0%, #2ea043 100%); color: #fff;"
+            >
+              @if (isSubmitting()) {
+                <i class="pi pi-spin pi-spinner text-[10px]"></i>
+                Đang nộp...
+              } @else {
+                <i class="pi pi-play text-[10px]"></i>
+                Nộp bài
+              }
+            </button>
           </div>
-        }
 
-        @if (canSubmit()) {
-          <div class="rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 p-5 space-y-3">
-            <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-0 mb-2">Nộp bài</h3>
-
-            <app-code-editor
-              [initialLanguage]="currentLanguage()"
-              (codeChange)="onCodeChange($event)"
-              (languageChange)="onLanguageChange($event)"
-            />
-
-            <div class="flex justify-end">
-              <p-button
-                label="Nộp bài"
-                icon="pi pi-send"
-                (onClick)="submitSolution()"
-                [loading]="isSubmitting()"
-                [disabled]="!currentCode().trim()"
-              />
+          <div class="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="rounded-xl p-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+              <p class="text-[10px] uppercase tracking-wide" style="color: var(--cr-text-subtle);">Submissions</p>
+              <p class="mt-1 text-xl font-bold" style="color: var(--cr-text-primary);">{{ getProblemSubmissionCount(sp.problemId) }}</p>
+            </div>
+            <div class="rounded-xl p-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+              <p class="text-[10px] uppercase tracking-wide" style="color: var(--cr-text-subtle);">Accepted</p>
+              <p class="mt-1 text-xl font-bold" style="color: var(--cr-accent-green);">{{ getProblemAcceptedCount(sp.problemId) }}</p>
+            </div>
+            <div class="rounded-xl p-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+              <p class="text-[10px] uppercase tracking-wide" style="color: var(--cr-text-subtle);">Best Score</p>
+              <p class="mt-1 text-xl font-bold" style="color: var(--cr-text-primary);">{{ getProblemBestScore(sp.problemId) }}</p>
+            </div>
+            <div class="rounded-xl p-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
+              <p class="text-[10px] uppercase tracking-wide" style="color: var(--cr-text-subtle);">Contest Score</p>
+              <p class="mt-1 text-xl font-bold" style="color: var(--cr-text-primary);">{{ sp.points || 0 }}</p>
             </div>
           </div>
-        }
+        </section>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div class="rounded-xl overflow-hidden flex flex-col min-w-0" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+            <div class="flex overflow-x-auto scrollbar-none" style="background: var(--cr-bg-tertiary); border-bottom: 1px solid var(--cr-border);">
+              @for (tab of detailTabs; track tab.index) {
+                <button
+                  type="button"
+                  class="px-3.5 py-3 text-[11px] font-medium transition-colors relative whitespace-nowrap shrink-0 inline-flex items-center gap-1.5"
+                  [style.color]="problemDetailTabIndex() === tab.index ? 'var(--cr-accent-blue)' : 'var(--cr-text-subtle)'"
+                  (click)="problemDetailTabIndex.set(tab.index)"
+                >
+                  <i [class]="'pi ' + tab.icon + ' text-[10px]'"></i>
+                  {{ tab.label }}
+                  @if (tab.index === 1 && sampleTestcases().length > 0) {
+                    <span
+                      class="ml-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                      [style]="problemDetailTabIndex() === tab.index
+                        ? 'background: rgba(88, 166, 255, 0.15); color: var(--cr-accent-blue);'
+                        : 'background: var(--cr-bg-elevated); color: var(--cr-text-subtle);'"
+                    >{{ sampleTestcases().length }}</span>
+                  }
+                  @if (tab.index === 2 && selectedProblemSubmissions().length > 0) {
+                    <span
+                      class="ml-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                      [style]="problemDetailTabIndex() === tab.index
+                        ? 'background: rgba(88, 166, 255, 0.15); color: var(--cr-accent-blue);'
+                        : 'background: var(--cr-bg-elevated); color: var(--cr-text-subtle);'"
+                    >{{ selectedProblemSubmissions().length }}</span>
+                  }
+                  @if (problemDetailTabIndex() === tab.index) {
+                    <div class="absolute bottom-0 left-0 right-0 h-0.5" style="background: var(--cr-accent-blue);"></div>
+                  }
+                </button>
+              }
+            </div>
+
+            <div class="p-4 overflow-y-auto flex-1 max-h-[calc(100vh-420px)]">
+              @if (problemDetailTabIndex() === 0) {
+                <div class="space-y-5">
+                  @if (sp.problem?.description) {
+                    <div>
+                      <h4 class="text-xs font-semibold uppercase tracking-wider mb-2.5" style="color: var(--cr-text-subtle);">
+                        <i class="pi pi-file-edit text-[10px] mr-1"></i> Mô tả
+                      </h4>
+                      <div class="text-sm leading-relaxed" style="color: var(--cr-text-secondary);">
+                        <app-markdown-view [content]="sp.problem?.description || ''" />
+                      </div>
+                    </div>
+                  }
+
+                  @if (sp.problem?.inputDescription) {
+                    <div class="pt-3" style="border-top: 1px solid var(--cr-border);">
+                      <h4 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--cr-text-subtle);">
+                        <i class="pi pi-sign-in text-[10px] mr-1"></i> Input
+                      </h4>
+                      <div class="text-sm leading-relaxed" style="color: var(--cr-text-secondary);">
+                        <app-markdown-view [content]="sp.problem?.inputDescription || ''" />
+                      </div>
+                    </div>
+                  }
+
+                  @if (sp.problem?.outputDescription) {
+                    <div class="pt-3" style="border-top: 1px solid var(--cr-border);">
+                      <h4 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--cr-text-subtle);">
+                        <i class="pi pi-sign-out text-[10px] mr-1"></i> Output
+                      </h4>
+                      <div class="text-sm leading-relaxed" style="color: var(--cr-text-secondary);">
+                        <app-markdown-view [content]="sp.problem?.outputDescription || ''" />
+                      </div>
+                    </div>
+                  }
+
+                  @if (!sp.problem?.description && !sp.problem?.inputDescription && !sp.problem?.outputDescription) {
+                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                      <div class="flex items-center justify-center w-12 h-12 rounded-full mb-3" style="background: var(--cr-bg-elevated);">
+                        <i class="pi pi-file-edit text-lg" style="color: var(--cr-text-subtle);"></i>
+                      </div>
+                      <p class="text-sm font-medium" style="color: var(--cr-text-muted);">Chưa có mô tả chi tiết</p>
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (problemDetailTabIndex() === 1) {
+                <div class="space-y-4">
+                  @for (tc of sampleTestcases(); track tc.id; let idx = $index) {
+                    <div class="rounded-lg overflow-hidden min-w-0" style="border: 1px solid var(--cr-border);">
+                      <div class="flex items-center justify-between px-4 py-2.5" style="background: var(--cr-bg-tertiary); border-bottom: 1px solid var(--cr-border);">
+                        <div class="flex items-center gap-2">
+                          <span
+                            class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold"
+                            style="background: rgba(88, 166, 255, 0.1); color: var(--cr-accent-blue);"
+                          >{{ idx + 1 }}</span>
+                          <span class="text-xs font-semibold" style="color: var(--cr-text-secondary);">Ví dụ {{ idx + 1 }}</span>
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-2 min-w-0" style="background: var(--cr-bg-secondary);">
+                        <div class="p-3 min-w-0 overflow-hidden" style="border-right: 1px solid var(--cr-border);">
+                          <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider" style="color: var(--cr-text-subtle);">Input</span>
+                            <button
+                              type="button"
+                              (click)="copyToClipboard(tc.input)"
+                              class="text-[10px] transition-colors inline-flex items-center gap-1 hover:opacity-80"
+                              style="color: var(--cr-text-subtle);"
+                              title="Copy"
+                            >
+                              <i class="pi pi-copy text-[10px]"></i>
+                            </button>
+                          </div>
+                          <pre class="p-2.5 rounded-md text-xs font-mono overflow-auto whitespace-pre-wrap break-words leading-relaxed max-h-40" style="background: var(--cr-bg-tertiary); color: var(--cr-text-secondary); word-break: break-word;">{{ tc.input }}</pre>
+                        </div>
+
+                        <div class="p-3 min-w-0 overflow-hidden">
+                          <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider" style="color: var(--cr-text-subtle);">Output</span>
+                            <button
+                              type="button"
+                              (click)="copyToClipboard(tc.expectedOutput)"
+                              class="text-[10px] transition-colors inline-flex items-center gap-1 hover:opacity-80"
+                              style="color: var(--cr-text-subtle);"
+                              title="Copy"
+                            >
+                              <i class="pi pi-copy text-[10px]"></i>
+                            </button>
+                          </div>
+                          <pre class="p-2.5 rounded-md text-xs font-mono overflow-auto whitespace-pre-wrap break-words leading-relaxed max-h-40" style="background: var(--cr-bg-tertiary); color: var(--cr-text-secondary); word-break: break-word;">{{ tc.expectedOutput }}</pre>
+                        </div>
+                      </div>
+                    </div>
+                  } @empty {
+                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                      <div class="flex items-center justify-center w-12 h-12 rounded-full mb-3" style="background: var(--cr-bg-elevated);">
+                        <i class="pi pi-list-check text-lg" style="color: var(--cr-text-subtle);"></i>
+                      </div>
+                      <p class="text-sm font-medium" style="color: var(--cr-text-muted);">Chưa có ví dụ</p>
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (problemDetailTabIndex() === 2) {
+                <div class="space-y-2">
+                  @for (s of selectedProblemSubmissions(); track s.id) {
+                    <div class="rounded-lg px-3 py-2.5" style="border: 1px solid var(--cr-border); background: var(--cr-bg-primary);">
+                      <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                          <p-tag
+                            [value]="getSubmissionStatusLabel(s.status)"
+                            [severity]="getSubmissionStatusSeverity(s.status)"
+                            styleClass="text-[10px]"
+                          />
+                          <span class="text-[11px]" style="color: var(--cr-text-subtle);">{{ getLanguageLabel(s.language) }}</span>
+                        </div>
+                        <span class="text-xs font-semibold" style="color: var(--cr-text-primary);">{{ s.score }} điểm</span>
+                      </div>
+
+                      <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]" style="color: var(--cr-text-subtle);">
+                        <span>
+                          <i class="pi pi-check-circle mr-1 text-[10px]"></i>
+                          {{ s.passedTestcases }}/{{ s.totalTestcases }} test
+                        </span>
+                        <span>
+                          <i class="pi pi-clock mr-1 text-[10px]"></i>
+                          {{ formatDate(s.submittedAt) }}
+                        </span>
+                      </div>
+                    </div>
+                  } @empty {
+                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                      <div class="flex items-center justify-center w-12 h-12 rounded-full mb-3" style="background: var(--cr-bg-elevated);">
+                        <i class="pi pi-history text-lg" style="color: var(--cr-text-subtle);"></i>
+                      </div>
+                      <p class="text-sm font-medium" style="color: var(--cr-text-muted);">Chưa có bài nộp</p>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="rounded-xl overflow-hidden flex flex-col min-w-0" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+            <div class="flex items-center justify-between px-3 py-2 shrink-0" style="background: var(--cr-bg-tertiary); border-bottom: 1px solid var(--cr-border);">
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded transition-colors"
+                  [class]="editorTabIndex() === 0 ? 'opacity-100' : 'opacity-60 hover:opacity-80'"
+                  [style]="editorTabIndex() === 0 ? 'background: var(--cr-bg-elevated); color: var(--cr-text-primary);' : 'color: var(--cr-text-subtle);'"
+                  (click)="editorTabIndex.set(0)"
+                >
+                  <i class="pi pi-code text-[10px]"></i>
+                  Code Editor
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium rounded transition-colors"
+                  [class]="editorTabIndex() === 1 ? 'opacity-100' : 'opacity-60 hover:opacity-80'"
+                  [style]="editorTabIndex() === 1 ? 'background: var(--cr-bg-elevated); color: var(--cr-text-primary);' : 'color: var(--cr-text-subtle);'"
+                  (click)="editorTabIndex.set(1)"
+                >
+                  <i class="pi pi-bolt text-[10px]"></i>
+                  Chạy thử
+                  @if (runResults().length > 0) {
+                    <span
+                      class="ml-1 px-1.5 py-0.5 text-[9px] font-semibold rounded"
+                      [style]="runAllPassed() ? 'background: #238636; color: #fff;' : 'background: #da3633; color: #fff;'"
+                    >
+                      {{ runPassedCount() }}/{{ runResults().length }}
+                    </span>
+                  }
+                </button>
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-colors hover:opacity-80"
+                  style="background: var(--cr-bg-elevated); color: var(--cr-text-subtle); border: 1px solid var(--cr-border);"
+                  [disabled]="isRunning()"
+                  (click)="runCode()"
+                >
+                  @if (isRunning()) {
+                    <i class="pi pi-spin pi-spinner text-[9px]"></i>
+                  } @else {
+                    <i class="pi pi-bolt text-[9px]"></i>
+                  }
+                  Run
+                </button>
+                <button
+                  type="button"
+                  (click)="submitSolution()"
+                  [disabled]="!canSubmit() || !currentCode().trim() || isSubmitting()"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded transition-all hover:brightness-110 disabled:opacity-50"
+                  style="background: #238636; color: #fff;"
+                >
+                  @if (isSubmitting()) {
+                    <i class="pi pi-spin pi-spinner text-[9px]"></i>
+                  } @else {
+                    <i class="pi pi-play text-[9px]"></i>
+                  }
+                  Submit
+                </button>
+              </div>
+            </div>
+
+            @if (editorTabIndex() === 0) {
+              <div class="flex-1 min-h-[420px]">
+                <app-code-editor
+                  [initialCode]="currentCode()"
+                  [initialLanguage]="currentLanguage()"
+                  (codeChange)="onCodeChange($event)"
+                  (languageChange)="onLanguageChange($event)"
+                />
+              </div>
+            } @else {
+              <div class="flex-1 min-h-[420px] overflow-y-auto p-4 space-y-4">
+                <div class="rounded-lg p-3" style="background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border);">
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-medium" style="color: var(--cr-text-primary);">
+                      <i class="pi pi-plus-circle mr-1.5"></i>
+                      Testcase tùy chỉnh
+                    </span>
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-colors hover:opacity-80"
+                      style="background: var(--cr-accent-blue); color: #fff;"
+                      (click)="addCustomTestcase()"
+                    >
+                      <i class="pi pi-plus text-[9px]"></i>
+                      Thêm
+                    </button>
+                  </div>
+                  @if (customTestcases().length === 0) {
+                    <div class="text-center py-3 text-[11px]" style="color: var(--cr-text-muted);">
+                      Chưa có testcase tùy chỉnh. Nhấn "Thêm" để thêm testcase.
+                    </div>
+                  } @else {
+                    <div class="space-y-3">
+                      @for (tc of customTestcases(); track tc.id) {
+                        <div class="rounded-lg p-2.5" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+                          <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-medium" style="color: var(--cr-text-subtle);">Custom #{{ tc.id }}</span>
+                            <button
+                              type="button"
+                              class="p-1 rounded hover:opacity-80 transition-opacity"
+                              style="color: #da3633;"
+                              (click)="removeCustomTestcase(tc.id)"
+                            >
+                              <i class="pi pi-trash text-[10px]"></i>
+                            </button>
+                          </div>
+                          <div class="grid grid-cols-2 gap-2">
+                            <div>
+                              <label class="text-[9px] font-medium mb-1 block" style="color: var(--cr-text-muted);">Input</label>
+                              <textarea
+                                class="w-full px-2 py-1.5 text-[11px] rounded resize-none font-mono"
+                                style="background: var(--cr-bg-primary); color: var(--cr-text-primary); border: 1px solid var(--cr-border);"
+                                rows="3"
+                                [value]="tc.input"
+                                (input)="updateCustomTestcase(tc.id, 'input', $any($event.target).value)"
+                                placeholder="Nhập input..."
+                              ></textarea>
+                            </div>
+                            <div>
+                              <label class="text-[9px] font-medium mb-1 block" style="color: var(--cr-text-muted);">Expected Output</label>
+                              <textarea
+                                class="w-full px-2 py-1.5 text-[11px] rounded resize-none font-mono"
+                                style="background: var(--cr-bg-primary); color: var(--cr-text-primary); border: 1px solid var(--cr-border);"
+                                rows="3"
+                                [value]="tc.expectedOutput"
+                                (input)="updateCustomTestcase(tc.id, 'expectedOutput', $any($event.target).value)"
+                                placeholder="Nhập expected output..."
+                              ></textarea>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+
+                @if (runResults().length > 0) {
+                  <div class="rounded-lg p-3" style="background: var(--cr-bg-tertiary); border: 1px solid var(--cr-border);">
+                    <div class="flex items-center justify-between mb-3">
+                      <span class="text-[11px] font-medium" style="color: var(--cr-text-primary);">
+                        <i class="pi pi-list mr-1.5"></i>
+                        Kết quả chạy thử
+                      </span>
+                      <span
+                        class="px-2 py-0.5 text-[10px] font-semibold rounded"
+                        [style]="runAllPassed() ? 'background: #238636; color: #fff;' : 'background: #da3633; color: #fff;'"
+                      >
+                        {{ runPassedCount() }}/{{ runResults().length }} passed
+                      </span>
+                    </div>
+                    <div class="space-y-3">
+                      @for (item of runResults(); track item.testcase.id; let i = $index) {
+                        <div
+                          class="rounded-lg p-3"
+                          [style]="'background: var(--cr-bg-secondary); border: 1px solid ' + (item.running ? 'var(--cr-border)' : (isTestcasePassed(item) ? '#238636' : '#da3633')) + ';'"
+                        >
+                          <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] font-medium" style="color: var(--cr-text-primary);">
+                              {{ item.testcase.id < 0 ? 'Sample' : 'Custom' }} #{{ item.testcase.id < 0 ? -item.testcase.id : item.testcase.id }}
+                            </span>
+                            @if (item.running) {
+                              <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-medium rounded" style="background: var(--cr-accent-blue); color: #fff;">
+                                <i class="pi pi-spin pi-spinner text-[8px]"></i>
+                                Running...
+                              </span>
+                            } @else if (isTestcasePassed(item)) {
+                              <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-semibold rounded" style="background: #238636; color: #fff;">
+                                <i class="pi pi-check text-[8px]"></i>
+                                Passed
+                              </span>
+                            } @else {
+                              <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-semibold rounded" style="background: #da3633; color: #fff;">
+                                <i class="pi pi-times text-[8px]"></i>
+                                {{ item.result ? getRunStatusLabel(item.result.status) : 'Failed' }}
+                              </span>
+                            }
+                          </div>
+
+                          @if (!item.running && item.result) {
+                            <div class="grid grid-cols-3 gap-2 text-[10px]">
+                              <div>
+                                <div class="font-medium mb-1" style="color: var(--cr-text-muted);">Input</div>
+                                <pre class="px-2 py-1.5 rounded text-[10px] font-mono whitespace-pre-wrap overflow-x-auto max-h-24 overflow-y-auto" style="background: var(--cr-bg-primary); color: var(--cr-text-primary);">{{ item.testcase.input || '(empty)' }}</pre>
+                              </div>
+                              <div>
+                                <div class="font-medium mb-1" style="color: var(--cr-text-muted);">Expected</div>
+                                <pre class="px-2 py-1.5 rounded text-[10px] font-mono whitespace-pre-wrap overflow-x-auto max-h-24 overflow-y-auto" style="background: var(--cr-bg-primary); color: var(--cr-text-primary);">{{ item.testcase.expectedOutput || '(empty)' }}</pre>
+                              </div>
+                              <div>
+                                <div class="font-medium mb-1" style="color: var(--cr-text-muted);">Actual</div>
+                                <pre
+                                  class="px-2 py-1.5 rounded text-[10px] font-mono whitespace-pre-wrap overflow-x-auto max-h-24 overflow-y-auto"
+                                  [style]="'background: var(--cr-bg-primary); color: ' + (isTestcasePassed(item) ? '#3fb950' : '#f85149') + ';'"
+                                >{{ item.result.stdout || '(empty)' }}</pre>
+                                @if (item.result.stderr) {
+                                  <pre class="mt-1 px-2 py-1.5 rounded text-[10px] font-mono whitespace-pre-wrap overflow-x-auto max-h-16 overflow-y-auto" style="background: var(--cr-bg-primary); color: #f85149;">{{ item.result.stderr }}</pre>
+                                }
+                              </div>
+                            </div>
+                            <div class="flex items-center gap-4 mt-2 text-[9px]" style="color: var(--cr-text-muted);">
+                              <span><i class="pi pi-clock mr-1"></i>{{ item.result.time }}ms</span>
+                              <span><i class="pi pi-database mr-1"></i>{{ (item.result.memory / 1024).toFixed(1) }}KB</span>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                } @else {
+                  <div class="text-center py-8" style="color: var(--cr-text-muted);">
+                    <i class="pi pi-bolt text-3xl mb-3 block" style="opacity: 0.5;"></i>
+                    <p class="text-[12px]">Nhấn "Run" để chạy thử code với các testcase.</p>
+                    <p class="text-[11px] mt-1">Bạn có thể thêm testcase tùy chỉnh ở trên.</p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
       </div>
     } @else {
       <!-- Tabs -->

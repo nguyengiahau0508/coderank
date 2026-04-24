@@ -6,11 +6,34 @@ import { RunnerService } from '../services/runner.service';
 import { CheckerService } from '../services/checker.service';
 import { ICheckResult } from 'src/common/interfaces/interfaces';
 import {
+  ProgrammingLanguageEnum,
   SubmissionStatusEnum,
   TestcaseCompareTypeEnum,
 } from 'src/common/enums/enums';
 import { RunStatusEnum } from '../dto/run-result.dto';
-import { SubmissionCompletedEvent } from '../events/submission-completed.event';
+import {
+  SubmissionCompletedEvent,
+  SubmissionSource,
+} from '../events/submission-completed.event';
+
+interface RunnerJobTestcase {
+  input: string;
+  expectedOutput: string;
+  compareType?: TestcaseCompareTypeEnum;
+}
+
+interface RunnerJobData {
+  submissionId: string;
+  language: ProgrammingLanguageEnum;
+  testcases: RunnerJobTestcase[];
+  code: string;
+  timeLimitMs: number;
+  memoryLimitMb: number;
+  source?: SubmissionSource;
+  contestId?: string;
+  userId?: string;
+  problemId?: string;
+}
 
 @Processor('runner-queue')
 export class RunnerProcessor extends WorkerHost {
@@ -24,7 +47,7 @@ export class RunnerProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job) {
+  async process(job: Job<RunnerJobData>) {
     const {
       submissionId,
       language,
@@ -32,11 +55,16 @@ export class RunnerProcessor extends WorkerHost {
       code,
       timeLimitMs,
       memoryLimitMb,
+      source = 'problem',
+      contestId,
+      userId,
+      problemId,
     } = job.data;
     if (
       !submissionId ||
       !language ||
       !testcases ||
+      testcases.length === 0 ||
       !code ||
       timeLimitMs == null ||
       memoryLimitMb == null
@@ -127,6 +155,10 @@ export class RunnerProcessor extends WorkerHost {
         maxMemory,
         errorMessage,
         failedOutput,
+        source,
+        contestId,
+        userId,
+        problemId,
       );
 
       this.eventEmitter.emit('submission.completed', event);
@@ -134,8 +166,10 @@ export class RunnerProcessor extends WorkerHost {
       this.logger.log(
         `Submission ${submissionId} completed: ${finalStatus} (${passedCount}/${testcases.length} passed)`,
       );
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(`Error processing submission ${submissionId}:`, error);
+      const systemErrorMessage =
+        error instanceof Error ? error.message : 'System error';
 
       // Emit error event
       const errorEvent = new SubmissionCompletedEvent(
@@ -146,11 +180,19 @@ export class RunnerProcessor extends WorkerHost {
         testcases.length,
         0,
         0,
-        error.message || 'System error',
+        systemErrorMessage,
+        undefined,
+        source,
+        contestId,
+        userId,
+        problemId,
       );
 
       this.eventEmitter.emit('submission.completed', errorEvent);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(systemErrorMessage);
     }
   }
 }

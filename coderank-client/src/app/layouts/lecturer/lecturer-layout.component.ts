@@ -16,36 +16,19 @@ export class LecturerLayoutComponent {
       route: '/lecturer/dashboard'
     },
     {
-      label: 'My Courses',
+      label: 'Course',
       icon: 'pi pi-book',
       route: '/lecturer/courses'
     },
     {
-      label: 'Problem Bank',
+      label: 'Problem',
       icon: 'pi pi-database',
       route: '/lecturer/problems'
     },
     {
-      label: 'Contests',
+      label: 'Contest',
       icon: 'pi pi-trophy',
       route: '/lecturer/contests'
-    },
-    {
-      label: 'Students',
-      icon: 'pi pi-users',
-      route: '/lecturer/students'
-    },
-    {
-      label: 'Submissions',
-      icon: 'pi pi-inbox',
-      route: '/lecturer/grading',
-      badge: '5',
-      badgeClass: 'bg-red-500 text-white'
-    },
-    {
-      label: 'Analytics',
-      icon: 'pi pi-chart-line',
-      route: '/lecturer/analytics'
     }
   ];
 }

@@ -13,6 +13,7 @@ export interface UsersModel extends BaseModel {
   gender: GenderEnum | null;
   roles: RolesEnum[];
   rating: number;
+  eloRating?: number;
   isActive: boolean;
   isEmailVerified: boolean;
   lastLogin: Date | null;

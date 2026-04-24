@@ -1,5 +1,7 @@
 import { SubmissionStatusEnum } from 'src/common/enums/enums';
 
+export type SubmissionSource = 'problem' | 'contest';
+
 export class SubmissionCompletedEvent {
   constructor(
     public readonly submissionId: string,
@@ -11,5 +13,9 @@ export class SubmissionCompletedEvent {
     public readonly memoryUsedMb: number,
     public readonly errorMessage?: string,
     public readonly output?: string,
+    public readonly source: SubmissionSource = 'problem',
+    public readonly contestId?: string,
+    public readonly userId?: string,
+    public readonly problemId?: string,
   ) {}
 }

@@ -87,6 +87,10 @@ export class UsersEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
   rating: number;
 
+  @ApiIntProperty('User Elo rating score', 1400, 0)
+  @Column({ type: 'int', default: 1400 })
+  eloRating: number;
+
   @ApiBooleanProperty('Whether the user account is active', true)
   @Column({ type: 'boolean', default: true })
   isActive: boolean;

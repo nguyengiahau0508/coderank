@@ -45,6 +45,7 @@ export class SubmissionsService extends BaseService<SubmissionsEntity> {
     });
     await this.judgeQueue.add('runner-queue', {
       submissionId: submissionSaved.id,
+      source: 'problem',
       language: dto.language,
       testcases: testcases.map((tc) => ({
         input: tc.input,

@@ -15,7 +15,7 @@ import { ContestParticipantsService } from './services/contest-participants.serv
 import { ContestProblemsService } from './services/contest-problems.service';
 import { ContestSubmissionsService } from './services/contest-submissions.service';
 import { CurrentUser, Public, Roles } from 'src/auth/decorators';
-import { RolesEnum } from 'src/common/enums/enums';
+import { ContestStatusEnum, RolesEnum } from 'src/common/enums/enums';
 import { CreateContestDto } from './dto/contests/create-contest.dto';
 import type { IJwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { Owner } from 'src/auth/decorators/owner.decorator';
@@ -114,12 +114,20 @@ export class ContestsController {
     @Param('contestId') contestId: string,
   ) {
     const { startTime, endTime, ...rest } = updateContestDto;
-    return this.contestsService.update(contestId, {
+    const updatedContest = await this.contestsService.update(contestId, {
       ...rest,
       ...(startTime && { startTime: new Date(startTime) }),
       ...(endTime && { endTime: new Date(endTime) }),
       authorId: currentUser.userId,
     });
+
+    if (updateContestDto.status === ContestStatusEnum.Ended) {
+      await this.contestsService.ensureContestRankCalculated(contestId);
+    } else if (updateContestDto.status) {
+      await this.contestsService.markContestRankUncalculated(contestId);
+    }
+
+    return updatedContest;
   }
 
   @Delete(':contestId')
@@ -262,11 +270,29 @@ export class ContestsController {
     description: 'Get all participants of a contest',
   })
   async getContestParticipants(@Param('contestId') contestId: string) {
+    await this.contestsService.ensureContestRankCalculated(contestId);
     return this.contestParticipantsService.find({
       where: { contestId: contestId },
       relations: { user: true },
       order: { rank: 'ASC' },
     });
+  }
+
+  @Get(':contestId/participants/me')
+  @Roles(RolesEnum.Student, RolesEnum.Instructor, RolesEnum.Admin)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get my contest participation',
+    description: 'Get current user participation info in contest',
+  })
+  async getMyParticipation(
+    @CurrentUser() currentUser: IJwtPayload,
+    @Param('contestId') contestId: string,
+  ) {
+    return this.contestParticipantsService.getMyParticipation(
+      currentUser.userId,
+      contestId,
+    );
   }
 
   @Get(':contestId/leaderboard')
@@ -276,6 +302,7 @@ export class ContestsController {
     description: 'Get contest rankings sorted by score',
   })
   async getContestLeaderboard(@Param('contestId') contestId: string) {
+    await this.contestsService.ensureContestRankCalculated(contestId);
     return this.contestParticipantsService.getLeaderboard(contestId);
   }
 
@@ -299,7 +326,10 @@ export class ContestsController {
       throw new BadRequestException('Participant not found');
     }
 
-    return this.contestParticipantsService.delete(participant.id);
+    await this.contestParticipantsService.delete(participant.id);
+    await this.contestParticipantsService.recalculateLeaderboard(contestId);
+    await this.contestParticipantsService.emitLeaderboardUpdate(contestId);
+    return { message: 'Participant removed' };
   }
 
   @Post(':contestId/leave')

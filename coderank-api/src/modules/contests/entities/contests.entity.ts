@@ -78,6 +78,13 @@ export class ContestsEntity extends BaseEntity {
   @Column({ type: 'boolean', default: false })
   isRated: boolean; // Có tính rating không
 
+  @ApiProperty({
+    description: 'Whether Elo rank has been calculated after contest ends',
+    example: false,
+  })
+  @Column({ type: 'boolean', default: false })
+  isRankCalculated: boolean;
+
   @ApiPropertyOptional({
     description: 'Maximum participants (0 for unlimited)',
     example: 0,

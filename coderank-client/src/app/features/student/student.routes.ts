@@ -3,8 +3,13 @@ import { Routes } from '@angular/router';
 export const studentRoutes: Routes = [
   {
     path: '',
-    redirectTo: 'courses/my-courses',
+    redirectTo: 'dashboard',
     pathMatch: 'full',
+  },
+  {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./dashboard/dashboard.component').then(m => m.StudentDashboardComponent),
   },
   {
     path: 'problems',

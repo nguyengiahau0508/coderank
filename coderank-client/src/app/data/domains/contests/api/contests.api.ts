@@ -112,6 +112,12 @@ export class ContestsApi extends BaseApi {
     );
   }
 
+  getMyContestParticipation(contestId: string): Observable<ApiResponse<ContestParticipantsModel | null>> {
+    return this.apiService.get<ApiResponse<ContestParticipantsModel | null>>(
+      this.getUrl(`/${contestId}/participants/me`)
+    );
+  }
+
   getContestLeaderboard(contestId: string): Observable<ApiResponse<ContestParticipantsModel[]>> {
     return this.apiService.get<ApiResponse<ContestParticipantsModel[]>>(
       this.getUrl(`/${contestId}/leaderboard`)

@@ -55,6 +55,12 @@ export class StudentLayoutComponent {
   readonly user = this.authService.currentUser;
   readonly menuItems: StudentMenuItem[] = [
     {
+      label: 'Dashboard',
+      icon: 'pi pi-chart-line',
+      route: '/student/dashboard',
+      hint: 'Your overview',
+    },
+    {
       label: 'Problems',
       icon: 'pi pi-code',
       route: '/student/problems',
@@ -110,6 +116,9 @@ export class StudentLayoutComponent {
 
   readonly currentUrl = signal(this.router.url);
   readonly currentSectionLabel = computed(() => {
+    if (this.currentUrl().includes('/dashboard')) {
+      return 'Student Dashboard';
+    }
     if (this.currentUrl().includes('/ide')) {
       return 'Online IDE';
     }
@@ -147,7 +156,7 @@ export class StudentLayoutComponent {
   }
 
   navigateHome(): void {
-    this.router.navigate(['/student/problems']);
+    this.router.navigate(['/student/dashboard']);
   }
 
   navigateIde(): void {
