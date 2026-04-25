@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { catchError, forkJoin, map, of } from 'rxjs';
 
 // PrimeNG
 import { Button } from 'primeng/button';
@@ -20,6 +21,7 @@ import { MarkdownViewComponent } from '../../../../shared/components/markdown-vi
 
 // Models & Enums
 import {
+  AssignmentGradingCriterion,
   CourseLessonsModel,
   CourseLessonProblemsModel,
   CourseQuizzesModel,
@@ -33,6 +35,11 @@ import { LessonTypeEnum, QuizQuestionTypeEnum, AssignmentTypeEnum, AssignmentSub
 // Services
 import { StudentCoursesService } from '../services/courses.service';
 import { environment } from '../../../../../environments/environment';
+
+type AssignmentSubmissionSummary = {
+  count: number;
+  latestStatus: AssignmentSubmissionStatusEnum | null;
+};
 
 @Component({
   selector: 'app-student-lesson-detail',
@@ -129,8 +136,32 @@ export class StudentLessonDetailComponent implements OnInit {
   readonly assignments = signal<CourseAssignmentsModel[]>([]);
   readonly loadingAssignments = signal<boolean>(false);
   readonly selectedAssignment = signal<CourseAssignmentsModel | null>(null);
+  readonly assignmentDetailTab = signal<string>('prompt');
   readonly mySubmissions = signal<CourseAssignmentSubmissionsModel[]>([]);
+  readonly assignmentSubmissionSummary = signal<Record<string, AssignmentSubmissionSummary>>({});
   readonly loadingSubmissions = signal<boolean>(false);
+
+  readonly selectedAssignmentCriteria = computed<AssignmentGradingCriterion[]>(() => {
+    const assignment = this.selectedAssignment();
+    if (!assignment?.gradingCriteria || assignment.gradingCriteria.length === 0) {
+      return [];
+    }
+
+    return assignment.gradingCriteria
+      .filter((item) => !!item?.criterion?.trim())
+      .map((item) => ({
+        criterion: item.criterion.trim(),
+        maxScore: Number(item.maxScore) || 0,
+        description: item.description?.trim() || '',
+      }));
+  });
+
+  readonly selectedAssignmentCriteriaTotalScore = computed<number>(() => {
+    return this.selectedAssignmentCriteria().reduce((sum, item) => {
+      const score = Number(item.maxScore);
+      return Number.isFinite(score) ? sum + score : sum;
+    }, 0);
+  });
 
   // Assignment submission
   readonly showSubmitDialog = signal<boolean>(false);
@@ -251,6 +282,7 @@ export class StudentLessonDetailComponent implements OnInit {
     this.quizQuestions.set([]);
     this.quizResult.set(null);
     this.selectedAssignment.set(null);
+    this.assignmentDetailTab.set('prompt');
     this.mySubmissions.set([]);
   }
 
@@ -370,23 +402,107 @@ export class StudentLessonDetailComponent implements OnInit {
     this.coursesService.getAssignments(this.courseId(), this.lessonId()).subscribe({
       next: (response) => {
         const data = response.data ?? (response as any);
-        this.assignments.set(Array.isArray(data) ? data.sort((a: any, b: any) => a.assignmentOrder - b.assignmentOrder) : []);
+        const assignments = Array.isArray(data)
+          ? data.sort((a: any, b: any) => a.assignmentOrder - b.assignmentOrder)
+          : [];
+        this.assignments.set(assignments);
+        this.loadAssignmentSubmissionSummary(assignments);
         this.loadingAssignments.set(false);
       },
       error: () => {
         this.assignments.set([]);
+        this.assignmentSubmissionSummary.set({});
         this.loadingAssignments.set(false);
       },
     });
   }
 
+  private loadAssignmentSubmissionSummary(assignments: CourseAssignmentsModel[]): void {
+    if (assignments.length === 0) {
+      this.assignmentSubmissionSummary.set({});
+      return;
+    }
+
+    const requests = assignments.map((assignment) => {
+      const assignmentId = assignment.id.toString();
+      return this.coursesService
+        .getMySubmissions(this.courseId(), this.lessonId(), assignmentId)
+        .pipe(
+          map((response) => {
+            const data = response.data ?? (response as unknown);
+            const submissions = Array.isArray(data)
+              ? (data as CourseAssignmentSubmissionsModel[])
+              : [];
+
+            return [
+              assignmentId,
+              this.buildAssignmentSubmissionSummary(submissions),
+            ] as const;
+          }),
+          catchError(() => {
+            const existingSummary = this.assignmentSubmissionSummary()[assignmentId] ?? {
+              count: 0,
+              latestStatus: null,
+            };
+            return of([assignmentId, existingSummary] as const);
+          }),
+        );
+    });
+
+    forkJoin(requests).subscribe({
+      next: (entries) => {
+        const summaryMap = entries.reduce<Record<string, AssignmentSubmissionSummary>>(
+          (acc, [assignmentId, summary]) => {
+            acc[assignmentId] = summary;
+            return acc;
+          },
+          {},
+        );
+        this.assignmentSubmissionSummary.set(summaryMap);
+      },
+    });
+  }
+
+  private buildAssignmentSubmissionSummary(
+    submissions: CourseAssignmentSubmissionsModel[],
+  ): AssignmentSubmissionSummary {
+    if (submissions.length === 0) {
+      return {
+        count: 0,
+        latestStatus: null,
+      };
+    }
+
+    const sortedSubmissions = [...submissions].sort(
+      (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
+    );
+
+    return {
+      count: submissions.length,
+      latestStatus: sortedSubmissions[0]?.status ?? null,
+    };
+  }
+
+  private updateAssignmentSubmissionSummary(
+    assignmentId: string,
+    submissions: CourseAssignmentSubmissionsModel[],
+  ): void {
+    const summary = this.buildAssignmentSubmissionSummary(submissions);
+    this.assignmentSubmissionSummary.update((currentSummary) => ({
+      ...currentSummary,
+      [assignmentId]: summary,
+    }));
+  }
+
   selectAssignment(assignment: CourseAssignmentsModel): void {
     this.selectedAssignment.set(assignment);
+    this.assignmentDetailTab.set('prompt');
     this.loadMyAssignmentSubmissions(assignment.id.toString());
   }
 
   backToAssignmentList(): void {
     this.selectedAssignment.set(null);
+    this.assignmentDetailTab.set('prompt');
     this.mySubmissions.set([]);
   }
 
@@ -395,7 +511,9 @@ export class StudentLessonDetailComponent implements OnInit {
     this.coursesService.getMySubmissions(this.courseId(), this.lessonId(), assignmentId).subscribe({
       next: (response) => {
         const data = response.data ?? (response as any);
-        this.mySubmissions.set(Array.isArray(data) ? data : []);
+        const submissions = Array.isArray(data) ? data : [];
+        this.mySubmissions.set(submissions);
+        this.updateAssignmentSubmissionSummary(assignmentId, submissions);
         this.loadingSubmissions.set(false);
       },
       error: () => {
@@ -648,5 +766,29 @@ export class StudentLessonDetailComponent implements OnInit {
       mixed: 'Kết hợp',
     };
     return labels[type] || type;
+  }
+
+  hasSubmittedAssignment(assignmentId: string): boolean {
+    return (this.assignmentSubmissionSummary()[assignmentId]?.count ?? 0) > 0;
+  }
+
+  getAssignmentSubmissionSummaryLabel(assignmentId: string): string {
+    const summary = this.assignmentSubmissionSummary()[assignmentId];
+    if (!summary || summary.count === 0) {
+      return 'Chưa nộp';
+    }
+
+    const statusLabel = summary.latestStatus
+      ? this.getSubmissionStatusLabel(summary.latestStatus)
+      : 'Đã nộp';
+
+    return summary.count > 1 ? `${statusLabel} (${summary.count} lần)` : statusLabel;
+  }
+
+  getAssignmentSubmissionSummarySeverity(
+    assignmentId: string,
+  ): 'info' | 'success' | 'warn' | 'secondary' {
+    const latestStatus = this.assignmentSubmissionSummary()[assignmentId]?.latestStatus;
+    return latestStatus ? this.getSubmissionStatusSeverity(latestStatus) : 'secondary';
   }
 }

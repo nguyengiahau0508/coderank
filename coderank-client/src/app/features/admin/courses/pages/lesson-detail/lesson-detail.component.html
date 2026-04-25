@@ -367,9 +367,26 @@
                         </div>
                       }
 
+                      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="relative w-full sm:max-w-sm">
+                          <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-xs" style="color: var(--cr-text-subtle);"></i>
+                          <input
+                            pInputText
+                            class="w-full pl-8"
+                            [ngModel]="submissionSearchQuery()"
+                            (ngModelChange)="submissionSearchQuery.set($event)"
+                            placeholder="Tìm theo tên hoặc email học viên"
+                          />
+                        </div>
+                        <p class="text-xs" style="color: var(--cr-text-subtle);">
+                          Hiển thị {{ filteredSubmissions().length }}/{{ submissions().length }} bài nộp
+                        </p>
+                      </div>
+
                       <p-tabs value="summary">
                         <p-tablist>
                           <p-tab value="summary"><i class="pi pi-table mr-2"></i>Tổng hợp điểm</p-tab>
+                          <p-tab value="criteria"><i class="pi pi-list-check mr-2"></i>Tiêu chí chấm điểm</p-tab>
                           <p-tab value="submissions"><i class="pi pi-file mr-2"></i>Bài nộp chi tiết</p-tab>
                         </p-tablist>
 
@@ -385,7 +402,11 @@
                               } @else if (gradedSubmissionSummaryRows().length === 0) {
                                 <div class="rounded-xl p-6 text-center" style="background: var(--cr-bg-secondary); border: 1px dashed var(--cr-border);">
                                   <i class="pi pi-table text-2xl mb-2" style="color: var(--cr-text-subtle);"></i>
-                                  <p class="text-sm" style="color: var(--cr-text-subtle);">Chưa có dữ liệu tổng hợp điểm. Hãy chấm điểm trước để hiển thị bảng.</p>
+                                  <p class="text-sm" style="color: var(--cr-text-subtle);">
+                                    {{ submissionSearchQuery().trim()
+                                      ? 'Không tìm thấy bài nộp đã chấm nào khớp với từ khóa tìm kiếm.'
+                                      : 'Chưa có dữ liệu tổng hợp điểm. Hãy chấm điểm trước để hiển thị bảng.' }}
+                                  </p>
                                 </div>
                               } @else {
                                 <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
@@ -440,8 +461,65 @@
                             </div>
                           </p-tabpanel>
 
+                          <p-tabpanel value="criteria">
+                            <div class="pt-3">
+                              @if (selectedAssignmentCriteria().length === 0) {
+                                <div class="rounded-xl p-6 text-center" style="background: var(--cr-bg-secondary); border: 1px dashed var(--cr-border);">
+                                  <i class="pi pi-list-check text-2xl mb-2" style="color: var(--cr-text-subtle);"></i>
+                                  <p class="text-sm" style="color: var(--cr-text-subtle);">Bài tập này chưa có tiêu chí chấm điểm.</p>
+                                </div>
+                              } @else {
+                                <div class="rounded-xl p-4 space-y-3" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+                                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                                    <h5 class="text-sm font-semibold" style="color: var(--cr-text-primary);">
+                                      <i class="pi pi-list-check mr-2"></i>Rubric chấm điểm
+                                    </h5>
+                                    <span class="text-xs" style="color: var(--cr-text-subtle);">{{ selectedAssignmentCriteria().length }} tiêu chí</span>
+                                  </div>
+
+                                  <div class="space-y-2">
+                                    @for (criterion of selectedAssignmentCriteria(); track criterion.criterion; let idx = $index) {
+                                      <div class="rounded-lg p-3" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border-light);">
+                                        <div class="flex items-start justify-between gap-3">
+                                          <div class="min-w-0">
+                                            <p class="text-sm font-medium" style="color: var(--cr-text-primary);">
+                                              {{ idx + 1 }}. {{ criterion.criterion }}
+                                            </p>
+                                            @if (criterion.description) {
+                                              <p class="text-xs mt-1" style="color: var(--cr-text-subtle);">{{ criterion.description }}</p>
+                                            }
+                                          </div>
+                                          <span class="text-xs font-semibold px-2 py-1 rounded shrink-0" style="background: var(--cr-bg-elevated); color: var(--cr-text-secondary); border: 1px solid var(--cr-border-light);">
+                                            {{ criterion.maxScore }} điểm
+                                          </span>
+                                        </div>
+                                      </div>
+                                    }
+                                  </div>
+
+                                  <div
+                                    class="rounded-lg p-3 text-sm"
+                                    [style]="selectedAssignmentCriteriaTotalScore() === sa.maxScore
+                                      ? 'background: var(--cr-bg-primary); border: 1px solid var(--cr-border-light); border-left: 3px solid rgba(63, 185, 80, 0.65); color: var(--cr-text-secondary);'
+                                      : 'background: var(--cr-bg-primary); border: 1px solid var(--cr-border-light); border-left: 3px solid rgba(210, 169, 34, 0.7); color: var(--cr-text-secondary);'"
+                                  >
+                                    <div class="font-medium">
+                                      <i class="pi mr-1" [class]="selectedAssignmentCriteriaTotalScore() === sa.maxScore ? 'pi-check-circle' : 'pi-info-circle'"></i>
+                                      Tổng điểm rubric: {{ selectedAssignmentCriteriaTotalScore() }} / {{ sa.maxScore }}
+                                    </div>
+                                    @if (selectedAssignmentCriteriaTotalScore() !== sa.maxScore) {
+                                      <div class="text-xs mt-1" style="color: var(--cr-text-muted);">
+                                        Lưu ý: tổng điểm theo tiêu chí đang khác với điểm tối đa của bài tập.
+                                      </div>
+                                    }
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          </p-tabpanel>
+
                           <p-tabpanel value="submissions">
-                            <div class="pt-3 space-y-2">
+                            <div class="pt-3 space-y-2 max-w-full overflow-hidden">
                               @if (loadingSubmissions()) {
                                 <div class="space-y-2 animate-pulse">
                                   @for (_ of [1, 2]; track _) {
@@ -453,98 +531,133 @@
                                   <i class="pi pi-inbox text-2xl mb-2" style="color: var(--cr-text-subtle);"></i>
                                   <p class="text-sm" style="color: var(--cr-text-subtle);">Chưa có bài nộp nào</p>
                                 </div>
+                              } @else if (filteredSubmissions().length === 0) {
+                                <div class="rounded-xl p-6 text-center" style="background: var(--cr-bg-secondary); border: 1px dashed var(--cr-border);">
+                                  <i class="pi pi-search text-2xl mb-2" style="color: var(--cr-text-subtle);"></i>
+                                  <p class="text-sm" style="color: var(--cr-text-subtle);">Không tìm thấy bài nộp phù hợp với tên/email đã nhập.</p>
+                                </div>
                               } @else {
-                                @for (sub of submissions(); track sub.id) {
-                                  <div class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-                                    <div class="flex items-start justify-between gap-3">
-                                      <div class="flex-1 min-w-0 space-y-1">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                          <span class="text-xs" style="color: var(--cr-text-subtle);">Lần nộp #{{ sub.attemptNumber }}</span>
-                                          <span
-                                            class="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                                            [style]="sub.status === 'graded'
-                                              ? 'background: rgba(63, 185, 80, 0.12); color: var(--cr-accent-green);'
-                                              : sub.status === 'returned'
-                                                ? 'background: rgba(88, 166, 255, 0.12); color: var(--cr-accent-blue);'
-                                                : sub.status === 'late'
-                                                  ? 'background: rgba(248, 81, 73, 0.12); color: var(--cr-accent-red);'
-                                                  : 'background: rgba(210, 169, 34, 0.12); color: var(--cr-accent-yellow);'"
-                                          >{{ getSubmissionStatusLabel(sub.status) }}</span>
-                                          @if (sub.score !== null && sub.score !== undefined) {
-                                            <span class="text-sm font-bold" style="color: var(--cr-accent-blue);">{{ sub.score }}/{{ sa.maxScore }} điểm</span>
+                                @for (sub of filteredSubmissions(); track sub.id) {
+                                  <div
+                                    class="rounded-xl p-4 max-w-full overflow-hidden"
+                                    [style]="sub.isSimilarityFlagged
+                                      ? 'background: var(--cr-bg-secondary); border: 1px solid rgba(248, 81, 73, 0.45);'
+                                      : 'background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);'"
+                                  >
+                                    <div class="space-y-2 max-w-full">
+                                      <div class="flex flex-wrap items-start justify-between gap-3 max-w-full">
+                                        <div class="flex-1 min-w-0 space-y-1">
+                                          <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-xs" style="color: var(--cr-text-subtle);">Lần nộp #{{ sub.attemptNumber }}</span>
+                                            <span
+                                              class="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                                              [style]="sub.status === 'graded'
+                                                ? 'background: rgba(63, 185, 80, 0.12); color: var(--cr-accent-green);'
+                                                : sub.status === 'returned'
+                                                  ? 'background: rgba(88, 166, 255, 0.12); color: var(--cr-accent-blue);'
+                                                  : sub.status === 'late'
+                                                    ? 'background: rgba(248, 81, 73, 0.12); color: var(--cr-accent-red);'
+                                                    : 'background: rgba(210, 169, 34, 0.12); color: var(--cr-accent-yellow);'"
+                                            >{{ getSubmissionStatusLabel(sub.status) }}</span>
+                                            @if (sub.isSimilarityFlagged) {
+                                              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" style="background: rgba(248, 81, 73, 0.14); color: var(--cr-accent-red);">
+                                                <i class="pi pi-copy mr-1"></i>Nghi ngờ sao chép
+                                                @if (sub.maxSimilarityScore !== null && sub.maxSimilarityScore !== undefined) {
+                                                  <span> {{ formatSimilarityPercent(sub.maxSimilarityScore) }}</span>
+                                                }
+                                              </span>
+                                            }
+                                            @if (sub.score !== null && sub.score !== undefined) {
+                                              <span class="text-sm font-bold" style="color: var(--cr-accent-blue);">{{ sub.score }}/{{ sa.maxScore }} điểm</span>
+                                            }
+                                          </div>
+                                          <div>
+                                            <p class="text-sm font-medium break-words" style="color: var(--cr-text-primary);">
+                                              {{ getSubmissionDisplayName(sub) }}
+                                            </p>
+                                            @if (sub.author?.email) {
+                                              <p class="text-xs break-all" style="color: var(--cr-text-subtle);">{{ sub.author?.email }}</p>
+                                            }
+                                          </div>
+                                          @if (!isSubmissionExpanded(sub)) {
+                                            <p class="text-xs" style="color: var(--cr-text-subtle);">Bấm "Chi tiết" để xem nhận xét và nội dung bài nộp.</p>
                                           }
                                         </div>
-                                        <div>
-                                          <p class="text-sm font-medium" style="color: var(--cr-text-primary);">
-                                            {{ getSubmissionDisplayName(sub) }}
-                                          </p>
-                                          @if (sub.author?.email) {
-                                            <p class="text-xs" style="color: var(--cr-text-subtle);">{{ sub.author?.email }}</p>
+                                        <div class="flex items-center gap-1 flex-wrap justify-start sm:justify-end shrink-0">
+                                          <p-button
+                                            [label]="isSubmissionExpanded(sub) ? 'Ẩn chi tiết' : 'Chi tiết'"
+                                            [icon]="isSubmissionExpanded(sub) ? 'pi pi-angle-up' : 'pi pi-angle-down'"
+                                            severity="secondary"
+                                            [text]="true"
+                                            size="small"
+                                            (onClick)="toggleSubmissionDetails(sub)"
+                                          />
+                                          <p-button icon="pi pi-star" severity="info" [text]="true" size="small" pTooltip="Chấm điểm" (onClick)="openGradeDialog(sub)" />
+                                          <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" pTooltip="Xóa bài nộp" (onClick)="confirmDeleteSubmission(sub)" />
+                                        </div>
+                                      </div>
+                                      @if (isSubmissionExpanded(sub)) {
+                                        <div class="space-y-2 max-w-full">
+                                          @if (sub.isSimilarityFlagged) {
+                                            <div class="p-2 rounded text-sm" style="background: rgba(248, 81, 73, 0.1); color: var(--cr-accent-red); border: 1px solid rgba(248, 81, 73, 0.3);">
+                                              <div class="font-semibold mb-1">
+                                                <i class="pi pi-exclamation-triangle mr-1"></i>Cảnh báo giống bài
+                                                @if (sub.maxSimilarityScore !== null && sub.maxSimilarityScore !== undefined) {
+                                                  <span>({{ formatSimilarityPercent(sub.maxSimilarityScore) }})</span>
+                                                }
+                                              </div>
+                                              @if (sub.similarityMatches && sub.similarityMatches.length > 0) {
+                                                <div class="text-xs space-y-0.5 break-words">
+                                                  @for (match of sub.similarityMatches.slice(0, 3); track match.submissionId) {
+                                                    <div>- {{ getSimilarityMatchLabel(match) }}: {{ formatSimilarityPercent(match.similarity) }}</div>
+                                                  }
+                                                </div>
+                                              }
+                                            </div>
+                                          }
+                                          @if (sub.aiGradingResult) {
+                                            <div class="p-2 rounded text-sm" style="background: rgba(63, 185, 80, 0.08); border: 1px solid rgba(63, 185, 80, 0.3); color: var(--cr-accent-green);">
+                                              <div class="font-semibold mb-1">
+                                                <i class="pi pi-sparkles mr-1"></i>Nhận xét AI
+                                                @if (sub.aiGradingResult.confidence !== undefined && sub.aiGradingResult.confidence !== null) {
+                                                  <span class="text-xs">· Độ tin cậy {{ formatSimilarityPercent(sub.aiGradingResult.confidence) }}</span>
+                                                }
+                                              </div>
+                                              <div class="text-xs whitespace-pre-wrap break-words" style="color: var(--cr-text-secondary);">
+                                                {{ sub.aiGradingResult.feedback || 'AI không trả về nhận xét chi tiết.' }}
+                                              </div>
+                                              @if (sub.aiGradingResult.criterionScores && sub.aiGradingResult.criterionScores.length > 0) {
+                                                <div class="text-xs mt-2 space-y-0.5 break-words">
+                                                  @for (criterion of sub.aiGradingResult.criterionScores; track criterion.criterion) {
+                                                    <div>• {{ criterion.criterion }}: {{ criterion.score }}/{{ criterion.maxScore }}</div>
+                                                  }
+                                                </div>
+                                              }
+                                            </div>
+                                          }
+                                          @if (sub.submissionFiles && sub.submissionFiles.length > 0) {
+                                            <div class="space-y-0.5">
+                                              @for (file of sub.submissionFiles; track file.fileId) {
+                                                <p class="text-sm break-all" style="color: var(--cr-text-secondary);">
+                                                  <i class="pi pi-file mr-1"></i>{{ file.fileName }}
+                                                  <span class="ml-1" style="color: var(--cr-text-subtle);">({{ formatFileSize(file.fileSize) }})</span>
+                                                </p>
+                                              }
+                                            </div>
+                                          }
+                                          @if (sub.content) {
+                                            <p class="text-sm max-w-full whitespace-pre-wrap break-words" style="color: var(--cr-text-muted);">{{ sub.content }}</p>
+                                          }
+                                          @if (sub.feedback) {
+                                            <div class="p-2 rounded text-sm whitespace-pre-wrap break-words" style="background: rgba(88, 166, 255, 0.08); color: var(--cr-accent-blue);">
+                                              <i class="pi pi-comment mr-1"></i>{{ sub.feedback }}
+                                            </div>
                                           }
                                         </div>
-                                        @if (sub.isSimilarityFlagged) {
-                                          <div class="mt-2 p-2 rounded text-sm" style="background: rgba(248, 81, 73, 0.1); color: var(--cr-accent-red); border: 1px solid rgba(248, 81, 73, 0.3);">
-                                            <div class="font-semibold mb-1">
-                                              <i class="pi pi-exclamation-triangle mr-1"></i>Cảnh báo giống bài
-                                              @if (sub.maxSimilarityScore !== null && sub.maxSimilarityScore !== undefined) {
-                                                <span>({{ formatSimilarityPercent(sub.maxSimilarityScore) }})</span>
-                                              }
-                                            </div>
-                                            @if (sub.similarityMatches && sub.similarityMatches.length > 0) {
-                                              <div class="text-xs space-y-0.5">
-                                                @for (match of sub.similarityMatches.slice(0, 3); track match.submissionId) {
-                                                  <div>- {{ getSimilarityMatchLabel(match) }}: {{ formatSimilarityPercent(match.similarity) }}</div>
-                                                }
-                                              </div>
-                                            }
-                                          </div>
-                                        }
-                                        @if (sub.aiGradingResult) {
-                                          <div class="mt-2 p-2 rounded text-sm" style="background: rgba(63, 185, 80, 0.08); border: 1px solid rgba(63, 185, 80, 0.3); color: var(--cr-accent-green);">
-                                            <div class="font-semibold mb-1">
-                                              <i class="pi pi-sparkles mr-1"></i>Nhận xét AI
-                                              @if (sub.aiGradingResult.confidence !== undefined && sub.aiGradingResult.confidence !== null) {
-                                                <span class="text-xs">· Độ tin cậy {{ formatSimilarityPercent(sub.aiGradingResult.confidence) }}</span>
-                                              }
-                                            </div>
-                                            <div class="text-xs" style="color: var(--cr-text-secondary);">
-                                              {{ sub.aiGradingResult.feedback || 'AI không trả về nhận xét chi tiết.' }}
-                                            </div>
-                                            @if (sub.aiGradingResult.criterionScores && sub.aiGradingResult.criterionScores.length > 0) {
-                                              <div class="text-xs mt-2 space-y-0.5">
-                                                @for (criterion of sub.aiGradingResult.criterionScores; track criterion.criterion) {
-                                                  <div>• {{ criterion.criterion }}: {{ criterion.score }}/{{ criterion.maxScore }}</div>
-                                                }
-                                              </div>
-                                            }
-                                          </div>
-                                        }
-                                        @if (sub.submissionFiles && sub.submissionFiles.length > 0) {
-                                          <div class="space-y-0.5">
-                                            @for (file of sub.submissionFiles; track file.fileId) {
-                                              <p class="text-sm" style="color: var(--cr-text-secondary);">
-                                                <i class="pi pi-file mr-1"></i>{{ file.fileName }}
-                                                <span class="ml-1" style="color: var(--cr-text-subtle);">({{ formatFileSize(file.fileSize) }})</span>
-                                              </p>
-                                            }
-                                          </div>
-                                        }
-                                        @if (sub.content) {
-                                          <p class="text-sm truncate" style="color: var(--cr-text-muted);">{{ sub.content }}</p>
-                                        }
-                                        @if (sub.feedback) {
-                                          <div class="mt-2 p-2 rounded text-sm" style="background: rgba(88, 166, 255, 0.08); color: var(--cr-accent-blue);">
-                                            <i class="pi pi-comment mr-1"></i>{{ sub.feedback }}
-                                          </div>
-                                        }
-                                        <p class="text-xs" style="color: var(--cr-text-subtle);">
-                                          Nộp lúc: {{ sub.submittedAt | date:'dd/MM/yyyy HH:mm' }}
-                                        </p>
-                                      </div>
-                                      <div class="flex items-center gap-1">
-                                        <p-button icon="pi pi-star" severity="info" [text]="true" size="small" pTooltip="Chấm điểm" (onClick)="openGradeDialog(sub)" />
-                                        <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" pTooltip="Xóa bài nộp" (onClick)="confirmDeleteSubmission(sub)" />
-                                      </div>
+                                      }
+                                      <p class="text-xs" style="color: var(--cr-text-subtle);">
+                                        Nộp lúc: {{ sub.submittedAt | date:'dd/MM/yyyy HH:mm' }}
+                                      </p>
                                     </div>
                                   </div>
                                 }

@@ -369,7 +369,7 @@ class CreateSectionTool extends BaseTool {
     .object({
       courseId: z.string().describe('The unique ID of the course'),
     })
-    .merge(CreateSectionSchema);
+    .extend(CreateSectionSchema.shape);
 
   protected async run(
     args: { courseId: string } & z.infer<typeof CreateSectionSchema>,
@@ -420,7 +420,7 @@ class UpdateSectionTool extends BaseTool {
       courseId: z.string().describe('The unique ID of the course'),
       sectionId: z.string().describe('The unique ID of the section'),
     })
-    .merge(UpdateSectionSchema);
+    .extend(UpdateSectionSchema.shape);
 
   protected async run(
     args: { courseId: string; sectionId: string } & z.infer<typeof UpdateSectionSchema>,
@@ -458,7 +458,7 @@ class CreateLessonTool extends BaseTool {
       courseId: z.string().describe('The unique ID of the course'),
       sectionId: z.string().describe('The unique ID of the section'),
     })
-    .merge(CreateLessonSchema);
+    .extend(CreateLessonSchema.shape);
 
   protected async run(
     args: { courseId: string; sectionId: string } & z.infer<typeof CreateLessonSchema>,
@@ -522,7 +522,7 @@ class UpdateLessonTool extends BaseTool {
       sectionId: z.string().describe('The unique ID of the section'),
       lessonId: z.string().describe('The unique ID of the lesson'),
     })
-    .merge(UpdateLessonSchema);
+    .extend(UpdateLessonSchema.shape);
 
   protected async run(
     args: { courseId: string; sectionId: string; lessonId: string } & z.infer<
@@ -572,7 +572,7 @@ class CreateLessonProblemTool extends BaseTool {
       sectionId: z.string().describe('The unique ID of the section'),
       lessonId: z.string().describe('The unique ID of the lesson'),
     })
-    .merge(CreateLessonProblemSchema);
+    .extend(CreateLessonProblemSchema.shape);
 
   protected async run(
     args: { courseId: string; sectionId: string; lessonId: string } & z.infer<
@@ -621,7 +621,7 @@ class UpdateLessonProblemTool extends BaseTool {
       lessonId: z.string().describe('The unique ID of the lesson'),
       lessonProblemId: z.string().describe('The unique ID of the lesson-problem link'),
     })
-    .merge(UpdateLessonProblemSchema);
+    .extend(UpdateLessonProblemSchema.shape);
 
   protected async run(
     args: {
@@ -701,7 +701,7 @@ class CreateQuizTool extends BaseTool {
       sectionId: z.string().describe('The unique ID of the section'),
       lessonId: z.string().describe('The unique ID of the lesson'),
     })
-    .merge(CreateQuizSchema);
+    .extend(CreateQuizSchema.shape);
 
   protected async run(
     args: { courseId: string; sectionId: string; lessonId: string } & z.infer<
@@ -773,7 +773,7 @@ class UpdateQuizTool extends BaseTool {
       lessonId: z.string().describe('The unique ID of the lesson'),
       quizId: z.string().describe('The unique ID of the quiz'),
     })
-    .merge(UpdateQuizSchema);
+    .extend(UpdateQuizSchema.shape);
 
   protected async run(
     args: { courseId: string; sectionId: string; lessonId: string; quizId: string } & z.infer<
@@ -825,7 +825,7 @@ class CreateQuizQuestionTool extends BaseTool {
       lessonId: z.string().describe('The unique ID of the lesson'),
       quizId: z.string().describe('The unique ID of the quiz'),
     })
-    .merge(CreateQuizQuestionSchema);
+    .extend(CreateQuizQuestionSchema.shape);
 
   protected async run(
     args: { courseId: string; sectionId: string; lessonId: string; quizId: string } & z.infer<
@@ -904,7 +904,7 @@ class UpdateQuizQuestionTool extends BaseTool {
       quizId: z.string().describe('The unique ID of the quiz'),
       questionId: z.string().describe('The unique ID of the question'),
     })
-    .merge(UpdateQuizQuestionSchema);
+    .extend(UpdateQuizQuestionSchema.shape);
 
   protected async run(
     args: {
@@ -969,7 +969,7 @@ class SubmitQuizAttemptTool extends BaseTool {
       lessonId: z.string().describe('The unique ID of the lesson'),
       quizId: z.string().describe('The unique ID of the quiz'),
     })
-    .merge(SubmitQuizAttemptSchema);
+    .extend(SubmitQuizAttemptSchema.shape);
 
   protected async run(
     args: { courseId: string; sectionId: string; lessonId: string; quizId: string } & z.infer<
@@ -1069,7 +1069,7 @@ class CreateCourseReviewTool extends BaseTool {
     .object({
       courseId: z.string().describe('The unique ID of the course'),
     })
-    .merge(CreateReviewSchema);
+    .extend(CreateReviewSchema.shape);
 
   protected async run(
     args: { courseId: string } & z.infer<typeof CreateReviewSchema>,
@@ -1104,7 +1104,7 @@ class UpdateCourseReviewTool extends BaseTool {
       courseId: z.string().describe('The unique ID of the course'),
       reviewId: z.string().describe('The unique ID of the review'),
     })
-    .merge(UpdateReviewSchema);
+    .extend(UpdateReviewSchema.shape);
 
   protected async run(
     args: { courseId: string; reviewId: string } & z.infer<typeof UpdateReviewSchema>,
@@ -1142,7 +1142,7 @@ class CreateAssignmentTool extends BaseTool {
       courseId: z.string().describe('The unique ID of the course'),
       lessonId: z.string().describe('The unique ID of the lesson'),
     })
-    .merge(CreateAssignmentSchema);
+    .extend(CreateAssignmentSchema.shape);
 
   protected async run(
     args: { courseId: string; lessonId: string } & z.infer<typeof CreateAssignmentSchema>,
@@ -1206,7 +1206,7 @@ class UpdateAssignmentTool extends BaseTool {
       lessonId: z.string().describe('The unique ID of the lesson'),
       assignmentId: z.string().describe('The unique ID of the assignment'),
     })
-    .merge(UpdateAssignmentSchema);
+    .extend(UpdateAssignmentSchema.shape);
 
   protected async run(
     args: { courseId: string; lessonId: string; assignmentId: string } & z.infer<
@@ -1258,7 +1258,7 @@ class CreateAssignmentSubmissionTool extends BaseTool {
       lessonId: z.string().describe('The unique ID of the lesson'),
       assignmentId: z.string().describe('The unique ID of the assignment'),
     })
-    .merge(CreateSubmissionSchema);
+    .extend(CreateSubmissionSchema.shape);
 
   protected async run(
     args: { courseId: string; lessonId: string; assignmentId: string } & z.infer<
@@ -1329,7 +1329,7 @@ class UpdateAssignmentSubmissionTool extends BaseTool {
       assignmentId: z.string().describe('The unique ID of the assignment'),
       submissionId: z.string().describe('The unique ID of the submission'),
     })
-    .merge(UpdateSubmissionSchema);
+    .extend(UpdateSubmissionSchema.shape);
 
   protected async run(
     args: {
@@ -1403,7 +1403,7 @@ class GradeAssignmentSubmissionTool extends BaseTool {
       assignmentId: z.string().describe('The unique ID of the assignment'),
       submissionId: z.string().describe('The unique ID of the submission'),
     })
-    .merge(GradeSubmissionSchema);
+    .extend(GradeSubmissionSchema.shape);
 
   protected async run(
     args: {

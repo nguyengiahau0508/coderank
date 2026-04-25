@@ -154,7 +154,22 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
   readonly showGradeDialog = signal<boolean>(false);
   readonly gradingSubmission = signal<CourseAssignmentSubmissionsModel | null>(null);
   readonly savingGrade = signal<boolean>(false);
+  readonly expandedSubmissionIds = signal<Set<string>>(new Set());
+  readonly submissionSearchQuery = signal<string>('');
   gradeForm: any = {};
+
+  readonly filteredSubmissions = computed<CourseAssignmentSubmissionsModel[]>(() => {
+    const query = this.normalizeSearchValue(this.submissionSearchQuery());
+    if (!query) {
+      return this.submissions();
+    }
+
+    return this.submissions().filter((submission) => {
+      const displayName = this.normalizeSearchValue(this.getSubmissionDisplayName(submission));
+      const email = this.normalizeSearchValue(submission.author?.email || '');
+      return displayName.includes(query) || email.includes(query);
+    });
+  });
 
   readonly gradedSubmissionSummaryRows = computed<AssignmentSubmissionSummaryRow[]>(() => {
     const assignment = this.selectedAssignment();
@@ -163,7 +178,7 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
     }
 
     const maxScore = assignment.maxScore;
-    const rows = this.submissions()
+    const rows = this.filteredSubmissions()
       .filter((sub) => typeof sub.score === 'number' && Number.isFinite(sub.score))
       .map((sub) => {
         const scoreValue = sub.score as number;
@@ -183,6 +198,28 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
       });
 
     return rows.sort((left, right) => right.scoreValue - left.scoreValue);
+  });
+
+  readonly selectedAssignmentCriteria = computed<AssignmentGradingCriterion[]>(() => {
+    const assignment = this.selectedAssignment();
+    if (!assignment?.gradingCriteria || assignment.gradingCriteria.length === 0) {
+      return [];
+    }
+
+    return assignment.gradingCriteria
+      .filter((item) => !!item?.criterion?.trim())
+      .map((item) => ({
+        criterion: item.criterion.trim(),
+        maxScore: Number(item.maxScore) || 0,
+        description: item.description?.trim() || '',
+      }));
+  });
+
+  readonly selectedAssignmentCriteriaTotalScore = computed<number>(() => {
+    return this.selectedAssignmentCriteria().reduce((sum, item) => {
+      const value = Number(item.maxScore);
+      return Number.isFinite(value) ? sum + value : sum;
+    }, 0);
   });
 
   // Computed prev/next
@@ -365,6 +402,7 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
     this.quizQuestions.set([]);
     this.selectedAssignment.set(null);
     this.submissions.set([]);
+    this.expandedSubmissionIds.set(new Set());
   }
 
   navigateToProblem(problemId: string | number): void {
@@ -1028,6 +1066,8 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
   selectAssignment(a: CourseAssignmentsModel): void {
     this.selectedAssignment.set(a);
     this.aiGradingSummary.set(null);
+    this.expandedSubmissionIds.set(new Set());
+    this.submissionSearchQuery.set('');
     this.loadSubmissions(a.id.toString());
   }
 
@@ -1035,6 +1075,25 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
     this.selectedAssignment.set(null);
     this.submissions.set([]);
     this.aiGradingSummary.set(null);
+    this.expandedSubmissionIds.set(new Set());
+    this.submissionSearchQuery.set('');
+  }
+
+  isSubmissionExpanded(sub: CourseAssignmentSubmissionsModel): boolean {
+    return this.expandedSubmissionIds().has(sub.id.toString());
+  }
+
+  toggleSubmissionDetails(sub: CourseAssignmentSubmissionsModel): void {
+    const submissionId = sub.id.toString();
+    this.expandedSubmissionIds.update((current) => {
+      const next = new Set(current);
+      if (next.has(submissionId)) {
+        next.delete(submissionId);
+      } else {
+        next.add(submissionId);
+      }
+      return next;
+    });
   }
 
   loadSubmissions(assignmentId: string): void {
@@ -1043,10 +1102,12 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
       next: (response) => {
         const data = response.data ?? (response as any);
         this.submissions.set(Array.isArray(data) ? data : []);
+        this.expandedSubmissionIds.set(new Set());
         this.loadingSubmissions.set(false);
       },
       error: () => {
         this.submissions.set([]);
+        this.expandedSubmissionIds.set(new Set());
         this.loadingSubmissions.set(false);
       },
     });
@@ -1156,6 +1217,14 @@ export class AdminLessonDetailComponent implements OnInit, OnDestroy {
       return '0%';
     }
     return `${Math.round(score * 100)}%`;
+  }
+
+  private normalizeSearchValue(value: string): string {
+    return value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
   }
 
   private createEmptyCriterionDraft(): AssignmentCriterionDraft {
