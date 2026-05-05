@@ -15,211 +15,48 @@
         <p-skeleton height="24rem" />
       </div>
     </div>
-  } @else {
-    <section
-      class="rounded-2xl p-5 sm:p-6"
-      style="background: linear-gradient(135deg, color-mix(in srgb, var(--cr-accent-blue) 14%, var(--cr-bg-secondary)) 0%, var(--cr-bg-secondary) 70%); border: 1px solid var(--cr-border);"
-    >
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div class="space-y-2">
-          <p class="text-xs uppercase tracking-[0.16em] font-semibold" style="color: var(--cr-text-subtle);">Student Dashboard</p>
-          <h1 class="text-2xl sm:text-3xl font-bold" style="color: var(--cr-text-primary);">Xin chào, {{ greeting() }}</h1>
-          <p class="text-sm" style="color: var(--cr-text-muted);">Theo dõi tiến độ học tập, thành tích contest và vị trí xếp hạng của bạn trong một màn hình.</p>
-        </div>
-
-        <div class="rounded-xl p-4 min-w-[15rem]" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
-          <p class="text-xs mb-1" style="color: var(--cr-text-subtle);">Xếp hạng năng lực</p>
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <p class="text-2xl font-bold leading-none" style="color: var(--cr-text-primary);">{{ profile()?.eloRating || 1400 }}</p>
-              <p class="text-[11px] mt-1" style="color: var(--cr-text-muted);">Elo Rating</p>
-            </div>
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold" [style]="learnerTierColor()">
-              {{ learnerTier() }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="rounded-xl p-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
-          <p class="text-[10px] uppercase tracking-wide" style="color: var(--cr-text-subtle);">Khóa học</p>
-          <p class="mt-1 text-xl font-bold" style="color: var(--cr-text-primary);">{{ courseStats().total }}</p>
-        </div>
-        <div class="rounded-xl p-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
-          <p class="text-[10px] uppercase tracking-wide" style="color: var(--cr-text-subtle);">Tiến độ TB</p>
-          <p class="mt-1 text-xl font-bold" style="color: var(--cr-accent-green);">{{ courseStats().avgProgress }}%</p>
-        </div>
-        <div class="rounded-xl p-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
-          <p class="text-[10px] uppercase tracking-wide" style="color: var(--cr-text-subtle);">Contest đã thi</p>
-          <p class="mt-1 text-xl font-bold" style="color: var(--cr-text-primary);">{{ contestStats().totalJoined }}</p>
-        </div>
-        <div class="rounded-xl p-3.5" style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);">
-          <p class="text-[10px] uppercase tracking-wide" style="color: var(--cr-text-subtle);">Best Rank</p>
-          <p class="mt-1 text-xl font-bold" style="color: var(--cr-accent-yellow);">{{ contestStats().bestRank || '—' }}</p>
-        </div>
-      </div>
+  } @else if (errorMessage() && !profile()) {
+    <section class="rounded-xl p-5 text-center" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
+      <i class="pi pi-exclamation-triangle text-2xl" style="color: var(--cr-accent-yellow);"></i>
+      <p class="text-sm mt-2" style="color: var(--cr-text-muted);">{{ errorMessage() }}</p>
+      <p-button label="Tải lại" icon="pi pi-refresh" styleClass="mt-3" (click)="reload()" />
     </section>
+  } @else {
+    <app-dashboard-hero-card
+      [profile]="profile()"
+      [learning]="learning()"
+      [contests]="contests()"
+    />
+
+    @if (partialFailures().length > 0) {
+      <section class="rounded-xl p-3" style="background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.35);">
+        <p class="text-xs font-medium" style="color: var(--cr-accent-yellow);">
+          Một số widget chưa tải đủ dữ liệu ({{ partialFailures().join(', ') }}). Bạn vẫn có thể sử dụng các phần còn lại.
+        </p>
+      </section>
+    }
 
     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)] gap-4 items-start">
       <div class="space-y-4">
-        <section class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <h2 class="text-sm font-semibold" style="color: var(--cr-text-primary);">Khóa học đang học</h2>
-            <a routerLink="/student/courses/my-courses" class="text-xs font-medium hover:opacity-80" style="color: var(--cr-accent-blue);">Xem tất cả</a>
-          </div>
+        <app-dashboard-learning-widget
+          [courses]="learning()?.recentCourses || []"
+        />
 
-          @if (recentCourses().length > 0) {
-            <div class="space-y-3">
-              @for (course of recentCourses(); track course.id) {
-                <a
-                  [routerLink]="'/student/courses/' + course.id"
-                  class="block rounded-lg p-3 transition-colors hover:brightness-110"
-                  style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);"
-                >
-                  <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                      <p class="text-sm font-semibold truncate" style="color: var(--cr-text-primary);">{{ course.title }}</p>
-                      <div class="mt-1 flex items-center gap-2 flex-wrap">
-                        <p-tag
-                          [value]="getCourseLevelLabel(course.level)"
-                          [severity]="getCourseLevelSeverity(course.level)"
-                          styleClass="text-[10px]"
-                        />
-                        <span class="text-[11px]" style="color: var(--cr-text-subtle);">
-                          {{ course.enrollment?.completedLessons || 0 }}/{{ course.enrollment?.totalLessons || 0 }} bài
-                        </span>
-                      </div>
-                    </div>
-                    <span class="text-xs font-semibold" style="color: var(--cr-accent-green);">
-                      {{ (course.enrollment?.progressPercent || 0) | number:'1.0-0' }}%
-                    </span>
-                  </div>
-                  <div class="mt-2 h-1.5 rounded-full overflow-hidden" style="background: var(--cr-bg-tertiary);">
-                    <div
-                      class="h-full rounded-full"
-                      style="background: linear-gradient(90deg, var(--cr-accent-blue), var(--cr-accent-green));"
-                      [style.width.%]="course.enrollment?.progressPercent || 0"
-                    ></div>
-                  </div>
-                </a>
-              }
-            </div>
-          } @else {
-            <div class="rounded-lg p-8 text-center" style="background: var(--cr-bg-primary); border: 1px dashed var(--cr-border);">
-              <i class="pi pi-book text-2xl" style="color: var(--cr-text-subtle);"></i>
-              <p class="text-sm mt-2" style="color: var(--cr-text-muted);">Bạn chưa đăng ký khóa học nào.</p>
-              <p-button label="Khám phá khóa học" icon="pi pi-compass" styleClass="mt-3" routerLink="/student/courses/explore" />
-            </div>
-          }
-        </section>
-
-        <section class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <h2 class="text-sm font-semibold" style="color: var(--cr-text-primary);">Cuộc thi đã tham gia</h2>
-            <a routerLink="/student/contests" class="text-xs font-medium hover:opacity-80" style="color: var(--cr-accent-blue);">Đến contest</a>
-          </div>
-
-          @if (recentParticipations().length > 0) {
-            <div class="space-y-2.5">
-              @for (item of recentParticipations(); track item.contest.id) {
-                <a
-                  [routerLink]="'/student/contests/' + item.contest.id"
-                  class="block rounded-lg px-3 py-2.5 transition-colors hover:brightness-110"
-                  style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);"
-                >
-                  <div class="flex items-center justify-between gap-2">
-                    <div class="min-w-0">
-                      <p class="text-sm font-semibold truncate" style="color: var(--cr-text-primary);">{{ item.contest.title }}</p>
-                      <p class="text-[11px] mt-0.5" style="color: var(--cr-text-subtle);">Kết thúc: {{ formatDate(item.contest.endTime) }}</p>
-                    </div>
-                    <div class="text-right">
-                      <p class="text-xs font-semibold" style="color: var(--cr-accent-yellow);">#{{ item.participation.rank || '—' }}</p>
-                      <p class="text-[11px]" style="color: var(--cr-text-subtle);">{{ item.participation.totalScore }} điểm</p>
-                    </div>
-                  </div>
-                </a>
-              }
-            </div>
-          } @else {
-            <div class="rounded-lg p-8 text-center" style="background: var(--cr-bg-primary); border: 1px dashed var(--cr-border);">
-              <i class="pi pi-trophy text-2xl" style="color: var(--cr-text-subtle);"></i>
-              <p class="text-sm mt-2" style="color: var(--cr-text-muted);">Chưa có dữ liệu contest đã thi.</p>
-            </div>
-          }
-        </section>
+        <app-dashboard-contest-widget
+          [recentParticipations]="contests()?.recentParticipations || []"
+          [spotlightContests]="contests()?.spotlightContests || []"
+        />
       </div>
 
       <aside class="space-y-4 xl:sticky xl:top-4">
-        <section class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-          <h2 class="text-sm font-semibold mb-3" style="color: var(--cr-text-primary);">Contest Performance</h2>
-          <div class="space-y-2 text-xs" style="color: var(--cr-text-subtle);">
-            <div class="flex items-center justify-between">
-              <span>Contest đã thi</span>
-              <span class="font-semibold" style="color: var(--cr-text-primary);">{{ contestStats().totalJoined }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span>Best rank</span>
-              <span class="font-semibold" style="color: var(--cr-accent-yellow);">{{ contestStats().bestRank || '—' }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span>Rank trung bình</span>
-              <span class="font-semibold" style="color: var(--cr-text-primary);">{{ contestStats().averageRank || '—' }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span>Tổng điểm contest</span>
-              <span class="font-semibold" style="color: var(--cr-accent-blue);">{{ contestStats().totalScore }}</span>
-            </div>
-          </div>
-        </section>
+        <app-dashboard-recommendations-widget
+          [problems]="recommendations()?.problems || []"
+          [activeLearningPath]="recommendations()?.activeLearningPath || null"
+        />
 
-        <section class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-          <h2 class="text-sm font-semibold mb-3" style="color: var(--cr-text-primary);">Cuộc thi nổi bật</h2>
-          @if (spotlightContests().length > 0) {
-            <div class="space-y-2.5">
-              @for (contest of spotlightContests(); track contest.id) {
-                <a
-                  [routerLink]="'/student/contests/' + contest.id"
-                  class="block rounded-lg px-3 py-2.5 transition-colors hover:brightness-110"
-                  style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);"
-                >
-                  <div class="flex items-center justify-between gap-2">
-                    <p class="text-xs font-medium truncate" style="color: var(--cr-text-primary);">{{ contest.title }}</p>
-                    <p-tag
-                      [value]="getContestStatusLabel(contest.status)"
-                      [severity]="getContestStatusSeverity(contest.status)"
-                      styleClass="text-[10px]"
-                    />
-                  </div>
-                  <p class="text-[11px] mt-1" style="color: var(--cr-text-subtle);">{{ formatDate(contest.startTime) }}</p>
-                </a>
-              }
-            </div>
-          } @else {
-            <p class="text-xs" style="color: var(--cr-text-muted);">Hiện chưa có cuộc thi công khai nào nổi bật.</p>
-          }
-        </section>
-
-        <section class="rounded-xl p-4" style="background: var(--cr-bg-secondary); border: 1px solid var(--cr-border);">
-          <h2 class="text-sm font-semibold mb-3" style="color: var(--cr-text-primary);">Thao tác nhanh</h2>
-          <div class="space-y-2">
-            @for (action of quickActions; track action.route) {
-              <a
-                [routerLink]="action.route"
-                class="flex items-center gap-3 p-2.5 rounded-lg transition-colors hover:brightness-110"
-                style="background: var(--cr-bg-primary); border: 1px solid var(--cr-border);"
-              >
-                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg" style="background: var(--cr-bg-tertiary); color: var(--cr-accent-blue);">
-                  <i [class]="'pi ' + action.icon + ' text-xs'"></i>
-                </span>
-                <span class="min-w-0">
-                  <span class="block text-xs font-semibold" style="color: var(--cr-text-primary);">{{ action.label }}</span>
-                  <span class="block text-[11px] truncate" style="color: var(--cr-text-subtle);">{{ action.description }}</span>
-                </span>
-              </a>
-            }
-          </div>
-        </section>
+        <app-dashboard-quick-actions-widget
+          [actions]="recommendations()?.quickActions || []"
+        />
       </aside>
     </div>
   }

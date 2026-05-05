@@ -110,19 +110,41 @@ export async function seedUsers(dataSource: DataSource) {
       refreshToken: faker.string.alphanumeric(64),
       ipAddress: faker.internet.ip(),
       userAgent: faker.internet.userAgent(),
-      deviceName: faker.helpers.arrayElement(['MacBook Pro', 'Windows PC', 'iPhone', 'Android Phone']),
+      deviceName: faker.helpers.arrayElement([
+        'MacBook Pro',
+        'Windows PC',
+        'iPhone',
+        'Android Phone',
+      ]),
       status: SessionStatusEnum.Active,
       expiresAt: faker.date.future({ years: 1 }),
       lastActivityAt: faker.date.recent({ days: 1 }),
       isRemembered: faker.datatype.boolean(),
-      deviceType: faker.helpers.arrayElement(['web', 'mobile', 'tablet', 'desktop']),
-      browser: faker.helpers.arrayElement(['Chrome 120', 'Firefox 115', 'Safari 17']),
-      os: faker.helpers.arrayElement(['Windows 11', 'macOS 14', 'Ubuntu 22.04', 'iOS 17', 'Android 14']),
+      deviceType: faker.helpers.arrayElement([
+        'web',
+        'mobile',
+        'tablet',
+        'desktop',
+      ]),
+      browser: faker.helpers.arrayElement([
+        'Chrome 120',
+        'Firefox 115',
+        'Safari 17',
+      ]),
+      os: faker.helpers.arrayElement([
+        'Windows 11',
+        'macOS 14',
+        'Ubuntu 22.04',
+        'iOS 17',
+        'Android 14',
+      ]),
     });
     sessions.push(session);
   }
   await sessionRepo.save(sessions);
 
-  console.log(`✅ Created ${users.length} users, ${authProviders.length} auth providers, ${sessions.length} sessions`);
+  console.log(
+    `✅ Created ${users.length} users, ${authProviders.length} auth providers, ${sessions.length} sessions`,
+  );
   return users;
 }

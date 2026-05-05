@@ -15,7 +15,10 @@ import {
   SubmissionStatusEnum,
 } from '../../common/enums/enums';
 
-export async function seedProblems(dataSource: DataSource, users: UsersEntity[]) {
+export async function seedProblems(
+  dataSource: DataSource,
+  users: UsersEntity[],
+) {
   console.log('🌱 Seeding problems...');
 
   const problemRepo = dataSource.getRepository(ProblemsEntity);
@@ -95,11 +98,15 @@ export async function seedProblems(dataSource: DataSource, users: UsersEntity[])
     'First Unique Character in a String',
   ];
 
-  const instructors = users.filter((u) => u.roles.includes('instructor' as any));
+  const instructors = users.filter((u) =>
+    u.roles.includes('instructor' as any),
+  );
 
   for (let i = 0; i < problemTitles.length; i++) {
     const title = problemTitles[i];
-    const difficulty = faker.helpers.arrayElement(Object.values(DifficultyEnum));
+    const difficulty = faker.helpers.arrayElement(
+      Object.values(DifficultyEnum),
+    );
     const author = faker.helpers.arrayElement(instructors);
 
     const problem = problemRepo.create({
@@ -113,9 +120,17 @@ export async function seedProblems(dataSource: DataSource, users: UsersEntity[])
       memoryLimitMb: faker.helpers.arrayElement([128, 256, 512]),
       difficulty,
       isPublished: faker.datatype.boolean(0.8),
-      points: difficulty === DifficultyEnum.Easy ? 100 : difficulty === DifficultyEnum.Medium ? 200 : 300,
+      points:
+        difficulty === DifficultyEnum.Easy
+          ? 100
+          : difficulty === DifficultyEnum.Medium
+            ? 200
+            : 300,
       authorId: author.id,
-      tags: faker.helpers.arrayElements(tags, faker.number.int({ min: 2, max: 5 })),
+      tags: faker.helpers.arrayElements(
+        tags,
+        faker.number.int({ min: 2, max: 5 }),
+      ),
     });
     problems.push(problem);
   }
@@ -185,22 +200,35 @@ export async function seedProblems(dataSource: DataSource, users: UsersEntity[])
     const numSubmissions = faker.number.int({ min: 5, max: 20 });
     for (let i = 0; i < numSubmissions; i++) {
       const student = faker.helpers.arrayElement(students);
-      const status = faker.helpers.arrayElement(Object.values(SubmissionStatusEnum));
+      const status = faker.helpers.arrayElement(
+        Object.values(SubmissionStatusEnum),
+      );
       const totalTests = faker.number.int({ min: 5, max: 10 });
-      const passedTests = status === SubmissionStatusEnum.Accepted ? totalTests : faker.number.int({ min: 0, max: totalTests });
+      const passedTests =
+        status === SubmissionStatusEnum.Accepted
+          ? totalTests
+          : faker.number.int({ min: 0, max: totalTests });
 
       const submission = submissionRepo.create({
         problemId: problem.id,
         authorId: student.id,
-        language: faker.helpers.arrayElement(Object.values(ProgrammingLanguageEnum)),
+        language: faker.helpers.arrayElement(
+          Object.values(ProgrammingLanguageEnum),
+        ),
         code: `// Submission by ${student.username}\n${faker.lorem.paragraphs(2)}`,
         status,
-        score: status === SubmissionStatusEnum.Accepted ? 100 : faker.number.int({ min: 0, max: 80 }),
+        score:
+          status === SubmissionStatusEnum.Accepted
+            ? 100
+            : faker.number.int({ min: 0, max: 80 }),
         executionTimeMs: faker.number.int({ min: 10, max: 1000 }),
         memoryUsedMb: faker.number.int({ min: 1, max: 100 }),
         passedTestcases: passedTests,
         totalTestcases: totalTests,
-        errorMessage: status !== SubmissionStatusEnum.Accepted ? faker.lorem.sentence() : undefined,
+        errorMessage:
+          status !== SubmissionStatusEnum.Accepted
+            ? faker.lorem.sentence()
+            : undefined,
       });
       submissions.push(submission);
     }

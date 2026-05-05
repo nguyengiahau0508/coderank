@@ -6,3 +6,4 @@ export * from './domains/problems';
 export * from './domains/contests';
 export * from './domains/courses';
 export * from './domains/runner';
+export * from './domains/dashboard';

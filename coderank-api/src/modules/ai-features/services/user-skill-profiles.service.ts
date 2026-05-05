@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseService } from 'src/common/services/base.service';
 import { UserSkillProfilesEntity } from '../entities/user-skill-profiles.entity';
 import { SubmissionsEntity } from 'src/modules/problems/entities/submissions.entity';
 import { SubmissionStatusEnum } from 'src/common/enums/enums';
+import { UsersEntity } from 'src/modules/users/entities/user.entity';
 
 @Injectable()
 export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntity> {
@@ -13,6 +14,8 @@ export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntit
     private readonly skillProfileRepository: Repository<UserSkillProfilesEntity>,
     @InjectRepository(SubmissionsEntity)
     private readonly submissionsRepository: Repository<SubmissionsEntity>,
+    @InjectRepository(UsersEntity)
+    private readonly usersRepository: Repository<UsersEntity>,
   ) {
     super(skillProfileRepository);
   }
@@ -21,6 +24,13 @@ export class UserSkillProfilesService extends BaseService<UserSkillProfilesEntit
    * Get or create skill profile for a user.
    */
   async getOrCreateProfile(userId: string): Promise<UserSkillProfilesEntity> {
+    const userExists = await this.usersRepository.exist({
+      where: { id: userId },
+    });
+    if (!userExists) {
+      throw new NotFoundException('User not found');
+    }
+
     let profile = await this.skillProfileRepository.findOne({
       where: { userId },
     });

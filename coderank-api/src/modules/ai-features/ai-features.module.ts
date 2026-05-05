@@ -29,6 +29,7 @@ import { CoursesModule } from '../courses/courses.module';
 import { SubmissionsEntity } from '../problems/entities/submissions.entity';
 import { ProblemsEntity } from '../problems/entities/problems.entity';
 import { CoursesEntity } from '../courses/entities/courses.entity';
+import { UsersEntity } from '../users/entities/user.entity';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { CoursesEntity } from '../courses/entities/courses.entity';
       SubmissionsEntity,
       ProblemsEntity,
       CoursesEntity,
+      UsersEntity,
     ]),
     AgentModule,
     ProblemsModule,

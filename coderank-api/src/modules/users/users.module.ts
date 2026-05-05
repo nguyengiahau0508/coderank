@@ -10,6 +10,7 @@ import { SessionsService } from './services/session.service';
 import { AuthProvidersService } from './services/auth-provider.service';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtConfigModule } from 'src/config/auth/jwt/jwt-config.module';
+import { UsersController } from './users.controller';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { JwtConfigModule } from 'src/config/auth/jwt/jwt-config.module';
     JwtConfigModule,
     JwtModule,
   ],
-  controllers: [],
+  controllers: [UsersController],
   providers: [
     UsersService,
     TokensService,

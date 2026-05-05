@@ -14,6 +14,7 @@ import { ClassAnalyticsEntity } from '../../modules/ai-features/entities/class-a
 import { UsersEntity } from '../../modules/users/entities/user.entity';
 import { ProblemsEntity } from '../../modules/problems/entities/problems.entity';
 import { SubmissionsEntity } from '../../modules/problems/entities/submissions.entity';
+import { CoursesEntity } from '../../modules/courses/entities/courses.entity';
 import {
   AiProviderEnum,
   AiHintLevelEnum,
@@ -41,19 +42,25 @@ export async function seedAiFeatures(
   const classAnalyticsRepo = dataSource.getRepository(ClassAnalyticsEntity);
 
   const students = users.filter((u) => u.roles.includes('student' as any));
-  const instructors = users.filter((u) => u.roles.includes('instructor' as any));
+  const instructors = users.filter((u) =>
+    u.roles.includes('instructor' as any),
+  );
 
   // Create AI configs for users
   const aiConfigs: UserAiConfigEntity[] = [];
   for (const user of users) {
     const config = aiConfigRepo.create({
-      userId: user.id,
+      authorId: user.id,
       provider: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
       apiKey: faker.string.alphanumeric(32),
-      model: faker.helpers.arrayElement(['gemini-pro', 'gpt-4', 'claude-3-opus']),
-      temperature: faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
-      maxTokens: faker.helpers.arrayElement([1000, 2000, 4000]),
-      isActive: true,
+      modelName: faker.helpers.arrayElement([
+        'gemini-2.5-flash',
+        'gpt-4',
+        'claude-3-opus',
+      ]),
+      baseHost: faker.datatype.boolean(0.3)
+        ? 'http://localhost:11434'
+        : undefined,
     });
     aiConfigs.push(config);
   }
@@ -65,9 +72,8 @@ export async function seedAiFeatures(
     const numConversations = faker.number.int({ min: 1, max: 5 });
     for (let i = 0; i < numConversations; i++) {
       const conversation = conversationRepo.create({
-        userId: student.id,
+        authorId: student.id,
         title: faker.lorem.sentence(),
-        context: JSON.stringify({ problemId: faker.helpers.arrayElement(problems).id }),
       });
       conversations.push(conversation);
     }
@@ -83,7 +89,6 @@ export async function seedAiFeatures(
         conversationId: conversation.id,
         role: i % 2 === 0 ? 'user' : 'assistant',
         content: faker.lorem.paragraph(),
-        metadata: JSON.stringify({ timestamp: new Date().toISOString() }),
       });
       messages.push(message);
     }
@@ -99,20 +104,32 @@ export async function seedAiFeatures(
   for (const submission of submissions.slice(0, 50)) {
     const review = codeReviewRepo.create({
       submissionId: submission.id,
-      userId: submission.userId,
       status: faker.helpers.arrayElement(Object.values(CodeReviewStatusEnum)),
-      findings: JSON.stringify([
+      overallScore: faker.number.int({ min: 60, max: 100 }),
+      readabilityScore: faker.number.int({ min: 50, max: 100 }),
+      maintainabilityScore: faker.number.int({ min: 50, max: 100 }),
+      efficiencyScore: faker.number.int({ min: 50, max: 100 }),
+      bestPracticesScore: faker.number.int({ min: 50, max: 100 }),
+      timeComplexity: faker.helpers.arrayElement([
+        'O(n)',
+        'O(n log n)',
+        'O(n²)',
+        'O(1)',
+      ]),
+      spaceComplexity: faker.helpers.arrayElement(['O(1)', 'O(n)', 'O(n²)']),
+      issues: [
         {
+          severity: 'warning',
           line: faker.number.int({ min: 1, max: 100 }),
-          severity: faker.helpers.arrayElement(Object.values(CodeReviewSeverityEnum)),
           message: faker.lorem.sentence(),
+          rule: 'code-style',
           suggestion: faker.lorem.sentence(),
         },
-      ]),
-      overallScore: faker.number.int({ min: 60, max: 100 }),
-      suggestions: faker.lorem.paragraph(),
-      aiProvider: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
-      processingTime: faker.number.int({ min: 100, max: 5000 }),
+      ],
+      suggestions: [faker.lorem.sentence(), faker.lorem.sentence()],
+      summary: faker.lorem.paragraph(),
+      reviewedBy: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
+      processingTimeMs: faker.number.int({ min: 100, max: 5000 }),
     });
     codeReviews.push(review);
   }
@@ -125,11 +142,12 @@ export async function seedAiFeatures(
     for (let i = 0; i < numHints; i++) {
       const hint = aiHintRepo.create({
         problemId: problem.id,
-        userId: faker.helpers.arrayElement(students).id,
         level: faker.helpers.arrayElement(Object.values(AiHintLevelEnum)),
-        content: faker.lorem.paragraph(),
-        aiProvider: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
-        generationTime: faker.number.int({ min: 500, max: 3000 }),
+        contentVi: faker.lorem.paragraph(),
+        contentEn: faker.lorem.paragraph(),
+        order: i,
+        isActive: true,
+        generatedBy: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
       });
       aiHints.push(hint);
     }
@@ -141,14 +159,47 @@ export async function seedAiFeatures(
   for (const submission of submissions.slice(0, 40)) {
     const grading = aiGradingRepo.create({
       submissionId: submission.id,
-      userId: submission.userId,
-      score: faker.number.int({ min: 0, max: 100 }),
-      feedback: faker.lorem.paragraph(),
-      strengths: JSON.stringify([faker.lorem.sentence(), faker.lorem.sentence()]),
-      weaknesses: JSON.stringify([faker.lorem.sentence(), faker.lorem.sentence()]),
-      suggestions: JSON.stringify([faker.lorem.sentence(), faker.lorem.sentence()]),
+      rubricScores: [
+        {
+          criterion: 'Correctness',
+          maxScore: 40,
+          score: faker.number.int({ min: 20, max: 40 }),
+          feedback: faker.lorem.sentence(),
+        },
+        {
+          criterion: 'Code Quality',
+          maxScore: 30,
+          score: faker.number.int({ min: 15, max: 30 }),
+          feedback: faker.lorem.sentence(),
+        },
+        {
+          criterion: 'Efficiency',
+          maxScore: 30,
+          score: faker.number.int({ min: 15, max: 30 }),
+          feedback: faker.lorem.sentence(),
+        },
+      ],
+      totalScore: faker.number.float({ min: 40, max: 100, fractionDigits: 2 }),
+      maxPossibleScore: 100,
+      percentageScore: faker.number.float({
+        min: 40,
+        max: 100,
+        fractionDigits: 2,
+      }),
+      overallFeedback: faker.lorem.paragraph(),
+      strengths: [faker.lorem.sentence(), faker.lorem.sentence()],
+      improvements: [faker.lorem.sentence(), faker.lorem.sentence()],
+      confidenceScore: faker.number.float({
+        min: 0.7,
+        max: 0.99,
+        fractionDigits: 2,
+      }),
       aiProvider: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
-      processingTime: faker.number.int({ min: 1000, max: 5000 }),
+      aiModel: 'gpt-4',
+      isVerified: faker.datatype.boolean(0.5),
+      verifiedBy: faker.datatype.boolean(0.3)
+        ? faker.helpers.arrayElement(instructors).id
+        : undefined,
     });
     aiGradings.push(grading);
   }
@@ -163,11 +214,22 @@ export async function seedAiFeatures(
         problemId: problem.id,
         input: faker.lorem.words(5),
         expectedOutput: faker.lorem.word(),
-        explanation: faker.lorem.sentence(),
-        difficulty: faker.helpers.arrayElement(['easy', 'medium', 'hard']),
-        aiProvider: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
+        category: faker.helpers.arrayElement([
+          'normal',
+          'edge',
+          'corner',
+          'performance',
+          'random',
+        ]),
+        description: faker.lorem.sentence(),
         isApproved: faker.datatype.boolean(0.7),
-        approvedBy: faker.datatype.boolean(0.5) ? faker.helpers.arrayElement(instructors).id : null,
+        isPublic: faker.datatype.boolean(0.6),
+        coverageScore: faker.number.float({
+          min: 0.5,
+          max: 1,
+          fractionDigits: 2,
+        }),
+        generatedBy: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
       });
       aiTestcases.push(testcase);
     }
@@ -178,19 +240,42 @@ export async function seedAiFeatures(
   const plagiarismReports: PlagiarismReportsEntity[] = [];
   for (let i = 0; i < 20; i++) {
     const submission1 = faker.helpers.arrayElement(submissions);
-    const submission2 = faker.helpers.arrayElement(submissions.filter((s) => s.id !== submission1.id));
+    const submission2 = faker.helpers.arrayElement(
+      submissions.filter((s) => s.id !== submission1.id),
+    );
 
     const report = plagiarismRepo.create({
-      submission1Id: submission1.id,
-      submission2Id: submission2.id,
-      similarityScore: faker.number.float({ min: 0.3, max: 1, fractionDigits: 2 }),
-      matchedSegments: JSON.stringify([
-        { line1: faker.number.int({ min: 1, max: 50 }), line2: faker.number.int({ min: 1, max: 50 }), length: faker.number.int({ min: 5, max: 20 }) },
-      ]),
-      aiProvider: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
+      submissionId: submission1.id,
+      maxSimilarity: faker.number.float({
+        min: 0.3,
+        max: 1,
+        fractionDigits: 2,
+      }),
+      isFlagged: faker.datatype.boolean(0.4),
+      matches: [
+        {
+          submissionId: submission2.id,
+          similarity: faker.number.float({
+            min: 0.3,
+            max: 1,
+            fractionDigits: 2,
+          }),
+          matchedLines: [
+            {
+              sourceLine: faker.number.int({ min: 1, max: 50 }),
+              targetLine: faker.number.int({ min: 1, max: 50 }),
+            },
+          ],
+        },
+      ],
+      matchCount: faker.number.int({ min: 1, max: 10 }),
+      analysis: faker.lorem.paragraph(),
       isReviewed: faker.datatype.boolean(0.5),
-      reviewedBy: faker.datatype.boolean(0.3) ? faker.helpers.arrayElement(instructors).id : null,
-      verdict: faker.helpers.arrayElement(['clean', 'suspicious', 'plagiarized', null]),
+      reviewedById: faker.datatype.boolean(0.3)
+        ? faker.helpers.arrayElement(instructors).id
+        : undefined,
+      reviewNotes: faker.lorem.sentence(),
+      processingTimeMs: faker.number.int({ min: 500, max: 5000 }),
     });
     plagiarismReports.push(report);
   }
@@ -201,16 +286,58 @@ export async function seedAiFeatures(
   for (const student of students) {
     const profile = skillProfileRepo.create({
       userId: student.id,
-      skills: JSON.stringify({
-        'data-structures': faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
-        'algorithms': faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
-        'dynamic-programming': faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
-        'graph-theory': faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
+      topicSkills: {
+        'data-structures': {
+          level: faker.number.int({ min: 0, max: 100 }),
+          problemsSolved: faker.number.int({ min: 0, max: 20 }),
+          averageAttempts: faker.number.float({
+            min: 1,
+            max: 3,
+            fractionDigits: 1,
+          }),
+          lastPracticed: faker.date.recent().toISOString(),
+        },
+        algorithms: {
+          level: faker.number.int({ min: 0, max: 100 }),
+          problemsSolved: faker.number.int({ min: 0, max: 20 }),
+          averageAttempts: faker.number.float({
+            min: 1,
+            max: 3,
+            fractionDigits: 1,
+          }),
+          lastPracticed: faker.date.recent().toISOString(),
+        },
+      },
+      strengths: ['Array manipulation', 'String processing'],
+      weaknesses: ['Graph algorithms', 'Dynamic programming'],
+      totalProblemsSolved: faker.number.int({ min: 0, max: 100 }),
+      totalSubmissions: faker.number.int({ min: 0, max: 150 }),
+      averageAccuracy: faker.number.float({
+        min: 0.5,
+        max: 1,
+        fractionDigits: 2,
       }),
-      strengths: JSON.stringify(['Array manipulation', 'String processing']),
-      weaknesses: JSON.stringify(['Graph algorithms', 'Dynamic programming']),
-      recommendedTopics: JSON.stringify(['Binary Search', 'Two Pointers']),
-      lastAnalyzed: faker.date.recent(),
+      averageAttemptsPerProblem: faker.number.float({
+        min: 1,
+        max: 5,
+        fractionDigits: 2,
+      }),
+      easySolved: faker.number.int({ min: 0, max: 30 }),
+      mediumSolved: faker.number.int({ min: 0, max: 20 }),
+      hardSolved: faker.number.int({ min: 0, max: 10 }),
+      learningPace: faker.helpers.arrayElement(['slow', 'moderate', 'fast']),
+      preferredDifficulty: 'medium',
+      averageCodeQuality: faker.number.float({
+        min: 0.6,
+        max: 1,
+        fractionDigits: 2,
+      }),
+      averageTimeComplexityScore: faker.number.float({
+        min: 0.6,
+        max: 1,
+        fractionDigits: 2,
+      }),
+      lastAnalyzedAt: faker.date.recent(),
     });
     skillProfiles.push(profile);
   }
@@ -219,47 +346,177 @@ export async function seedAiFeatures(
   // Create learning paths
   const learningPaths: LearningPathsEntity[] = [];
   for (const student of students.slice(0, 30)) {
+    const goalTopics = ['Arrays', 'Strings', 'Hash Tables', 'Trees', 'Graphs'];
+    const goalTopic = faker.helpers.arrayElement(goalTopics);
+
     const path = learningPathRepo.create({
       userId: student.id,
-      title: `Learning Path for ${student.username}`,
+      title: `${goalTopic} Learning Path`,
       description: faker.lorem.paragraph(),
-      steps: JSON.stringify([
-        { order: 1, topic: 'Arrays', problems: faker.helpers.arrayElements(problems, 3).map((p) => p.id) },
-        { order: 2, topic: 'Strings', problems: faker.helpers.arrayElements(problems, 3).map((p) => p.id) },
-        { order: 3, topic: 'Hash Tables', problems: faker.helpers.arrayElements(problems, 3).map((p) => p.id) },
+      goalTopic,
+      targetLevel: faker.helpers.arrayElement([
+        'beginner',
+        'intermediate',
+        'advanced',
+        'expert',
       ]),
-      currentStep: faker.number.int({ min: 0, max: 2 }),
-      progress: faker.number.int({ min: 0, max: 100 }),
-      estimatedCompletionDate: faker.date.future(),
-      aiProvider: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
+      steps: [
+        {
+          order: 1,
+          title: `Introduction to ${goalTopic}`,
+          description: 'Learn the basics',
+          type: 'topic',
+          resourceId: faker.helpers.arrayElement(problems).id,
+          estimatedTime: 60,
+          isCompleted: faker.datatype.boolean(0.5),
+          completedAt: faker.datatype.boolean(0.3)
+            ? new Date().toISOString()
+            : undefined,
+        },
+        {
+          order: 2,
+          title: `Practice ${goalTopic}`,
+          description: 'Solve problems',
+          type: 'problem',
+          resourceId: faker.helpers.arrayElement(problems).id,
+          estimatedTime: 120,
+          isCompleted: faker.datatype.boolean(0.3),
+          completedAt: faker.datatype.boolean(0.1)
+            ? new Date().toISOString()
+            : undefined,
+        },
+      ],
+      currentStepIndex: faker.number.int({ min: 0, max: 1 }),
+      completedSteps: faker.number.int({ min: 0, max: 2 }),
+      totalSteps: 2,
+      progressPercent: faker.number.float({
+        min: 0,
+        max: 100,
+        fractionDigits: 1,
+      }),
+      status: faker.helpers.arrayElement([
+        'draft',
+        'active',
+        'paused',
+        'completed',
+        'abandoned',
+      ]),
+      estimatedTotalMinutes: 180,
+      actualMinutesSpent: faker.number.int({ min: 0, max: 200 }),
+      generatedBy: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
+      startedAt: faker.date.recent(),
+      completedAt: faker.datatype.boolean(0.2)
+        ? faker.date.future()
+        : undefined,
     });
     learningPaths.push(path);
   }
   await learningPathRepo.save(learningPaths);
 
   // Create class analytics
+  const courseRepo = dataSource.getRepository(CoursesEntity);
+  const courses = await courseRepo.find({ take: 10 });
+
   const classAnalytics: ClassAnalyticsEntity[] = [];
-  for (const instructor of instructors) {
+  for (const course of courses) {
     const analytics = classAnalyticsRepo.create({
-      instructorId: instructor.id,
-      courseId: null,
-      period: 'monthly',
-      metrics: JSON.stringify({
-        averageScore: faker.number.float({ min: 60, max: 95, fractionDigits: 2 }),
-        completionRate: faker.number.float({ min: 0.5, max: 1, fractionDigits: 2 }),
-        activeStudents: faker.number.int({ min: 20, max: 100 }),
-        strugglingStudents: faker.number.int({ min: 0, max: 20 }),
+      courseId: course.id,
+      instructorId: faker.helpers.arrayElement(instructors).id,
+      periodStart: faker.date.recent({ days: 30 }),
+      periodEnd: faker.date.soon({ days: 30 }),
+      totalStudents: faker.number.int({ min: 20, max: 100 }),
+      activeStudents: faker.number.int({ min: 10, max: 80 }),
+      averageProgress: faker.number.float({
+        min: 20,
+        max: 100,
+        fractionDigits: 1,
       }),
-      insights: JSON.stringify([
-        'Students struggle with dynamic programming',
-        'High engagement in graph theory lessons',
-      ]),
-      recommendations: JSON.stringify([
-        'Add more practice problems for DP',
-        'Create additional video tutorials',
-      ]),
+      totalSubmissions: faker.number.int({ min: 50, max: 500 }),
+      acceptedSubmissions: faker.number.int({ min: 30, max: 400 }),
+      overallAcceptanceRate: faker.number.float({
+        min: 0.5,
+        max: 1,
+        fractionDigits: 2,
+      }),
+      averageAttemptsPerProblem: faker.number.float({
+        min: 1,
+        max: 5,
+        fractionDigits: 2,
+      }),
+      totalProblemsAssigned: faker.number.int({ min: 10, max: 50 }),
+      problemsWithZeroSolves: faker.number.int({ min: 0, max: 10 }),
+      difficultyBreakdown: {
+        easy: {
+          assigned: 20,
+          avgAcceptance: faker.number.float({
+            min: 0.7,
+            max: 1,
+            fractionDigits: 2,
+          }),
+        },
+        medium: {
+          assigned: 20,
+          avgAcceptance: faker.number.float({
+            min: 0.5,
+            max: 0.9,
+            fractionDigits: 2,
+          }),
+        },
+        hard: {
+          assigned: 10,
+          avgAcceptance: faker.number.float({
+            min: 0.2,
+            max: 0.6,
+            fractionDigits: 2,
+          }),
+        },
+      },
+      topicPerformance: {
+        arrays: {
+          totalProblems: 5,
+          averageAcceptance: faker.number.float({
+            min: 0.6,
+            max: 1,
+            fractionDigits: 2,
+          }),
+          averageAttempts: faker.number.float({
+            min: 1,
+            max: 3,
+            fractionDigits: 2,
+          }),
+        },
+        strings: {
+          totalProblems: 4,
+          averageAcceptance: faker.number.float({
+            min: 0.5,
+            max: 0.95,
+            fractionDigits: 2,
+          }),
+          averageAttempts: faker.number.float({
+            min: 1,
+            max: 4,
+            fractionDigits: 2,
+          }),
+        },
+      },
+      commonMistakes: [
+        {
+          category: 'off-by-one',
+          description: 'Students making off-by-one errors in loop conditions',
+          frequency: faker.number.int({ min: 5, max: 20 }),
+          affectedStudents: faker.number.int({ min: 3, max: 15 }),
+        },
+      ],
+      aiInsights: {
+        summary: faker.lorem.paragraph(),
+        summaryVi: faker.lorem.paragraph(),
+        recommendations: [faker.lorem.sentence(), faker.lorem.sentence()],
+        recommendationsVi: [faker.lorem.sentence(), faker.lorem.sentence()],
+        alerts: [faker.lorem.sentence()],
+        alertsVi: [faker.lorem.sentence()],
+      },
+      strugglingTopics: ['dynamic-programming', 'graph-algorithms'],
       generatedAt: faker.date.recent(),
-      aiProvider: faker.helpers.arrayElement(Object.values(AiProviderEnum)),
     });
     classAnalytics.push(analytics);
   }

@@ -39,12 +39,20 @@ export async function seedCourses(
   const quizQuestionRepo = dataSource.getRepository(CourseQuizQuestionsEntity);
   const quizAttemptRepo = dataSource.getRepository(CourseQuizAttemptsEntity);
   const assignmentRepo = dataSource.getRepository(CourseAssignmentsEntity);
-  const assignmentSubmissionRepo = dataSource.getRepository(CourseAssignmentSubmissionsEntity);
+  const assignmentSubmissionRepo = dataSource.getRepository(
+    CourseAssignmentSubmissionsEntity,
+  );
   const reviewRepo = dataSource.getRepository(CourseReviewsEntity);
-  const lessonProgressRepo = dataSource.getRepository(CourseLessonProgressEntity);
-  const lessonProblemRepo = dataSource.getRepository(CourseLessonProblemsEntity);
+  const lessonProgressRepo = dataSource.getRepository(
+    CourseLessonProgressEntity,
+  );
+  const lessonProblemRepo = dataSource.getRepository(
+    CourseLessonProblemsEntity,
+  );
 
-  const instructors = users.filter((u) => u.roles.includes('instructor' as any));
+  const instructors = users.filter((u) =>
+    u.roles.includes('instructor' as any),
+  );
   const students = users.filter((u) => u.roles.includes('student' as any));
 
   const courseTitles = [
@@ -77,14 +85,27 @@ export async function seedCourses(
       isPublic: faker.datatype.boolean(0.8),
       maxStudents: faker.helpers.arrayElement([0, 30, 50, 100]),
       estimatedDurationMinutes: faker.number.int({ min: 300, max: 3000 }),
-      tags: faker.helpers.arrayElements(['programming', 'web', 'backend', 'frontend', 'database'], 3).join(','),
-      category: faker.helpers.arrayElement(['Programming', 'Web Development', 'Data Science', 'DevOps']),
+      tags: faker.helpers
+        .arrayElements(
+          ['programming', 'web', 'backend', 'frontend', 'database'],
+          3,
+        )
+        .join(','),
+      category: faker.helpers.arrayElement([
+        'Programming',
+        'Web Development',
+        'Data Science',
+        'DevOps',
+      ]),
       learningObjectives: JSON.stringify([
         faker.lorem.sentence(),
         faker.lorem.sentence(),
         faker.lorem.sentence(),
       ]),
-      prerequisites: JSON.stringify([faker.lorem.sentence(), faker.lorem.sentence()]),
+      prerequisites: JSON.stringify([
+        faker.lorem.sentence(),
+        faker.lorem.sentence(),
+      ]),
       enrollmentCount: 0,
       averageRating: 0,
       reviewCount: 0,
@@ -119,15 +140,26 @@ export async function seedCourses(
     const numLessons = faker.number.int({ min: 3, max: 8 });
 
     for (let i = 0; i < numLessons; i++) {
-      const lessonType = faker.helpers.arrayElement(Object.values(LessonTypeEnum));
+      const lessonType = faker.helpers.arrayElement(
+        Object.values(LessonTypeEnum),
+      );
 
       const lesson = lessonRepo.create({
         sectionId: section.id,
         title: `Lesson ${i + 1}: ${faker.lorem.words(4)}`,
-        content: lessonType === LessonTypeEnum.Text ? faker.lorem.paragraphs(5) : undefined,
+        content:
+          lessonType === LessonTypeEnum.Text
+            ? faker.lorem.paragraphs(5)
+            : undefined,
         type: lessonType,
-        videoUrl: lessonType === LessonTypeEnum.Video ? faker.internet.url() : undefined,
-        videoDurationSeconds: lessonType === LessonTypeEnum.Video ? faker.number.int({ min: 300, max: 3600 }) : undefined,
+        videoUrl:
+          lessonType === LessonTypeEnum.Video
+            ? faker.internet.url()
+            : undefined,
+        videoDurationSeconds:
+          lessonType === LessonTypeEnum.Video
+            ? faker.number.int({ min: 300, max: 3600 })
+            : undefined,
         lessonOrder: i,
         estimatedMinutes: faker.number.int({ min: 10, max: 60 }),
         isPublished: faker.datatype.boolean(0.8),
@@ -164,20 +196,23 @@ export async function seedCourses(
     const numQuestions = faker.number.int({ min: 5, max: 15 });
 
     for (let i = 0; i < numQuestions; i++) {
-      const questionType = faker.helpers.arrayElement(Object.values(QuizQuestionTypeEnum));
+      const questionType = faker.helpers.arrayElement(
+        Object.values(QuizQuestionTypeEnum),
+      );
 
       const question = quizQuestionRepo.create({
         quizId: quiz.id,
         questionText: faker.lorem.sentence() + '?',
         questionType,
-        options: questionType === QuizQuestionTypeEnum.MultipleChoice
-          ? [
-              { id: 'A', text: faker.lorem.word(), isCorrect: true },
-              { id: 'B', text: faker.lorem.word(), isCorrect: false },
-              { id: 'C', text: faker.lorem.word(), isCorrect: false },
-              { id: 'D', text: faker.lorem.word(), isCorrect: false },
-            ]
-          : undefined,
+        options:
+          questionType === QuizQuestionTypeEnum.MultipleChoice
+            ? [
+                { id: 'A', text: faker.lorem.word(), isCorrect: true },
+                { id: 'B', text: faker.lorem.word(), isCorrect: false },
+                { id: 'C', text: faker.lorem.word(), isCorrect: false },
+                { id: 'D', text: faker.lorem.word(), isCorrect: false },
+              ]
+            : undefined,
         correctAnswer: faker.lorem.word(),
         explanation: faker.lorem.sentence(),
         points: faker.number.int({ min: 1, max: 5 }),
@@ -190,7 +225,9 @@ export async function seedCourses(
 
   // Create assignments for practice lessons (after lessons are saved)
   const assignments: CourseAssignmentsEntity[] = [];
-  const practiceLessons = lessons.filter((l) => l.type === LessonTypeEnum.Practice);
+  const practiceLessons = lessons.filter(
+    (l) => l.type === LessonTypeEnum.Practice,
+  );
   for (const lesson of practiceLessons) {
     const assignment = assignmentRepo.create({
       lessonId: lesson.id,
@@ -227,16 +264,25 @@ export async function seedCourses(
   const enrollments: CourseEnrollmentsEntity[] = [];
   for (const course of courses) {
     const numEnrollments = faker.number.int({ min: 10, max: 30 });
-    const enrolledStudents = faker.helpers.arrayElements(students, numEnrollments);
+    const enrolledStudents = faker.helpers.arrayElements(
+      students,
+      numEnrollments,
+    );
 
     for (const student of enrolledStudents) {
       const enrollment = enrollmentRepo.create({
         courseId: course.id,
         userId: student.id,
         status: faker.helpers.arrayElement(Object.values(EnrollmentStatusEnum)),
-        progressPercent: faker.number.float({ min: 0, max: 100, fractionDigits: 2 }),
+        progressPercent: faker.number.float({
+          min: 0,
+          max: 100,
+          fractionDigits: 2,
+        }),
         enrolledAt: faker.date.past(),
-        completedAt: faker.datatype.boolean(0.2) ? faker.date.recent() : undefined,
+        completedAt: faker.datatype.boolean(0.2)
+          ? faker.date.recent()
+          : undefined,
       });
       enrollments.push(enrollment);
     }
@@ -253,8 +299,14 @@ export async function seedCourses(
       return section?.courseId === enrollment.courseId;
     });
 
-    const numCompleted = faker.number.int({ min: 0, max: courseLessons.length });
-    const completedLessons = faker.helpers.arrayElements(courseLessons, numCompleted);
+    const numCompleted = faker.number.int({
+      min: 0,
+      max: courseLessons.length,
+    });
+    const completedLessons = faker.helpers.arrayElements(
+      courseLessons,
+      numCompleted,
+    );
 
     for (const lesson of completedLessons) {
       const progress = lessonProgressRepo.create({
@@ -274,7 +326,10 @@ export async function seedCourses(
   for (const enrollment of enrollments) {
     const courseLessons = lessons.filter((l) => {
       const section = sections.find((s) => s.id === l.sectionId);
-      return section?.courseId === enrollment.courseId && l.type === LessonTypeEnum.Quiz;
+      return (
+        section?.courseId === enrollment.courseId &&
+        l.type === LessonTypeEnum.Quiz
+      );
     });
 
     for (const lesson of courseLessons) {
@@ -283,7 +338,11 @@ export async function seedCourses(
 
       const numAttempts = faker.number.int({ min: 1, max: 3 });
       for (let i = 0; i < numAttempts; i++) {
-        const score = faker.number.float({ min: 0, max: 100, fractionDigits: 2 });
+        const score = faker.number.float({
+          min: 0,
+          max: 100,
+          fractionDigits: 2,
+        });
         const attempt = quizAttemptRepo.create({
           quizId: quiz.id,
           userId: enrollment.userId,
@@ -308,7 +367,10 @@ export async function seedCourses(
   for (const enrollment of enrollments) {
     const courseLessons = lessons.filter((l) => {
       const section = sections.find((s) => s.id === l.sectionId);
-      return section?.courseId === enrollment.courseId && l.type === LessonTypeEnum.Practice;
+      return (
+        section?.courseId === enrollment.courseId &&
+        l.type === LessonTypeEnum.Practice
+      );
     });
 
     for (const lesson of courseLessons) {
@@ -333,9 +395,17 @@ export async function seedCourses(
   // Create course reviews
   const reviews: CourseReviewsEntity[] = [];
   for (const course of courses) {
-    const courseEnrollments = enrollments.filter((e) => e.courseId === course.id);
-    const numReviews = faker.number.int({ min: 5, max: Math.min(15, courseEnrollments.length) });
-    const reviewers = faker.helpers.arrayElements(courseEnrollments, numReviews);
+    const courseEnrollments = enrollments.filter(
+      (e) => e.courseId === course.id,
+    );
+    const numReviews = faker.number.int({
+      min: 5,
+      max: Math.min(15, courseEnrollments.length),
+    });
+    const reviewers = faker.helpers.arrayElements(
+      courseEnrollments,
+      numReviews,
+    );
 
     let totalRating = 0;
     for (const enrollment of reviewers) {

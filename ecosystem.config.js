@@ -25,8 +25,8 @@ module.exports = {
       },
     },
     {
-      name: 'coderank-agent',
-      cwd: './coderank-agent',
+      name: 'coderank-agent-v1',
+      cwd: './coderank-agent-v1',
       script: 'npm',
       args: 'run pm2:start',
       env_development: {

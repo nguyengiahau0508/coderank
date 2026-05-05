@@ -25,7 +25,9 @@ export async function seedContests(
   const participantRepo = dataSource.getRepository(ContestParticipantsEntity);
   const submissionRepo = dataSource.getRepository(ContestSubmissionsEntity);
 
-  const instructors = users.filter((u) => u.roles.includes('instructor' as any));
+  const instructors = users.filter((u) =>
+    u.roles.includes('instructor' as any),
+  );
   const students = users.filter((u) => u.roles.includes('student' as any));
 
   const contestTitles = [
@@ -45,7 +47,10 @@ export async function seedContests(
 
   for (const title of contestTitles) {
     const organizer = faker.helpers.arrayElement(instructors);
-    const startTime = faker.date.between({ from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), to: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
+    const startTime = faker.date.between({
+      from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      to: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
     const duration = faker.helpers.arrayElement([60, 90, 120, 180]);
     const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
 
@@ -71,7 +76,9 @@ export async function seedContests(
       isPublic: faker.datatype.boolean(0.8),
       isRated: faker.datatype.boolean(0.7),
       isRankCalculated: status === ContestStatusEnum.Ended,
-      password: faker.datatype.boolean(0.2) ? faker.internet.password() : undefined,
+      password: faker.datatype.boolean(0.2)
+        ? faker.internet.password()
+        : undefined,
       maxParticipants: faker.helpers.arrayElement([0, 50, 100, 200]),
       authorId: organizer.id,
     });
@@ -104,7 +111,10 @@ export async function seedContests(
   const participants: ContestParticipantsEntity[] = [];
   for (const contest of contests) {
     const numParticipants = faker.number.int({ min: 10, max: 40 });
-    const contestStudents = faker.helpers.arrayElements(students, numParticipants);
+    const contestStudents = faker.helpers.arrayElements(
+      students,
+      numParticipants,
+    );
 
     for (const student of contestStudents) {
       const participant = participantRepo.create({
@@ -126,32 +136,55 @@ export async function seedContests(
   for (const contest of contests) {
     if (contest.status === ContestStatusEnum.Upcoming) continue;
 
-    const contestParticipants = participants.filter((p) => p.contestId === contest.id);
-    const contestProblemsList = contestProblems.filter((cp) => cp.contestId === contest.id);
+    const contestParticipants = participants.filter(
+      (p) => p.contestId === contest.id,
+    );
+    const contestProblemsList = contestProblems.filter(
+      (cp) => cp.contestId === contest.id,
+    );
 
     for (const participant of contestParticipants) {
-      const numSubmissions = faker.number.int({ min: 1, max: contestProblemsList.length * 3 });
+      const numSubmissions = faker.number.int({
+        min: 1,
+        max: contestProblemsList.length * 3,
+      });
 
       for (let i = 0; i < numSubmissions; i++) {
         const contestProblem = faker.helpers.arrayElement(contestProblemsList);
-        const status = faker.helpers.arrayElement(Object.values(SubmissionStatusEnum));
+        const status = faker.helpers.arrayElement(
+          Object.values(SubmissionStatusEnum),
+        );
         const totalTests = faker.number.int({ min: 5, max: 10 });
-        const passedTests = status === SubmissionStatusEnum.Accepted ? totalTests : faker.number.int({ min: 0, max: totalTests });
+        const passedTests =
+          status === SubmissionStatusEnum.Accepted
+            ? totalTests
+            : faker.number.int({ min: 0, max: totalTests });
 
         const submission = submissionRepo.create({
           contestId: contest.id,
           problemId: contestProblem.problemId,
           userId: participant.userId,
-          language: faker.helpers.arrayElement(Object.values(ProgrammingLanguageEnum)),
+          language: faker.helpers.arrayElement(
+            Object.values(ProgrammingLanguageEnum),
+          ),
           code: faker.lorem.paragraphs(2),
           status,
-          score: status === SubmissionStatusEnum.Accepted ? contestProblem.points : 0,
+          score:
+            status === SubmissionStatusEnum.Accepted
+              ? contestProblem.points
+              : 0,
           executionTimeMs: faker.number.int({ min: 10, max: 1000 }),
           memoryUsedMb: faker.number.int({ min: 1, max: 100 }),
           passedTestcases: passedTests,
           totalTestcases: totalTests,
-          errorMessage: status !== SubmissionStatusEnum.Accepted ? faker.lorem.sentence() : undefined,
-          submittedAt: faker.date.between({ from: contest.startTime, to: contest.endTime }),
+          errorMessage:
+            status !== SubmissionStatusEnum.Accepted
+              ? faker.lorem.sentence()
+              : undefined,
+          submittedAt: faker.date.between({
+            from: contest.startTime,
+            to: contest.endTime,
+          }),
         });
         submissions.push(submission);
       }
@@ -161,11 +194,17 @@ export async function seedContests(
 
   // Calculate participant scores and ranks
   for (const contest of contests) {
-    const contestParticipants = participants.filter((p) => p.contestId === contest.id);
-    const contestSubmissions = submissions.filter((s) => s.contestId === contest.id);
+    const contestParticipants = participants.filter(
+      (p) => p.contestId === contest.id,
+    );
+    const contestSubmissions = submissions.filter(
+      (s) => s.contestId === contest.id,
+    );
 
     for (const participant of contestParticipants) {
-      const userSubmissions = contestSubmissions.filter((s) => s.userId === participant.userId);
+      const userSubmissions = contestSubmissions.filter(
+        (s) => s.userId === participant.userId,
+      );
 
       const problemScores = new Map<string, number>();
       for (const submission of userSubmissions) {
@@ -175,8 +214,13 @@ export async function seedContests(
         }
       }
 
-      participant.totalScore = Array.from(problemScores.values()).reduce((a, b) => a + b, 0);
-      participant.solvedProblems = Array.from(problemScores.values()).filter((s) => s > 0).length;
+      participant.totalScore = Array.from(problemScores.values()).reduce(
+        (a, b) => a + b,
+        0,
+      );
+      participant.solvedProblems = Array.from(problemScores.values()).filter(
+        (s) => s > 0,
+      ).length;
       participant.penaltyMinutes = faker.number.int({ min: 0, max: 100 });
     }
 
@@ -188,7 +232,8 @@ export async function seedContests(
     contestParticipants.forEach((p, index) => {
       p.rank = index + 1;
       if (contest.isRated && contest.status === ContestStatusEnum.Ended) {
-        p.newRating = (p.oldRating || 1400) + faker.number.int({ min: -50, max: 100 });
+        p.newRating =
+          (p.oldRating || 1400) + faker.number.int({ min: -50, max: 100 });
         p.ratingDelta = p.newRating - (p.oldRating || 1400);
       }
     });

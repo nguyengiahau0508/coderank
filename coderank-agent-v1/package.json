@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx ts-node src/main.ts",
     "dev": "nodemon --watch src/**/*.ts --exec \"npx ts-node\" src/main.ts",
-    "pm2:start": "if [ \"$NODE_ENV\" = \"production\" ]; then npm run start; else npm run dev; fi"
+    "pm2:start": "if [ \"$NODE_ENV\" = \"production\" ]; then npm run start; else npm run start; fi"
   },
   "keywords": [],
   "author": "",
